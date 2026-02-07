@@ -82,25 +82,27 @@ def price_alert(zones, timeframe, five_minute):
     # 12h Zones
     if timeframe == "12h":
         # High Zone Check
+        hf_high = int(zones['high'] / 1000)
         high_touch = (last_high >= zones['high_lower'] and last_high <= zones['high'])
-        high_cross = (last_high > zones['high'] and last_low < zones['high'])
+        high_cross = (last_high >= (zones['high'] - hf_high) and last_low <= (zones['high'] + hf_high))
         if high_touch or high_cross:
             telegram_bot_sendtext(f"{emoji} {timeframe} High {int(zones['high'])}-{int(zones['high_lower'])}")
             sleep_until_next(SLEEP_INTERVAL)
 
         # Low Zone Check
+        hf_low = int(zones['low'] / 1000)
         low_touch = (last_high >= zones['low_lower'] and last_high <= zones['low'])
-        low_cross = (last_high > zones['low'] and last_low < zones['low'])
+        low_cross = (last_high >= (zones['low'] - hf_low) and last_low <= (zones['low'] + hf_low))
         if low_touch or low_cross:
             telegram_bot_sendtext(f"{emoji} {timeframe} Low {int(zones['low'])}-{int(zones['low_lower'])}")
             sleep_until_next(SLEEP_INTERVAL)
 
     # 4h Levels (No Zones, only crossing)
     if timeframe == "4h":
-        if last_high > zones['high'] and last_low < zones['high']:
+        if last_high >= zones['high'] and last_low <= zones['high']:
             telegram_bot_sendtext(f"{emoji} {timeframe} High Cross at {int(zones['high'])}")
             sleep_until_next(SLEEP_INTERVAL)
-        if last_high > zones['low'] and last_low < zones['low']:
+        if last_high >= zones['low'] and last_low <= zones['low']:
             telegram_bot_sendtext(f"{emoji} {timeframe} Low Cross at {int(zones['low'])}")
             sleep_until_next(SLEEP_INTERVAL)
 
@@ -108,8 +110,9 @@ def price_alert(zones, timeframe, five_minute):
     MIDDLE_LINE = True
     if timeframe == "1d" and not zones.get("monitor_mid", True): MIDDLE_LINE = False
     if timeframe in ["1d", "12h"] and MIDDLE_LINE:
+        hf_mid = int(zones['middle'] / 1000)
         mid_touch = (last_high >= zones['middle_lower'] and last_high <= zones['middle'])
-        mid_cross = (last_high > zones['middle'] and last_low < zones['middle'])
+        mid_cross = (last_high >= (zones['middle'] - hf_mid) and last_low <= (zones['middle'] + hf_mid))
         if mid_touch or mid_cross:
             telegram_bot_sendtext(f"{emoji} {timeframe} Middle {int(zones['middle'])}-{int(zones['middle_lower'])}")
             sleep_until_next(SLEEP_INTERVAL)
@@ -117,9 +120,9 @@ def price_alert(zones, timeframe, five_minute):
 def check_whole_numbers(five_minute):
     last_high = five_minute["high"].iloc[-1]
     last_low = five_minute["low"].iloc[-1]
-
     for level in WHOLE_NUMBER:
-        if last_high >= level and last_low <= level:
+        buffer = int(level / 1000)
+        if last_high >= (level - buffer) and last_low <= (level + buffer):
             telegram_bot_sendtext(f"💥 WHOLE NUMBER TOUCH 💥 {level}")
             sleep_until_next(SLEEP_INTERVAL)
 
