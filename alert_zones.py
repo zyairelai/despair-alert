@@ -8,18 +8,29 @@ except ImportError:
     exit(1)
 
 # --- Configuration ---
+SYMBOL = "BTCUSDT"
+WHOLE_NUMBER = [60000, 70000, 80000]
+
 BUFFER = 0.1
 ENABLE_4H = True
 SLEEP_INTERVAL = "-"
 
 def sleep_until_next(interval):
+    if not interval or interval.lower() in ["-", "none", "na"]: sys.exit(0)
     now = datetime.now()
-    if interval == "1h": next_time = (now.replace(minute=0, second=10, microsecond=0) + timedelta(hours=1))
-    else:
+    if interval.endswith("h"):
+        hours = int(interval.replace("h", ""))
+        hours_to_add = hours - (now.hour % hours)
+        next_time = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=hours_to_add)
+        next_time += timedelta(seconds=10)
+    elif interval.endswith("m"):
         minutes = int(interval.replace("m", ""))
         minutes_to_add = minutes - (now.minute % minutes)
         next_time = now.replace(second=0, microsecond=0) + timedelta(minutes=minutes_to_add)
         next_time += timedelta(seconds=1)
+    else:
+        print(f"Unknown interval format: {interval}")
+        sys.exit(1)
 
     sleep_seconds = (next_time - now).total_seconds()
     if sleep_seconds > 0: time.sleep(sleep_seconds)
@@ -45,7 +56,6 @@ def get_klines(pair, interval):
     candlestick = pandas.DataFrame(result, columns=cols).sort_values("timestamp")
     return candlestick
 
-SYMBOL = "BTCUSDT"
 def prepare_zones(timeframe):
     df = get_klines(SYMBOL, timeframe)
 
@@ -55,15 +65,16 @@ def prepare_zones(timeframe):
 
     zones = {"high": high, "low": low, "middle": (high + low) / 2}
 
-    if timeframe == "12h":
+    if timeframe in ["12h", "1d"]:
         current_buffer = BUFFER
         zones["high_lower"] = high - int(diff * current_buffer)
         zones["low_lower"] = low - int(diff * current_buffer)
-    
+        # zones["middle_lower"] = zones["middle"] - int(diff * current_buffer / 2)
+        zones["middle_lower"] = zones["middle"]
+
     return zones
 
-def price_alert(zones, timeframe):
-    five_minute = get_klines(SYMBOL, "5m")
+def price_alert(zones, timeframe, five_minute):
     last_high = five_minute["high"].iloc[-1]
     last_low = five_minute["low"].iloc[-1]
     emoji = "🚨" * (3 if timeframe == "1d" else 2 if timeframe == "12h" else 1)
@@ -71,34 +82,45 @@ def price_alert(zones, timeframe):
     # 12h Zones
     if timeframe == "12h":
         # High Zone Check
-        if (last_high >= zones['high_lower'] and last_high <= zones['high']) or \
-           (last_low >= zones['high_lower'] and last_low <= zones['high']):
-            telegram_bot_sendtext(f"{emoji} BTC {timeframe} High {int(zones['high'])}-{int(zones['high_lower'])}")
+        high_touch = (last_high >= zones['high_lower'] and last_high <= zones['high'])
+        high_cross = (last_high > zones['high'] and last_low < zones['high'])
+        if high_touch or high_cross:
+            telegram_bot_sendtext(f"{emoji} {timeframe} High {int(zones['high'])}-{int(zones['high_lower'])}")
             sleep_until_next(SLEEP_INTERVAL)
 
         # Low Zone Check
-        if (last_high >= zones['low_lower'] and last_high <= zones['low']) or \
-           (last_low >= zones['low_lower'] and last_low <= zones['low']):
-            telegram_bot_sendtext(f"{emoji} BTC {timeframe} Low {int(zones['low'])}-{int(zones['low_lower'])}")
+        low_touch = (last_high >= zones['low_lower'] and last_high <= zones['low'])
+        low_cross = (last_high > zones['low'] and last_low < zones['low'])
+        if low_touch or low_cross:
+            telegram_bot_sendtext(f"{emoji} {timeframe} Low {int(zones['low'])}-{int(zones['low_lower'])}")
             sleep_until_next(SLEEP_INTERVAL)
 
     # 4h Levels (No Zones, only crossing)
     if timeframe == "4h":
         if last_high > zones['high'] and last_low < zones['high']:
-            telegram_bot_sendtext(f"{emoji} BTC {timeframe} High Cross at {int(zones['high'])}")
+            telegram_bot_sendtext(f"{emoji} {timeframe} High Cross at {int(zones['high'])}")
             sleep_until_next(SLEEP_INTERVAL)
         if last_high > zones['low'] and last_low < zones['low']:
-            telegram_bot_sendtext(f"{emoji} BTC {timeframe} Low Cross at {int(zones['low'])}")
+            telegram_bot_sendtext(f"{emoji} {timeframe} Low Cross at {int(zones['low'])}")
             sleep_until_next(SLEEP_INTERVAL)
 
     # Middle Line Check (1d and 12h only)
     MIDDLE_LINE = True
-    if timeframe == "1d" and not zones.get("monitor_mid", True):
-        MIDDLE_LINE = False
-
+    if timeframe == "1d" and not zones.get("monitor_mid", True): MIDDLE_LINE = False
     if timeframe in ["1d", "12h"] and MIDDLE_LINE:
-        if last_high > zones['middle'] and last_low < zones['middle']:
-            telegram_bot_sendtext(f"{emoji} cross {timeframe} Middle at {int(zones['middle'])}")
+        mid_touch = (last_high >= zones['middle_lower'] and last_high <= zones['middle'])
+        mid_cross = (last_high > zones['middle'] and last_low < zones['middle'])
+        if mid_touch or mid_cross:
+            telegram_bot_sendtext(f"{emoji} {timeframe} Middle {int(zones['middle'])}-{int(zones['middle_lower'])}")
+            sleep_until_next(SLEEP_INTERVAL)
+
+def check_whole_numbers(five_minute):
+    last_high = five_minute["high"].iloc[-1]
+    last_low = five_minute["low"].iloc[-1]
+
+    for level in WHOLE_NUMBER:
+        if last_high >= level and last_low <= level:
+            telegram_bot_sendtext(f"💥 WHOLE NUMBER TOUCH 💥 {level}")
             sleep_until_next(SLEEP_INTERVAL)
 
 def main():
@@ -129,7 +151,7 @@ def main():
         elif tf == "12h":
             print(f"\nPrevious {tf} High Zone: {int(zones['high'])} - {int(zones['high_lower'])}")
             print(f"Previous {tf} Low Zone : {int(zones['low'])} - {int(zones['low_lower'])}")
-            print(f"Previous {tf} Middle Line: {int(zones['middle'])}")
+            print(f"Previous {tf} Mid Zone : {int(zones['middle'])} - {int(zones['middle_lower'])}")
         elif tf == "4h":
             print(f"\nPrevious {tf} High Level: {int(zones['high'])}")
             print(f"Previous {tf} Low Level : {int(zones['low'])}")
@@ -137,8 +159,11 @@ def main():
     try:
         while True:
             try:
+                five_minute = get_klines(SYMBOL, "5m")
+                check_whole_numbers(five_minute)
+
                 for tf, zones in zones_map.items():
-                    price_alert(zones, tf)
+                    price_alert(zones, tf, five_minute)
                 time.sleep(5)
             except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
                 print(f"Error: {e}")

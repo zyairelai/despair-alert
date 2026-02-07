@@ -47,7 +47,8 @@ def waiting_for_entry(pair, interval):
     is_shooting_star = (
         timeframe['close'].iloc[-1] < timeframe['open'].iloc[-1] and
         timeframe['high'].iloc[-1] >= timeframe['high'].iloc[-5:].max() and
-        timeframe['upper_wick'].iloc[-1] > timeframe['body'].iloc[-1] * 2 + timeframe['lower_wick'].iloc[-1])
+        timeframe['upper_wick'].iloc[-1] > timeframe['body'].iloc[-1] * 2 + timeframe['lower_wick'].iloc[-1]) or \
+        timeframe['upper_wick'].iloc[-1] > (timeframe['body'].iloc[-1] + timeframe['lower_wick'].iloc[-1]) * 2
 
     # 3. Bearish Engulfing
     is_bearish_engulfing = (
