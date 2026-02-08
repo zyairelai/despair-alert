@@ -71,7 +71,9 @@ def prepare_zones(timeframe):
         current_buffer = BUFFER
         zones["high_lower"] = high - int(diff * current_buffer)
         zones["low_lower"] = low - int(diff * current_buffer)
+
         # zones["middle_lower"] = zones["middle"] - int(diff * current_buffer / 2)
+        # zones["middle_lower"] = zones["middle"] - int(zones['middle'] / 1000)
         zones["middle_lower"] = zones["middle"]
 
     return zones
@@ -137,8 +139,7 @@ def main():
     # print(f"Monitoring timeframes: {', '.join(timeframes)}")
 
     zones_map = {}
-    for tf in timeframes:
-        zones_map[tf] = prepare_zones(tf)
+    for tf in timeframes: zones_map[tf] = prepare_zones(tf)
 
     # Filter 1d Middle based on 12h Range
     if "1d" in zones_map and "12h" in zones_map:
