@@ -13,7 +13,9 @@ WHOLE_NUMBER = [60000, 70000, 80000]
 
 BUFFER = 0.1
 ENABLE_4H = True
-SLEEP_INTERVAL = "-"
+ENABLE_1D_MIDDLE_LINE = True
+ENABLE_12H_MIDDLE_LINE = True
+SLEEP_INTERVAL = "1h"
 
 def sleep_until_next(interval):
     if not interval or interval.lower() in ["-", "none", "na"]: sys.exit(0)
@@ -107,9 +109,11 @@ def price_alert(zones, timeframe, five_minute):
             sleep_until_next(SLEEP_INTERVAL)
 
     # Middle Line Check (1d and 12h only)
-    MIDDLE_LINE = True
-    if timeframe == "1d" and not zones.get("monitor_mid", True): MIDDLE_LINE = False
-    if timeframe in ["1d", "12h"] and MIDDLE_LINE:
+    should_alert_middle = False
+    if timeframe == "1d": should_alert_middle = ENABLE_1D_MIDDLE_LINE and zones.get("monitor_mid", True)
+    elif timeframe == "12h": should_alert_middle = ENABLE_12H_MIDDLE_LINE
+
+    if should_alert_middle:
         hf_mid = int(zones['middle'] / 1000)
         mid_touch = (last_high >= zones['middle_lower'] and last_high <= zones['middle'])
         mid_cross = (last_high >= (zones['middle'] - hf_mid) and last_low <= (zones['middle'] + hf_mid))
@@ -127,7 +131,8 @@ def check_whole_numbers(five_minute):
             sleep_until_next(SLEEP_INTERVAL)
 
 def main():
-    timeframes = ["1d", "12h"]
+    timeframes = ["12h"]
+    if ENABLE_1D_MIDDLE_LINE: timeframes.insert(0, "1d")
     if ENABLE_4H: timeframes.append("4h")
     # print(f"Monitoring timeframes: {', '.join(timeframes)}")
 
