@@ -33,8 +33,7 @@ def get_klines(pair, interval):
     r = session.get(url, params=params, timeout=5)
     r.raise_for_status()
     data = r.json()
-    result = []
-    for x in data: result.append([x[0], float(x[1]), float(x[2]), float(x[3]), float(x[4]), float(x[5])])
+    result = [[x[0], float(x[1]), float(x[2]), float(x[3]), float(x[4]), float(x[5])] for x in data]
     cols = ["timestamp", "open", "high", "low", "close", "volume"]
     candlestick = pandas.DataFrame(result, columns=cols).sort_values("timestamp")
     candlestick["body"] = (candlestick["close"] - candlestick["open"]).abs()
