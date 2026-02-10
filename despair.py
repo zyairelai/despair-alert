@@ -82,13 +82,13 @@ def condition_15m_raw(pair):
 def short_despair():
     if condition_1h("BTCUSDT"):
         telegram_bot_sendtext("💥 1H STRUCTURE BREAK 💥")
-        sleep_until_next_hour()
+        exit()
     if condition_15m("BTCUSDT"):
         telegram_bot_sendtext("💥 15m HEIKIN ASHI VOLUME FLUSH 💥")
-        sleep_until_next_hour()
-    if condition_15m_raw("BTCUSDT"):
-        telegram_bot_sendtext("💥 15m RAW CANDLE STRUCTURE BREAK 💥")
-        sleep_until_next_hour()
+        exit()
+    # if condition_15m_raw("BTCUSDT"):
+    #     telegram_bot_sendtext("💥 15m RAW CANDLE STRUCTURE BREAK 💥")
+    #     exit()
 
 try:
     while True:

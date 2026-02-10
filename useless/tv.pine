@@ -2,14 +2,15 @@
 indicator("ALL IN ONE", overlay=true)
 
 // === CONFIGURATION (Hardcoded instead of inputs) ===
-showHigh = false
-showLow  = false
-show4hHigh = true
-show4hLow  = true
-colHigh  = color.black
-colLow   = color.black
-col4hHigh = color.black
-col4hLow  = color.black
+show1d      = true
+show1dMid   = true
+show12h     = true
+show4h      = true
+
+col1d       = color.black
+col1dMid    = color.red
+col12h      = color.blue
+col4h       = color.green
 
 // === INDICATORS ===
 ema10  = ta.ema(close, 10)
@@ -24,45 +25,66 @@ plot(ema100, color=#E4005C, linewidth=3, title="EMA 100")
 
 // === DATA RETRIEVAL ===
 standardTicker = ticker.new(syminfo.prefix, syminfo.ticker)
-prevHigh       = request.security(standardTicker, "D", high[1])
-prevLow        = request.security(standardTicker, "D", low[1])
-targetStart    = request.security(standardTicker, "D", time[1])
 
+// 1D Data
+prev1dHigh     = request.security(standardTicker, "D", high[1])
+prev1dLow      = request.security(standardTicker, "D", low[1])
+prev1dMid      = (prev1dHigh + prev1dLow) / 2
+target1dStart  = request.security(standardTicker, "D", time[1])
+
+// 12H Data
+prev12hHigh    = request.security(standardTicker, "720", high[1])
+prev12hLow     = request.security(standardTicker, "720", low[1])
+target12hStart = request.security(standardTicker, "720", time[1])
+
+// 4H Data
 prev4hHigh     = request.security(standardTicker, "240", high[1])
 prev4hLow      = request.security(standardTicker, "240", low[1])
 target4hStart  = request.security(standardTicker, "240", time[1])
 
 // === STATUS LINE VALUES ===
-plot(prevHigh, "High Value", color=na, display = showHigh ? display.status_line : display.none)
-plot(prevLow,  "Low Value",  color=na, display = showLow  ? display.status_line : display.none)
-plot(prev4hHigh, "4H High Value", color=na, display = show4hHigh ? display.status_line : display.none)
-plot(prev4hLow,  "4H Low Value",  color=na, display = show4hLow  ? display.status_line : display.none)
+plot(prev1dHigh,  "Prev 1D High",   color=na, display = show1d    ? display.status_line : display.none)
+plot(prev1dMid,   "Prev 1D Middle", color=na, display = show1dMid ? display.status_line : display.none)
+plot(prev1dLow,   "Prev 1D Low",    color=na, display = show1d    ? display.status_line : display.none)
+plot(prev12hHigh, "Prev 12H High",  color=na, display = show12h   ? display.status_line : display.none)
+plot(prev12hLow,  "Prev 12H Low",   color=na, display = show12h   ? display.status_line : display.none)
+plot(prev4hHigh,  "Prev 4H High",   color=na, display = show4h    ? display.status_line : display.none)
+plot(prev4hLow,   "Prev 4H Low",    color=na, display = show4h    ? display.status_line : display.none)
 
 // === LINE DRAWING ===
-var line lineHigh = na
-var line lineLow  = na
+var line line1dHigh = na
+var line line1dLow  = na
+var line line1dMid  = na
+var line line12hHigh = na
+var line line12hLow  = na
 var line line4hHigh = na
 var line line4hLow  = na
 
 if barstate.islast
-    // Extend the line to current time + 1 day (86,400,000 milliseconds)
+    // Extend the line to current time + 1 day
     actualEnd = time + 86400000
 
     // Clean up old lines
-    line.delete(lineHigh)
-    line.delete(lineLow)
+    line.delete(line1dHigh)
+    line.delete(line1dLow)
+    line.delete(line1dMid)
+    line.delete(line12hHigh)
+    line.delete(line12hLow)
     line.delete(line4hHigh)
     line.delete(line4hLow)
 
     // Create new lines
-    if showHigh
-        lineHigh := line.new(targetStart, prevHigh, actualEnd, prevHigh, xloc=xloc.bar_time, color=colHigh, width=3)
+    if show1d
+        line1dHigh := line.new(target1dStart, prev1dHigh, actualEnd, prev1dHigh, xloc=xloc.bar_time, color=col1d, width=4)
+        line1dLow  := line.new(target1dStart, prev1dLow,  actualEnd, prev1dLow,  xloc=xloc.bar_time, color=col1d, width=4)
 
-    if showLow
-        lineLow := line.new(targetStart, prevLow, actualEnd, prevLow, xloc=xloc.bar_time, color=colLow, width=3)
+    if show1dMid
+        line1dMid := line.new(target1dStart, prev1dMid, actualEnd, prev1dMid, xloc=xloc.bar_time, color=col1dMid, width=4)
 
-    if show4hHigh
-        line4hHigh := line.new(target4hStart, prev4hHigh, actualEnd, prev4hHigh, xloc=xloc.bar_time, color=col4hHigh, width=2)
+    if show12h
+        line12hHigh := line.new(target12hStart, prev12hHigh, actualEnd, prev12hHigh, xloc=xloc.bar_time, color=col12h, width=3)
+        line12hLow  := line.new(target12hStart, prev12hLow,  actualEnd, prev12hLow,  xloc=xloc.bar_time, color=col12h, width=3)
 
-    if show4hLow
-        line4hLow := line.new(target4hStart, prev4hLow, actualEnd, prev4hLow, xloc=xloc.bar_time, color=col4hLow, width=2)
+    if show4h
+        line4hHigh := line.new(target4hStart, prev4hHigh, actualEnd, prev4hHigh, xloc=xloc.bar_time, color=col4h, width=2)
+        line4hLow  := line.new(target4hStart, prev4hLow,  actualEnd, prev4hLow,  xloc=xloc.bar_time, color=col4h, width=2)

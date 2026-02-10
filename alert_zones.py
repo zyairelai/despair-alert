@@ -1,25 +1,19 @@
 #!/usr/bin/python3
 
-import time, socket, os, sys
+import pandas, requests, time, socket, os, sys
 from datetime import datetime, timedelta
-try: 
-    import pandas, requests
-    from termcolor import colored
-except ImportError:
-    print("Library not found, run:\npip3 install pandas requests termcolor --break-system-packages")
-    exit(1)
+from termcolor import colored
 
-# --- Configuration ---
+# ----- Configuration -----
 SYMBOL = "BTCUSDT"
 # WHOLE_NUMBER = [100000, 70000]
+CANDLE_MUST_BE_GREEN = True
 BUFFER = 666
-SLEEP_INTERVAL = "15m"
+SLEEP_INTERVAL = "30m"
 ENABLED_TIMEFRAME = ["1d", "12h", "4h"]
-# ENABLED_TIMEFRAME = ["12h", "4h"]
 ENABLED_MIDD_LINE = ["1d"]
 
 def sleep_until_next(interval):
-    if not interval or interval.lower() in ["-", "none", "na"]: sys.exit(0)
     now = datetime.now()
     if interval.endswith("h"):
         hours = int(interval.replace("h", ""))
@@ -31,15 +25,12 @@ def sleep_until_next(interval):
         minutes_to_add = minutes - (now.minute % minutes)
         next_time = now.replace(second=0, microsecond=0) + timedelta(minutes=minutes_to_add)
         next_time += timedelta(seconds=10)
-    else:
-        print(f"Unknown interval format: {interval}")
-        sys.exit(1)
-
+    else: sys.exit(0)
     sleep_seconds = (next_time - now).total_seconds()
     if sleep_seconds > 0: time.sleep(sleep_seconds)
 
 def telegram_bot_sendtext(bot_message):
-    print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S")))
+    print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
     bot_token = os.environ.get('TELEGRAM_LIVERMORE')
     chat_id = "@swinglivermore"
     send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + chat_id + '&parse_mode=html&text=' + bot_message
@@ -76,29 +67,38 @@ def price_alert(timeframe, current_minute):
     middle = (high + low) / 2
     
     last_high, last_low = current_minute["high"].iloc[-1], current_minute["low"].iloc[-1]
+    last_open, last_close = current_minute["open"].iloc[-1], current_minute["close"].iloc[-1]
+    is_green = last_close > last_open
+
+    if CANDLE_MUST_BE_GREEN and not is_green: return
     emoji = "🚨" * (3 if timeframe == "1d" else 2 if timeframe == "12h" else 1)
 
     # High/Low Check (Resistance/Support)
     if timeframe in ENABLED_TIMEFRAME:
         for val, name in [(high, "High"), (low, "Low")]:
             threshold = val - (val / BUFFER)
-            if last_high >= threshold and last_low <= threshold:
-                telegram_bot_sendtext(f"\n{emoji} {timeframe} {name} at {int(val)}")
+            if (last_high >= threshold and last_low <= threshold) or (last_high >= val and last_low <= val):
+                telegram_bot_sendtext(f"\n{emoji} {timeframe.upper()} {name} at {int(val)}")
                 sleep_until_next(SLEEP_INTERVAL)
 
     # Middle Check
     if timeframe in ENABLED_MIDD_LINE:
         threshold = middle - (middle / BUFFER)
-        if last_high >= threshold and last_low <= threshold:
-            telegram_bot_sendtext(f"{emoji} {timeframe} Middle at {int(middle)}")
+        if (last_high >= threshold and last_low <= threshold) or (last_high >= middle and last_low <= middle):
+            telegram_bot_sendtext(f"{emoji} {timeframe.upper()} Middle at {int(middle)}")
             sleep_until_next(SLEEP_INTERVAL)
 
 def check_whole_numbers(current_minute):
     if "WHOLE_NUMBER" not in globals() or not WHOLE_NUMBER: return
     last_high, last_low = current_minute["high"].iloc[-1], current_minute["low"].iloc[-1]
+    last_open, last_close = current_minute["open"].iloc[-1], current_minute["close"].iloc[-1]
+    is_green = last_close > last_open
+
+    if CANDLE_MUST_BE_GREEN and not is_green: return
+
     for level in WHOLE_NUMBER:
         threshold = level - (level / BUFFER * 2)
-        if last_high >= threshold and last_low <= threshold:
+        if (last_high >= threshold and last_low <= threshold) or (last_high >= level and last_low <= level):
             telegram_bot_sendtext(f"💥 WHOLE NUMBER TOUCH 💥 {level}")
             sleep_until_next(SLEEP_INTERVAL)
 
@@ -111,7 +111,11 @@ def main():
         h, l = df["high"].iloc[-2], df["low"].iloc[-2]
         levels_data[timeframe] = {"High": h, "Low": l, "Middle": (h + l) / 2}
 
-        print(f"\n--- {timeframe} ---")
+        # Skip timeframe if both High and Low are duplicates
+        if timeframe != "1d":
+            if check_duplicated(timeframe, h, levels_data) and check_duplicated(timeframe, l, levels_data): continue
+
+        print(f"\n--- {timeframe.upper()} ---")
         current_levels = []
         if timeframe in ENABLED_TIMEFRAME:
             current_levels.extend([("High", levels_data[timeframe]["High"]), ("Low", levels_data[timeframe]["Low"])])
@@ -121,7 +125,7 @@ def main():
             match = check_duplicated(timeframe, val, levels_data)
             label = "Mid" if name == "Middle" else name
             
-            if match: print(f"Prev {timeframe} {label}: -")
+            if match: print(f"Prev {timeframe.upper()} {label}: -")
             else:
                 out_val = str(int(val))
                 if timeframe == "12h":
@@ -129,7 +133,7 @@ def main():
                     else: out_val = colored(out_val, "blue")
                 elif timeframe == "1d" and name == "Middle": out_val = colored(out_val, "red")
                 elif timeframe == "4h": out_val = colored(out_val, "green")
-                print(f"Prev {timeframe} {label}: {out_val}")
+                print(f"Prev {timeframe.upper()} {label}: {out_val}")
 
         # Out of range warning (1d vs 12h)
         if timeframe == "12h" and "1d" in levels_data and "1d" in ENABLED_MIDD_LINE:
