@@ -9,7 +9,7 @@ SYMBOL = "BTCUSDT"
 # WHOLE_NUMBER = [100000, 70000]
 CANDLE_MUST_BE_GREEN = True
 BUFFER = 666
-SLEEP_INTERVAL = "30m"
+SLEEP_INTERVAL = "-"
 ENABLED_TIMEFRAME = ["1d", "12h", "4h"]
 ENABLED_MIDD_LINE = ["1d"]
 
@@ -60,7 +60,7 @@ def check_duplicated(timeframe, val, levels_data):
                 return f"Same as {tf} {name}"
     return None
 
-def price_alert(timeframe, current_minute):
+def price_alert(timeframe, current_minute, levels_data):
     if timeframe not in ENABLED_TIMEFRAME and timeframe not in ENABLED_MIDD_LINE: return
     df = get_klines(SYMBOL, timeframe)
     high, low = df["high"].iloc[-2], df["low"].iloc[-2]
@@ -78,6 +78,7 @@ def price_alert(timeframe, current_minute):
         for val, name in [(high, "High"), (low, "Low")]:
             threshold = val - (val / BUFFER)
             if (last_high >= threshold and last_low <= threshold) or (last_high >= val and last_low <= val):
+                if check_duplicated(timeframe, val, levels_data): continue
                 telegram_bot_sendtext(f"\n{emoji} {timeframe.upper()} {name} at {int(val)}")
                 sleep_until_next(SLEEP_INTERVAL)
 
@@ -85,6 +86,7 @@ def price_alert(timeframe, current_minute):
     if timeframe in ENABLED_MIDD_LINE:
         threshold = middle - (middle / BUFFER)
         if (last_high >= threshold and last_low <= threshold) or (last_high >= middle and last_low <= middle):
+            if check_duplicated(timeframe, middle, levels_data): return
             telegram_bot_sendtext(f"{emoji} {timeframe.upper()} Middle at {int(middle)}")
             sleep_until_next(SLEEP_INTERVAL)
 
@@ -95,9 +97,8 @@ def check_whole_numbers(current_minute):
     is_green = last_close > last_open
 
     if CANDLE_MUST_BE_GREEN and not is_green: return
-
     for level in WHOLE_NUMBER:
-        threshold = level - (level / BUFFER * 2)
+        threshold = level - (level / BUFFER)
         if (last_high >= threshold and last_low <= threshold) or (last_high >= level and last_low <= level):
             telegram_bot_sendtext(f"💥 WHOLE NUMBER TOUCH 💥 {level}")
             sleep_until_next(SLEEP_INTERVAL)
@@ -109,7 +110,15 @@ def main():
         
         df = get_klines(SYMBOL, timeframe)
         h, l = df["high"].iloc[-2], df["low"].iloc[-2]
-        levels_data[timeframe] = {"High": h, "Low": l, "Middle": (h + l) / 2}
+        
+        # Only store enabled levels for duplication checks
+        temp_levels = {}
+        if timeframe in ENABLED_TIMEFRAME:
+            temp_levels["High"] = h
+            temp_levels["Low"] = l
+        if timeframe in ENABLED_MIDD_LINE:
+            temp_levels["Middle"] = (h + l) / 2
+        levels_data[timeframe] = temp_levels
 
         # Skip timeframe if both High and Low are duplicates
         if timeframe != "1d":
@@ -147,7 +156,7 @@ def main():
                 current_minute = get_klines(SYMBOL, "15m")
                 # print(current_minute.tail(3))
                 check_whole_numbers(current_minute)
-                for tf in ["1d", "12h", "4h"]: price_alert(tf, current_minute)
+                for tf in ["1d", "12h", "4h"]: price_alert(tf, current_minute, levels_data)
                 time.sleep(5)
             except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
                 print(f"Error: {e}")

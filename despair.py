@@ -69,13 +69,13 @@ def condition_1h(pair):
 def condition_15m(pair):
     minute_15m = get_klines(pair, "15m")
     low_condition = minute_15m['low'].iloc[-1] < minute_15m['low'].iloc[-5:-1].min()
-    volume_condition = minute_15m['volume'].iloc[-1] > minute_15m['volume'].iloc[-5:-1].mean() * 2
-    return low_condition and volume_condition
+    # volume_condition = minute_15m['volume'].iloc[-1] > minute_15m['volume'].iloc[-5:-1].mean() * 2
+    return low_condition #and volume_condition
 
 def condition_15m_raw(pair):
     minute_15m = get_klines(pair, "15m")
-    body_size = minute_15m['body'].iloc[-1] > minute_15m['body'].iloc[-3:-1].sum()
     lower_low = minute_15m['close'].iloc[-1] < minute_15m['low'].iloc[-3:-1].min()
+    body_size = minute_15m['body'].iloc[-1] > minute_15m['body'].iloc[-3:-1].sum()
     volume_condition = minute_15m['volume'].iloc[-1] > minute_15m['volume'].iloc[-3:-1].mean() * 1.5
     return body_size and lower_low and volume_condition
 
