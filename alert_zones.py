@@ -11,6 +11,7 @@ WHOLE_NUMBER = [100000, 60000]
 BUFFER = 0.15
 SLEEP_INTERVAL = "-"
 ENABLED_TIMEFRAME = ["1d", "12h", "4h"]
+# ENABLED_TIMEFRAME = ["1d", "12h"]
 ENABLED_MIDD_LINE = ["1d"]
 
 def sleep_until_next(interval):
@@ -35,6 +36,7 @@ def telegram_bot_sendtext(bot_message):
     chat_id = "@swinglivermore"
     send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + chat_id + '&parse_mode=html&text=' + bot_message
     response = requests.get(send_text)
+    sleep_until_next(globals().get("SLEEP_INTERVAL", "-"))
     return response.json()
 
 session = requests.Session()
@@ -50,18 +52,24 @@ def get_klines(pair, interval):
     candlestick = pandas.DataFrame(result, columns=cols).sort_values("timestamp")
     return candlestick
 
+def get_dynamic_buffer(timeframe):
+    base_buffer = globals().get("BUFFER")
+    if base_buffer is None or base_buffer == 0: return 0
+    if timeframe == "1d": return base_buffer
+    if timeframe == "12h": return base_buffer * 0.7
+    return 0 # else has 0 buffer
+
 def check_duplicated(timeframe, val, levels_data):
     order = ["1d", "12h", "4h"]
     for tf in order:
         if tf == timeframe: break
         if tf not in levels_data: continue
         for name, l_val in levels_data[tf].items():
-            buffer_val = globals().get("BUFFER")
-            if buffer_val and buffer_val != 0:
+            buffer_val = get_dynamic_buffer(timeframe)
+            if buffer_val > 0:
                 if abs(val - l_val) <= (val * (buffer_val / 100) * 2):
                     return f"Same as {tf} {name}"
-            elif val == l_val:
-                return f"Same as {tf} {name}"
+            elif val == l_val: return f"Same as {tf} {name}"
     return None
 
 def price_alert(timeframe, current_minute, levels_data):
@@ -69,42 +77,38 @@ def price_alert(timeframe, current_minute, levels_data):
     df = get_klines(SYMBOL, timeframe)
     high, low = df["high"].iloc[-2], df["low"].iloc[-2]
     middle = (high + low) / 2
-    
+
     last_high, last_low = current_minute["high"].iloc[-1], current_minute["low"].iloc[-1]
     last_open, last_close = current_minute["open"].iloc[-1], current_minute["close"].iloc[-1]
     is_green = last_close > last_open
 
-    if CANDLE_MUST_BE_GREEN and not is_green: return
+    if globals().get("CANDLE_MUST_BE_GREEN") and not is_green: return
     emoji = "🚨" * (3 if timeframe == "1d" else 2 if timeframe == "12h" else 1)
 
     # High/Low Check (Resistance/Support)
     if timeframe in ENABLED_TIMEFRAME:
         for val, name in [(high, "High"), (low, "Low")]:
-            buffer_val = globals().get("BUFFER")
-            if buffer_val and buffer_val != 0:
+            buffer_val = get_dynamic_buffer(timeframe)
+            if buffer_val > 0:
                 threshold = val - (val * (buffer_val / 100))
                 triggered = (last_high >= threshold and last_low <= threshold) or (last_high >= val and last_low <= val)
-            else:
-                triggered = (last_high >= val and last_low <= val)
+            else: triggered = (last_high >= val and last_low <= val)
 
             if triggered:
                 if check_duplicated(timeframe, val, levels_data): continue
                 telegram_bot_sendtext(f"\n{emoji} {timeframe.upper()} {name} at {int(val)}")
-                sleep_until_next(globals().get("SLEEP_INTERVAL", "-"))
 
     # Middle Check
     if timeframe in ENABLED_MIDD_LINE:
-        buffer_val = globals().get("BUFFER")
-        if buffer_val and buffer_val != 0:
+        buffer_val = get_dynamic_buffer(timeframe)
+        if buffer_val > 0:
             threshold = middle - (middle * (buffer_val / 100))
             triggered = (last_high >= threshold and last_low <= threshold) or (last_high >= middle and last_low <= middle)
-        else:
-            triggered = (last_high >= middle and last_low <= middle)
+        else: triggered = (last_high >= middle and last_low <= middle)
 
         if triggered:
             if check_duplicated(timeframe, middle, levels_data): return
             telegram_bot_sendtext(f"{emoji} {timeframe.upper()} Middle at {int(middle)}")
-            sleep_until_next(globals().get("SLEEP_INTERVAL", "-"))
 
 def check_whole_numbers(current_minute):
     if "WHOLE_NUMBER" not in globals() or not WHOLE_NUMBER: return
@@ -112,27 +116,23 @@ def check_whole_numbers(current_minute):
     last_open, last_close = current_minute["open"].iloc[-1], current_minute["close"].iloc[-1]
     is_green = last_close > last_open
 
-    if CANDLE_MUST_BE_GREEN and not is_green: return
+    if globals().get("CANDLE_MUST_BE_GREEN") and not is_green: return
     for level in WHOLE_NUMBER:
-        buffer_val = globals().get("BUFFER")
-        if buffer_val and buffer_val != 0:
+        buffer_val = get_dynamic_buffer("whole") # Whole numbers have 0 buffer
+        if buffer_val > 0:
             threshold = level - (level * (buffer_val / 100))
             triggered = (last_high >= threshold and last_low <= threshold) or (last_high >= level and last_low <= level)
-        else:
-            triggered = (last_high >= level and last_low <= level)
-
-        if triggered:
-            telegram_bot_sendtext(f"💥 WHOLE NUMBER TOUCH 💥 {level}")
-            sleep_until_next(globals().get("SLEEP_INTERVAL", "-"))
+        else: triggered = (last_high >= level and last_low <= level)
+        if triggered: telegram_bot_sendtext(f"💥 WHOLE NUMBER TOUCH 💥 {level}")
 
 def main():
     levels_data = {}
     for timeframe in ["1d", "12h", "4h"]:
         if timeframe not in ENABLED_TIMEFRAME and timeframe not in ENABLED_MIDD_LINE: continue
-        
+
         df = get_klines(SYMBOL, timeframe)
         h, l = df["high"].iloc[-2], df["low"].iloc[-2]
-        
+
         # Only store enabled levels for duplication checks
         temp_levels = {}
         if timeframe in ENABLED_TIMEFRAME:
@@ -155,7 +155,7 @@ def main():
         for name, val in current_levels:
             match = check_duplicated(timeframe, val, levels_data)
             label = "Mid" if name == "Middle" else name
-            
+
             if match: print(f"Prev {timeframe.upper()} {label}: -")
             else:
                 out_val = str(int(val))
