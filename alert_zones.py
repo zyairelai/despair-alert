@@ -6,7 +6,7 @@ from termcolor import colored
 
 # ----- Configuration -----
 SYMBOL = "BTCUSDT"
-CANDLE_MUST_BE_GREEN = True
+CANDLE_MUST_BE_GREEN = False
 WHOLE_NUMBER = [100000, 60000]
 BUFFER = 0.15
 SLEEP_INTERVAL = "-"
@@ -90,7 +90,7 @@ def price_alert(timeframe, current_minute, levels_data):
             if triggered:
                 if check_duplicated(timeframe, val, levels_data): continue
                 telegram_bot_sendtext(f"\n{emoji} {timeframe.upper()} {name} at {int(val)}")
-                sleep_until_next(SLEEP_INTERVAL)
+                sleep_until_next(globals().get("SLEEP_INTERVAL", "-"))
 
     # Middle Check
     if timeframe in ENABLED_MIDD_LINE:
@@ -104,7 +104,7 @@ def price_alert(timeframe, current_minute, levels_data):
         if triggered:
             if check_duplicated(timeframe, middle, levels_data): return
             telegram_bot_sendtext(f"{emoji} {timeframe.upper()} Middle at {int(middle)}")
-            sleep_until_next(SLEEP_INTERVAL)
+            sleep_until_next(globals().get("SLEEP_INTERVAL", "-"))
 
 def check_whole_numbers(current_minute):
     if "WHOLE_NUMBER" not in globals() or not WHOLE_NUMBER: return
@@ -123,7 +123,7 @@ def check_whole_numbers(current_minute):
 
         if triggered:
             telegram_bot_sendtext(f"💥 WHOLE NUMBER TOUCH 💥 {level}")
-            sleep_until_next(SLEEP_INTERVAL)
+            sleep_until_next(globals().get("SLEEP_INTERVAL", "-"))
 
 def main():
     levels_data = {}
