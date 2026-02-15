@@ -6,9 +6,9 @@ from termcolor import colored
 
 # ----- Configuration -----
 SYMBOL = "BTCUSDT"
-# WHOLE_NUMBER = [100000, 70000]
 CANDLE_MUST_BE_GREEN = True
-BUFFER = 666
+WHOLE_NUMBER = [100000, 60000]
+BUFFER = 0.15
 SLEEP_INTERVAL = "-"
 ENABLED_TIMEFRAME = ["1d", "12h", "4h"]
 ENABLED_MIDD_LINE = ["1d"]
@@ -56,7 +56,11 @@ def check_duplicated(timeframe, val, levels_data):
         if tf == timeframe: break
         if tf not in levels_data: continue
         for name, l_val in levels_data[tf].items():
-            if abs(val - l_val) <= (val / BUFFER * 2):
+            buffer_val = globals().get("BUFFER")
+            if buffer_val and buffer_val != 0:
+                if abs(val - l_val) <= (val * (buffer_val / 100) * 2):
+                    return f"Same as {tf} {name}"
+            elif val == l_val:
                 return f"Same as {tf} {name}"
     return None
 
@@ -76,16 +80,28 @@ def price_alert(timeframe, current_minute, levels_data):
     # High/Low Check (Resistance/Support)
     if timeframe in ENABLED_TIMEFRAME:
         for val, name in [(high, "High"), (low, "Low")]:
-            threshold = val - (val / BUFFER)
-            if (last_high >= threshold and last_low <= threshold) or (last_high >= val and last_low <= val):
+            buffer_val = globals().get("BUFFER")
+            if buffer_val and buffer_val != 0:
+                threshold = val - (val * (buffer_val / 100))
+                triggered = (last_high >= threshold and last_low <= threshold) or (last_high >= val and last_low <= val)
+            else:
+                triggered = (last_high >= val and last_low <= val)
+
+            if triggered:
                 if check_duplicated(timeframe, val, levels_data): continue
                 telegram_bot_sendtext(f"\n{emoji} {timeframe.upper()} {name} at {int(val)}")
                 sleep_until_next(SLEEP_INTERVAL)
 
     # Middle Check
     if timeframe in ENABLED_MIDD_LINE:
-        threshold = middle - (middle / BUFFER)
-        if (last_high >= threshold and last_low <= threshold) or (last_high >= middle and last_low <= middle):
+        buffer_val = globals().get("BUFFER")
+        if buffer_val and buffer_val != 0:
+            threshold = middle - (middle * (buffer_val / 100))
+            triggered = (last_high >= threshold and last_low <= threshold) or (last_high >= middle and last_low <= middle)
+        else:
+            triggered = (last_high >= middle and last_low <= middle)
+
+        if triggered:
             if check_duplicated(timeframe, middle, levels_data): return
             telegram_bot_sendtext(f"{emoji} {timeframe.upper()} Middle at {int(middle)}")
             sleep_until_next(SLEEP_INTERVAL)
@@ -98,8 +114,14 @@ def check_whole_numbers(current_minute):
 
     if CANDLE_MUST_BE_GREEN and not is_green: return
     for level in WHOLE_NUMBER:
-        threshold = level - (level / BUFFER)
-        if (last_high >= threshold and last_low <= threshold) or (last_high >= level and last_low <= level):
+        buffer_val = globals().get("BUFFER")
+        if buffer_val and buffer_val != 0:
+            threshold = level - (level * (buffer_val / 100))
+            triggered = (last_high >= threshold and last_low <= threshold) or (last_high >= level and last_low <= level)
+        else:
+            triggered = (last_high >= level and last_low <= level)
+
+        if triggered:
             telegram_bot_sendtext(f"💥 WHOLE NUMBER TOUCH 💥 {level}")
             sleep_until_next(SLEEP_INTERVAL)
 

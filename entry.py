@@ -7,12 +7,13 @@ except ImportError:
     print("Library not found, run:\npip3 install pandas requests --break-system-packages")
     exit(1)
 
-def telegram_bot_sendtext(bot_message):
+def telegram_bot_sendtext(bot_message, interval):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
     bot_token = os.environ.get('TELEGRAM_WOLVESRISE')
     chat_id = "@futures_wolves_rise"
     send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + chat_id + '&parse_mode=html&text=' + bot_message
     response = requests.get(send_text)
+    sleep_or_exit(interval)
     return response.json()
 
 # telegram_bot_sendtext("Telegram works!")
@@ -36,37 +37,34 @@ def get_klines(pair, interval):
 
 def waiting_for_entry(pair, interval):
     timeframe = get_klines(pair, interval)
+    current_candle = -2
 
     # 1. Structure Break (Lower Low + Momentum)
-    low_condition = timeframe['close'].iloc[-1] < timeframe['low'].iloc[-5:-1].min()
-    momentum_condition = timeframe['body'].iloc[-1] > timeframe['body'].iloc[-5:-1].sum()
+    low_condition = timeframe['close'].iloc[current_candle] < timeframe['low'].iloc[current_candle-4:current_candle].min()
+    momentum_condition = timeframe['body'].iloc[current_candle] > timeframe['body'].iloc[current_candle-4:current_candle].sum()
     decisive_breakdown = low_condition and momentum_condition
 
     # 2. Shooting Star
+    # Use a slice that handles current_candle correctly for the 'last 5' window
+    end_idx = current_candle + 1 if current_candle != -1 else None
     is_shooting_star = (
-        timeframe['close'].iloc[-1] < timeframe['open'].iloc[-1] and
-        timeframe['high'].iloc[-1] >= timeframe['high'].iloc[-5:].max() and
-        timeframe['upper_wick'].iloc[-1] > timeframe['body'].iloc[-1] * 2 + timeframe['lower_wick'].iloc[-1]) or \
-        timeframe['upper_wick'].iloc[-1] > (timeframe['body'].iloc[-1] + timeframe['lower_wick'].iloc[-1]) * 2
+        timeframe['close'].iloc[current_candle] < timeframe['open'].iloc[current_candle] and
+        timeframe['high'].iloc[current_candle] >= timeframe['high'].iloc[current_candle-4:end_idx].max() and
+        timeframe['upper_wick'].iloc[current_candle] > timeframe['body'].iloc[current_candle] * 2 + timeframe['lower_wick'].iloc[current_candle]) or \
+        timeframe['upper_wick'].iloc[current_candle] > (timeframe['body'].iloc[current_candle] + timeframe['lower_wick'].iloc[current_candle]) * 2
 
     # 3. Bearish Engulfing
     is_bearish_engulfing = (
-        timeframe['close'].iloc[-1] < timeframe['low'].iloc[-3:-1].min() and
-        timeframe['body'].iloc[-1] > timeframe['body'].iloc[-3:-1].max())
+        timeframe['close'].iloc[current_candle] < timeframe['low'].iloc[current_candle-2:current_candle].min() and
+        timeframe['body'].iloc[current_candle] > timeframe['body'].iloc[current_candle-2:current_candle].max())
 
-    if decisive_breakdown:
-        telegram_bot_sendtext(f"📉 {interval} MOMENTUM BREAKDOWN 📉")
-        sleep_or_exit(interval)
-    elif is_shooting_star:
-        telegram_bot_sendtext(f"🎯 {interval} SHOOTING STAR 🎯")
-        sleep_or_exit(interval)
-    elif is_bearish_engulfing:
-        telegram_bot_sendtext(f"🐻 {interval} BEARISH ENGULFING 🐻")
-        sleep_or_exit(interval)
+    if decisive_breakdown: telegram_bot_sendtext(f"📉 {interval} MOMENTUM BREAKDOWN 📉", interval)
+    elif is_shooting_star: telegram_bot_sendtext(f"🎯 {interval} SHOOTING STAR 🎯", interval)
+    elif is_bearish_engulfing: telegram_bot_sendtext(f"🐻 {interval} BEARISH ENGULFING 🐻", interval)
 
 def sleep_or_exit(interval):
-    time.sleep({"5m": 300, "15m": 900, "1h": 3600}.get(interval, 300))
-    # exit()
+    # time.sleep({"5m": 300, "15m": 900, "1h": 3600}.get(interval, 300))
+    exit()
 
 try:
     while True:
