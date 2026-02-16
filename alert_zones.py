@@ -10,9 +10,9 @@ CANDLE_MUST_BE_GREEN = False
 WHOLE_NUMBER = [100000, 60000]
 BUFFER = 0.15
 SLEEP_INTERVAL = "-"
+ENABLED_MIDD_LINE = ["1d"]
 ENABLED_TIMEFRAME = ["1d", "12h", "4h"]
 # ENABLED_TIMEFRAME = ["1d", "12h"]
-ENABLED_MIDD_LINE = ["1d"]
 
 def sleep_until_next(interval):
     now = datetime.now()
@@ -65,7 +65,7 @@ def check_duplicated(timeframe, val, levels_data):
         if tf == timeframe: break
         if tf not in levels_data: continue
         for name, l_val in levels_data[tf].items():
-            buffer_val = get_dynamic_buffer(timeframe)
+            buffer_val = get_dynamic_buffer(timeframe) or 0.05 # Min 0.05% for suppression
             if buffer_val > 0:
                 if abs(val - l_val) <= (val * (buffer_val / 100) * 2):
                     return f"Same as {tf} {name}"
@@ -165,12 +165,6 @@ def main():
                 elif timeframe == "1d" and name == "Middle": out_val = colored(out_val, "red")
                 elif timeframe == "4h": out_val = colored(out_val, "green")
                 print(f"Prev {timeframe.upper()} {label}: {out_val}")
-
-        # Out of range warning (1d vs 12h)
-        if timeframe == "12h" and "1d" in levels_data and "1d" in ENABLED_MIDD_LINE:
-            d1_m = levels_data["1d"]["Middle"]
-            h12, l12 = levels_data["12h"]["High"], levels_data["12h"]["Low"]
-            if d1_m > h12 or d1_m < l12: print(f"1D middle ({int(d1_m)}) is out of range")
 
     try:
         while True:
