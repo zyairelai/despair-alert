@@ -142,15 +142,23 @@ def main():
             temp_levels["Middle"] = (h + l) / 2
         levels_data[timeframe] = temp_levels
 
-        # Skip timeframe if both High and Low are duplicates
-        if timeframe != "1d":
-            if check_duplicated(timeframe, h, levels_data) and check_duplicated(timeframe, l, levels_data): continue
-
         print(f"\n--- {timeframe.upper()} ---")
         current_levels = []
         if timeframe in ENABLED_TIMEFRAME:
             current_levels.extend([("High", levels_data[timeframe]["High"]), ("Low", levels_data[timeframe]["Low"])])
-        if timeframe in ENABLED_MIDD_LINE: current_levels.insert(1, ("Middle", levels_data[timeframe]["Middle"]))
+        if timeframe in ENABLED_MIDD_LINE:
+            current_levels.insert(1, ("Middle", levels_data[timeframe]["Middle"]))
+
+        # Check if all enabled levels are duplicated
+        all_duplicated = True
+        for name, val in current_levels:
+            if not check_duplicated(timeframe, val, levels_data):
+                all_duplicated = False
+                break
+        
+        if all_duplicated and timeframe != "1d":
+            print("DUPLICATED")
+            continue
 
         for name, val in current_levels:
             match = check_duplicated(timeframe, val, levels_data)
