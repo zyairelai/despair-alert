@@ -12,9 +12,8 @@ BUFFER = 0.15
 SLEEP_INTERVAL = "-"
 
 ENABLE_PREV_1D_MIDDLE = True
-ENABLE_PREV_1D_CLOSE = True
+ENABLE_PREV_1D_CLOSE = False
 ENABLED_TIMEFRAME = ["1d", "4h"]
-if "-c" in sys.argv: ENABLE_PREV_1D_CLOSE = False
 if "-m" in sys.argv: ENABLE_PREV_1D_MIDDLE = False
 if "-4" in sys.argv: ENABLED_TIMEFRAME.remove("4h")
 
@@ -150,7 +149,7 @@ def main():
             temp_levels["Close"] = c
         levels_data[timeframe] = temp_levels
 
-        print(f"\n--- {timeframe.upper()} ---")
+        print(f"\n======= {timeframe.upper()} =======")
         current_levels = []
         if timeframe in ENABLED_TIMEFRAME:
             current_levels.extend([("High", levels_data[timeframe]["High"]), ("Low", levels_data[timeframe]["Low"])])
