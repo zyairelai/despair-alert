@@ -174,7 +174,9 @@ def main():
             match = check_duplicated(timeframe, val, levels_data)
             label = "Mid" if name == "Middle" else name
 
-            if match: print(f"Prev {timeframe.upper()} {label}: -")
+            if match:
+                prefix = f"Prev {timeframe.upper()}"
+                print(f"{prefix} {label}: -")
             else:
                 out_val = str(int(val))
                 if timeframe == "1w":
@@ -185,7 +187,11 @@ def main():
                 elif timeframe == "1d" and name == "Middle": out_val = colored(out_val, "red")
                 elif timeframe == "1d" and name == "Close": out_val = f"\033[38;5;208m{out_val}\033[0m"
                 elif timeframe == "4h": out_val = colored(out_val, "green")
-                print(f"Prev {timeframe.upper()} {label}: {out_val}")
+                
+                if timeframe == "1d" and name == "Close":
+                    print(f"Daily Open: {out_val}")
+                else:
+                    print(f"Prev {timeframe.upper()} {label}: {out_val}")
 
     try:
         while True:
