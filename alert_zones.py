@@ -10,8 +10,12 @@ SYMBOL = "BTCUSDT"
 # WHOLE_NUMBER = [100000, 60000]
 BUFFER = 0.15
 SLEEP_INTERVAL = "-"
-ENABLED_MIDD_LINE = ["1d"]
-ENABLED_TIMEFRAME = ["1d", "12h", "4h"]
+
+ENABLE_PREV_1D_MIDDLE = True
+ENABLE_PREV_1D_CLOSE = True
+ENABLED_TIMEFRAME = ["1d", "4h"]
+if "-c" in sys.argv: ENABLE_PREV_1D_CLOSE = False
+if "-m" in sys.argv: ENABLE_PREV_1D_MIDDLE = False
 if "-4" in sys.argv: ENABLED_TIMEFRAME.remove("4h")
 
 def sleep_until_next(interval):
@@ -55,12 +59,12 @@ def get_klines(pair, interval):
 def get_dynamic_buffer(timeframe):
     base_buffer = globals().get("BUFFER")
     if base_buffer is None or base_buffer == 0: return 0
-    if timeframe == "1d": return base_buffer
+    if timeframe in ["1w", "1d"]: return base_buffer
     if timeframe == "12h": return base_buffer * 0.7
     return 0 # else has 0 buffer
 
 def check_duplicated(timeframe, val, levels_data):
-    order = ["1d", "12h", "4h"]
+    order = ["1w", "1d", "4h"]
     for tf in order:
         if tf == timeframe: break
         if tf not in levels_data: continue
@@ -73,7 +77,7 @@ def check_duplicated(timeframe, val, levels_data):
     return None
 
 def price_alert(timeframe, current_minute, levels_data):
-    if timeframe not in ENABLED_TIMEFRAME and timeframe not in ENABLED_MIDD_LINE: return
+    if timeframe not in ENABLED_TIMEFRAME and timeframe != "1d": return
     df = get_klines(SYMBOL, timeframe)
     high, low = df["high"].iloc[-2], df["low"].iloc[-2]
     middle = (high + low) / 2
@@ -83,7 +87,7 @@ def price_alert(timeframe, current_minute, levels_data):
     is_green = last_close > last_open
 
     if globals().get("CANDLE_MUST_BE_GREEN") and not is_green: return
-    emoji = "🚨" * (3 if timeframe == "1d" else 2 if timeframe == "12h" else 1)
+    emoji = "🚨" * (4 if timeframe == "1w" else 3 if timeframe == "1d" else 2 if timeframe == "12h" else 1)
 
     # High/Low Check (Resistance/Support)
     if timeframe in ENABLED_TIMEFRAME:
@@ -98,8 +102,8 @@ def price_alert(timeframe, current_minute, levels_data):
                 if check_duplicated(timeframe, val, levels_data): continue
                 telegram_bot_sendtext(f"\n{emoji} {timeframe.upper()} {name} at {int(val)}")
 
-    # Middle Check
-    if timeframe in ENABLED_MIDD_LINE:
+    # Middle Check (Only for 1D)
+    if timeframe == "1d" and ENABLE_PREV_1D_MIDDLE:
         buffer_val = get_dynamic_buffer(timeframe)
         if buffer_val > 0:
             threshold = middle - (middle * (buffer_val / 100))
@@ -127,27 +131,33 @@ def check_whole_numbers(current_minute):
 
 def main():
     levels_data = {}
-    for timeframe in ["1d", "12h", "4h"]:
-        if timeframe not in ENABLED_TIMEFRAME and timeframe not in ENABLED_MIDD_LINE: continue
+    for timeframe in ["1w", "1d", "4h"]:
+        if timeframe not in ENABLED_TIMEFRAME and timeframe != "1d": continue
 
         df = get_klines(SYMBOL, timeframe)
         h, l = df["high"].iloc[-2], df["low"].iloc[-2]
+        c = df["close"].iloc[-2] if timeframe == "1d" else None
 
         # Only store enabled levels for duplication checks
         temp_levels = {}
         if timeframe in ENABLED_TIMEFRAME:
             temp_levels["High"] = h
             temp_levels["Low"] = l
-        if timeframe in ENABLED_MIDD_LINE:
+        if timeframe == "1d" and ENABLE_PREV_1D_MIDDLE:
             temp_levels["Middle"] = (h + l) / 2
+        
+        if timeframe == "1d" and ENABLE_PREV_1D_CLOSE:
+            temp_levels["Close"] = c
         levels_data[timeframe] = temp_levels
 
         print(f"\n--- {timeframe.upper()} ---")
         current_levels = []
         if timeframe in ENABLED_TIMEFRAME:
             current_levels.extend([("High", levels_data[timeframe]["High"]), ("Low", levels_data[timeframe]["Low"])])
-        if timeframe in ENABLED_MIDD_LINE:
-            current_levels.insert(1, ("Middle", levels_data[timeframe]["Middle"]))
+        
+        if timeframe == "1d":
+            if ENABLE_PREV_1D_MIDDLE: current_levels.insert(1, ("Middle", levels_data[timeframe]["Middle"]))
+            if ENABLE_PREV_1D_CLOSE: current_levels.append(("Close", levels_data[timeframe]["Close"]))
 
         # Check if all enabled levels are duplicated
         all_duplicated = True
@@ -156,7 +166,7 @@ def main():
                 all_duplicated = False
                 break
         
-        if all_duplicated and timeframe != "1d":
+        if all_duplicated and timeframe not in ["1w", "1d"]:
             print("DUPLICATED")
             continue
 
@@ -167,10 +177,13 @@ def main():
             if match: print(f"Prev {timeframe.upper()} {label}: -")
             else:
                 out_val = str(int(val))
-                if timeframe == "12h":
+                if timeframe == "1w":
+                    out_val = colored(out_val, "cyan")
+                elif timeframe == "12h":
                     if name == "Middle": out_val = colored(out_val, "magenta")
                     else: out_val = colored(out_val, "blue")
                 elif timeframe == "1d" and name == "Middle": out_val = colored(out_val, "red")
+                elif timeframe == "1d" and name == "Close": out_val = f"\033[38;5;208m{out_val}\033[0m"
                 elif timeframe == "4h": out_val = colored(out_val, "green")
                 print(f"Prev {timeframe.upper()} {label}: {out_val}")
 
@@ -180,7 +193,7 @@ def main():
                 current_minute = get_klines(SYMBOL, "15m")
                 # print(current_minute.tail(3))
                 check_whole_numbers(current_minute)
-                for tf in ["1d", "12h", "4h"]: price_alert(tf, current_minute, levels_data)
+                for tf in ["1w", "1d", "4h"]: price_alert(tf, current_minute, levels_data)
                 time.sleep(5)
             except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
                 print(f"Error: {e}")
