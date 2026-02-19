@@ -6,13 +6,13 @@ from termcolor import colored
 
 # ----- Configuration -----
 SYMBOL = "BTCUSDT"
-CANDLE_MUST_BE_GREEN = False
-WHOLE_NUMBER = [100000, 60000]
+# CANDLE_MUST_BE_GREEN = True
+# WHOLE_NUMBER = [100000, 60000]
 BUFFER = 0.15
 SLEEP_INTERVAL = "-"
 ENABLED_MIDD_LINE = ["1d"]
 ENABLED_TIMEFRAME = ["1d", "12h", "4h"]
-# ENABLED_TIMEFRAME = ["1d", "12h"]
+if "-4" in sys.argv: ENABLED_TIMEFRAME.remove("4h")
 
 def sleep_until_next(interval):
     now = datetime.now()
