@@ -70,8 +70,8 @@ try:
     while True:
         try:
             # waiting_for_entry("BTCUSDT", "1h")
+            # waiting_for_entry("BTCUSDT", "5m")
             waiting_for_entry("BTCUSDT", "15m")
-            waiting_for_entry("BTCUSDT", "5m")
             time.sleep(5)
         except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
             print(f"Network error: {e}")
