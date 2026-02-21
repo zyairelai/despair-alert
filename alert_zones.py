@@ -1,20 +1,28 @@
 #!/usr/bin/python3
 
-import pandas, requests, time, socket, os, sys
+import pandas, requests, time, socket, os, sys, argparse
 from datetime import datetime, timedelta, timezone
 from termcolor import colored
 
 # ----- Configuration -----
 SYMBOL = "BTCUSDT"
 BUFFER = 0.2
-SLEEP_INTERVAL = "-"
+SLEEP_INTERVAL = "1h"
 
 # WHOLE_NUMBER = [100000, 60000]
 ENABLE_PREV_1D_MIDDLE = True
 ENABLE_PREV_1D_CLOSE = False
 ENABLED_TIMEFRAME = ["1d", "4h"]
-if "-m" in sys.argv: ENABLE_PREV_1D_MIDDLE = False
-if "-4" in sys.argv: ENABLED_TIMEFRAME.remove("4h")
+
+parser = argparse.ArgumentParser(description="BTC Price Alert Zones Script")
+parser.add_argument("-m", dest="disable_middle", action="store_true", help="Disable Middle")
+parser.add_argument("-4", dest="disable_4h", action="store_true", help="Disable 4H Timeframe")
+parser.add_argument("-e", dest="exit_mode", action="store_true", help="Exit after triggered (Default 1H)")
+args = parser.parse_args()
+
+if args.disable_middle: ENABLE_PREV_1D_MIDDLE = False
+if args.disable_4h: ENABLED_TIMEFRAME.remove("4h")
+if args.exit_mode: SLEEP_INTERVAL = "-"
 
 def sleep_until_next(interval):
     now = datetime.now()
