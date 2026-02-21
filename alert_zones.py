@@ -8,7 +8,7 @@ from termcolor import colored
 SYMBOL = "BTCUSDT"
 # CANDLE_MUST_BE_GREEN = True
 # WHOLE_NUMBER = [100000, 60000]
-BUFFER = 0.15
+BUFFER = 0.2
 SLEEP_INTERVAL = "-"
 
 ENABLE_PREV_1D_MIDDLE = True

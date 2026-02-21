@@ -6,7 +6,7 @@ except ImportError:
     print("Library not found, run:\npip3 install pandas requests --break-system-packages")
     exit(1)
 
-targets = [76900, 76200]
+targets = [67500, 66600]
 for i, t in enumerate(targets, start=1):
     print(f"Target {i}: {t}")
 
