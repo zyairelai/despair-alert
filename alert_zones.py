@@ -1,16 +1,15 @@
 #!/usr/bin/python3
 
 import pandas, requests, time, socket, os, sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from termcolor import colored
 
 # ----- Configuration -----
 SYMBOL = "BTCUSDT"
-# CANDLE_MUST_BE_GREEN = True
-# WHOLE_NUMBER = [100000, 60000]
 BUFFER = 0.2
 SLEEP_INTERVAL = "-"
 
+# WHOLE_NUMBER = [100000, 60000]
 ENABLE_PREV_1D_MIDDLE = True
 ENABLE_PREV_1D_CLOSE = False
 ENABLED_TIMEFRAME = ["1d", "4h"]
@@ -85,7 +84,6 @@ def price_alert(timeframe, current_minute, levels_data):
     last_open, last_close = current_minute["open"].iloc[-1], current_minute["close"].iloc[-1]
     is_green = last_close > last_open
 
-    if globals().get("CANDLE_MUST_BE_GREEN") and not is_green: return
     emoji = "🚨" * (4 if timeframe == "1w" else 3 if timeframe == "1d" else 2 if timeframe == "12h" else 1)
 
     # High/Low Check (Resistance/Support)
@@ -119,7 +117,6 @@ def check_whole_numbers(current_minute):
     last_open, last_close = current_minute["open"].iloc[-1], current_minute["close"].iloc[-1]
     is_green = last_close > last_open
 
-    if globals().get("CANDLE_MUST_BE_GREEN") and not is_green: return
     for level in WHOLE_NUMBER:
         buffer_val = get_dynamic_buffer("whole") # Whole numbers have 0 buffer
         if buffer_val > 0:
@@ -128,8 +125,7 @@ def check_whole_numbers(current_minute):
         else: triggered = (last_high >= level and last_low <= level)
         if triggered: telegram_bot_sendtext(f"💥 WHOLE NUMBER TOUCH 💥 {level}")
 
-def main():
-    levels_data = {}
+def refresh_levels(levels_data):
     for timeframe in ["1w", "1d", "4h"]:
         if timeframe not in ENABLED_TIMEFRAME and timeframe != "1d": continue
 
@@ -192,9 +188,24 @@ def main():
                 else:
                     print(f"Prev {timeframe.upper()} {label}: {out_val}")
 
+def main():
+    levels_data = {}
+    refresh_levels(levels_data)
+    last_refresh_time = None
+
     try:
         while True:
             try:
+                now_utc = datetime.now(timezone.utc)
+                refresh_hours = [0, 4, 8, 12, 16, 20]
+                
+                if now_utc.hour in refresh_hours and now_utc.minute == 0 and now_utc.second >= 10:
+                    current_period = now_utc.replace(minute=0, second=0, microsecond=0)
+                    if last_refresh_time != current_period:
+                        print("\n==================\n= NEW 4H UPDATED =\n==================")
+                        refresh_levels(levels_data)
+                        last_refresh_time = current_period
+
                 current_minute = get_klines(SYMBOL, "15m")
                 # print(current_minute.tail(3))
                 check_whole_numbers(current_minute)
