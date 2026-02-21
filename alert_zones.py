@@ -138,11 +138,8 @@ def refresh_levels(levels_data):
         if timeframe in ENABLED_TIMEFRAME:
             temp_levels["High"] = h
             temp_levels["Low"] = l
-        if timeframe == "1d" and ENABLE_PREV_1D_MIDDLE:
-            temp_levels["Middle"] = (h + l) / 2
-        
-        if timeframe == "1d" and ENABLE_PREV_1D_CLOSE:
-            temp_levels["Close"] = c
+        if timeframe == "1d" and ENABLE_PREV_1D_MIDDLE: temp_levels["Middle"] = (h + l) / 2
+        if timeframe == "1d" and ENABLE_PREV_1D_CLOSE: temp_levels["Close"] = c
         levels_data[timeframe] = temp_levels
 
         print(f"\n======= {timeframe.upper()} =======")
@@ -183,10 +180,8 @@ def refresh_levels(levels_data):
                 elif timeframe == "1d" and name == "Close": out_val = f"\033[38;5;208m{out_val}\033[0m"
                 elif timeframe == "4h": out_val = colored(out_val, "green")
                 
-                if timeframe == "1d" and name == "Close":
-                    print(f"Daily Open: {out_val}")
-                else:
-                    print(f"Prev {timeframe.upper()} {label}: {out_val}")
+                if timeframe == "1d" and name == "Close": print(f"Daily Open: {out_val}")
+                else: print(f"Prev {timeframe.upper()} {label}: {out_val}")
 
 def main():
     levels_data = {}
