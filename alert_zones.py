@@ -15,7 +15,7 @@ ENABLE_PREV_1D_CLOSE = False
 ENABLED_TIMEFRAME = ["1d", "4h"]
 
 parser = argparse.ArgumentParser(description="BTC Price Alert Zones Script")
-parser.add_argument("-m", dest="disable_middle", action="store_true", help="Disable Middle")
+parser.add_argument("-m", dest="disable_middle", action="store_true", help="Disable 1D Middle")
 parser.add_argument("-4", dest="disable_4h", action="store_true", help="Disable 4H Timeframe")
 parser.add_argument("-e", dest="exit_mode", action="store_true", help="Exit after triggered (Default 1H)")
 args = parser.parse_args()
@@ -41,7 +41,7 @@ def sleep_until_next(interval):
     if sleep_seconds > 0: time.sleep(sleep_seconds)
 
 def telegram_bot_sendtext(bot_message):
-    print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
+    print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S")))
     bot_token = os.environ.get('TELEGRAM_LIVERMORE')
     chat_id = "@swinglivermore"
     send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + chat_id + '&parse_mode=html&text=' + bot_message
@@ -117,7 +117,7 @@ def price_alert(timeframe, current_minute, levels_data):
 
         if triggered:
             if check_duplicated(timeframe, middle, levels_data): return
-            telegram_bot_sendtext(f"{emoji} {timeframe.upper()} Middle at {int(middle)}")
+            telegram_bot_sendtext(f"\n{emoji} {timeframe.upper()} Middle at {int(middle)}")
 
 def check_whole_numbers(current_minute):
     if "WHOLE_NUMBER" not in globals() or not WHOLE_NUMBER: return
@@ -131,7 +131,7 @@ def check_whole_numbers(current_minute):
             threshold = level - (level * (buffer_val / 100))
             triggered = (last_high >= threshold and last_low <= threshold) or (last_high >= level and last_low <= level)
         else: triggered = (last_high >= level and last_low <= level)
-        if triggered: telegram_bot_sendtext(f"💥 WHOLE NUMBER TOUCH 💥 {level}")
+        if triggered: telegram_bot_sendtext(f"\n💥 WHOLE NUMBER TOUCH 💥 {level}")
 
 def refresh_levels(levels_data):
     for timeframe in ["1w", "1d", "4h"]:
