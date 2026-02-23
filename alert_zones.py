@@ -154,7 +154,7 @@ def refresh_levels(levels_data):
         current_levels = []
         if timeframe in ENABLED_TIMEFRAME:
             current_levels.extend([("High", levels_data[timeframe]["High"]), ("Low", levels_data[timeframe]["Low"])])
-        
+
         if timeframe == "1d":
             if ENABLE_PREV_1D_MIDDLE: current_levels.insert(1, ("Middle", levels_data[timeframe]["Middle"]))
             if ENABLE_PREV_1D_CLOSE: current_levels.append(("Close", levels_data[timeframe]["Close"]))
@@ -165,7 +165,7 @@ def refresh_levels(levels_data):
             if not check_duplicated(timeframe, val, levels_data):
                 all_duplicated = False
                 break
-        
+
         if all_duplicated and timeframe not in ["1w", "1d"]:
             print("DUPLICATED")
             continue
@@ -187,7 +187,7 @@ def refresh_levels(levels_data):
                 elif timeframe == "1d" and name == "Middle": out_val = colored(out_val, "red")
                 elif timeframe == "1d" and name == "Close": out_val = f"\033[38;5;208m{out_val}\033[0m"
                 elif timeframe == "4h": out_val = colored(out_val, "green")
-                
+
                 if timeframe == "1d" and name == "Close": print(f"Daily Open: {out_val}")
                 else: print(f"Prev {timeframe.upper()} {label}: {out_val}")
 
@@ -201,7 +201,7 @@ def main():
             try:
                 now_utc = datetime.now(timezone.utc)
                 refresh_hours = [0, 4, 8, 12, 16, 20]
-                
+
                 if now_utc.hour in refresh_hours and now_utc.minute == 0 and now_utc.second >= 10:
                     current_period = now_utc.replace(minute=0, second=0, microsecond=0)
                     if last_refresh_time != current_period:

@@ -39,7 +39,7 @@ def show_levels():
     prev_1d_high = int(df_1d["high"].iloc[-2])
     prev_1d_low = int(df_1d["low"].iloc[-2])
     prev_1d_mid = int((prev_1d_high + prev_1d_low) / 2)
-    
+
     curr_1d_high = int(df_1d["high"].iloc[-1])
     curr_1d_low = int(df_1d["low"].iloc[-1])
     curr_1d_mid = int((curr_1d_high + curr_1d_low) / 2)
@@ -48,7 +48,7 @@ def show_levels():
     df_4h = get_klines(SYMBOL, "4h")
     prev_4h_high = int(df_4h["high"].iloc[-2])
     prev_4h_low = int(df_4h["low"].iloc[-2])
-    
+
     curr_4h_high = int(df_4h["high"].iloc[-1])
     curr_4h_low = int(df_4h["low"].iloc[-1])
 
