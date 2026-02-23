@@ -1,11 +1,18 @@
 #!/usr/bin/python3
 
-import pandas, requests, time, socket, os
-from datetime import datetime, timedelta, timezone
-from termcolor import colored
+import time, socket, os
+from datetime import datetime, timedelta
+try: import pandas, requests
+except ImportError:
+    print("Library not found, run:\npip3 install pandas requests --break-system-packages")
+    exit(1)
 
-# ----- Configuration -----
-SYMBOL = "BTCUSDT"
+def sleep_until_next_hour():
+    now = datetime.now()
+    # even_hour = 2 - (now.hour % 2)
+    next_hour = (now.replace(minute=0, second=10, microsecond=0) + timedelta(hours=1))
+    sleep_seconds = (next_hour - now).total_seconds()
+    if sleep_seconds > 0: time.sleep(sleep_seconds)
 
 def telegram_bot_sendtext(bot_message):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
@@ -16,6 +23,7 @@ def telegram_bot_sendtext(bot_message):
     return response.json()
 
 # telegram_bot_sendtext("Telegram works!")
+print("The DESPAIR script is running...\n")
 
 session = requests.Session()
 def get_klines(pair, interval):
@@ -32,53 +40,6 @@ def get_klines(pair, interval):
     candlestick["upper_wick"] = candlestick["high"] - candlestick[["open", "close"]].max(axis=1)
     candlestick["lower_wick"] = candlestick[["open", "close"]].min(axis=1) - candlestick["low"]
     return candlestick
-
-def show_levels():
-    # 1D Levels
-    df_1d = get_klines(SYMBOL, "1d")
-    prev_1d_high = int(df_1d["high"].iloc[-2])
-    prev_1d_low = int(df_1d["low"].iloc[-2])
-    prev_1d_mid = int((prev_1d_high + prev_1d_low) / 2)
-    
-    curr_1d_high = int(df_1d["high"].iloc[-1])
-    curr_1d_low = int(df_1d["low"].iloc[-1])
-    curr_1d_mid = int((curr_1d_high + curr_1d_low) / 2)
-
-    # 4H Levels
-    df_4h = get_klines(SYMBOL, "4h")
-    prev_4h_high = int(df_4h["high"].iloc[-2])
-    prev_4h_low = int(df_4h["low"].iloc[-2])
-    
-    curr_4h_high = int(df_4h["high"].iloc[-1])
-    curr_4h_low = int(df_4h["low"].iloc[-1])
-
-    print()
-    print("===== PREVIOUS 1D =====")
-    print(f"Prev 1D High: {prev_1d_high}")
-    print(f"Prev 1D Mid: {colored(str(prev_1d_mid), 'red')}")
-    print(f"Prev 1D Low: {prev_1d_low}")
-    print()
-    print("===== PREVIOUS 4H =====")
-    print(f"Prev 4H High: {colored(str(prev_4h_high), 'green')}")
-    print(f"Prev 4H Low: {colored(str(prev_4h_low), 'green')}")
-    print()
-    print("=========================")
-    print("=========================")
-    print()
-    print("===== CURRENT 1D ======")
-    print(f"Current 1D High: {curr_1d_high}")
-    print(f"Current 1D Mid: {colored(str(curr_1d_mid), 'red')}")
-    print(f"Current 1D Low: {curr_1d_low}")
-    print()
-    print("===== CURRENT 4H ======")
-    print(f"Current 4H High: {colored(str(curr_4h_high), 'green')}")
-    print(f"Current 4H Low: {colored(str(curr_4h_low), 'green')}")
-    print()
-    print("=========================")
-    print("=========================")
-
-show_levels()
-print("\nThe DESPAIR script is running...\n")
 
 def heikin_ashi(klines):
     heikin_ashi_df = pandas.DataFrame(index=klines.index.values, columns=['ha_open', 'ha_high', 'ha_low', 'ha_close'])
@@ -102,13 +63,32 @@ def heikin_ashi(klines):
 
 def condition_1h(pair):
     one_hour = heikin_ashi(get_klines(pair, "1h"))
-    low_condition = one_hour['ha_low'].iloc[-1] < one_hour['ha_low'].iloc[-5:-1].min()
+    low_condition = one_hour['ha_low'].iloc[-1] < one_hour['ha_low'].iloc[-4:-1].min()
     return low_condition # -4:1 = previous 3 candles
 
+def condition_15m(pair):
+    minute_15m = get_klines(pair, "15m")
+    low_condition = minute_15m['low'].iloc[-1] < minute_15m['low'].iloc[-5:-1].min()
+    # volume_condition = minute_15m['volume'].iloc[-1] > minute_15m['volume'].iloc[-5:-1].mean() * 2
+    return low_condition #and volume_condition
+
+def condition_15m_raw(pair):
+    minute_15m = get_klines(pair, "15m")
+    lower_low = minute_15m['close'].iloc[-1] < minute_15m['low'].iloc[-3:-1].min()
+    body_size = minute_15m['body'].iloc[-1] > minute_15m['body'].iloc[-3:-1].sum()
+    volume_condition = minute_15m['volume'].iloc[-1] > minute_15m['volume'].iloc[-3:-1].mean() * 1.5
+    return body_size and lower_low and volume_condition
+
 def short_despair():
-    if condition_1h(SYMBOL):
+    if condition_1h("BTCUSDT"):
         telegram_bot_sendtext("💥 1H STRUCTURE BREAK 💥")
         exit()
+    if condition_15m("BTCUSDT"):
+        telegram_bot_sendtext("💥 15m HEIKIN ASHI VOLUME FLUSH 💥")
+        exit()
+    # if condition_15m_raw("BTCUSDT"):
+    #     telegram_bot_sendtext("💥 15m RAW CANDLE STRUCTURE BREAK 💥")
+    #     exit()
 
 try:
     while True:
