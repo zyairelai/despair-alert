@@ -1,14 +1,18 @@
 #!/usr/bin/python3
 
-import time, socket, os
-try: import pandas, requests
-except ImportError:
-    print("Library not found, run:\npip3 install pandas requests --break-system-packages")
-    exit(1)
+import pandas, requests, time, socket, os, argparse, sys
 
-targets = [67500, 66600]
-for i, t in enumerate(targets, start=1):
-    print(f"Target {i}: {t}")
+def print_usage(): print(f"[i] Usage: {os.path.basename(sys.argv[0])} [target1] [target2] [target3]....")
+if "-h" in sys.argv or "--help" in sys.argv or len(sys.argv) == 1:
+    print_usage()
+    sys.exit(0)
+
+parser = argparse.ArgumentParser(add_help=False)
+parser.error = lambda message: (print_usage(), sys.exit(1))
+parser.add_argument('targets', type=float, nargs='*')
+args = parser.parse_args()
+targets = args.targets
+for i, t in enumerate(targets, start=1): print(f"Target {i}: {t}")
 
 def telegram_bot_sendtext(bot_message):
     print(bot_message)

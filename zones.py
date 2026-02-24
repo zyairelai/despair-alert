@@ -9,15 +9,26 @@ SYMBOL = "BTCUSDT"
 BUFFER = 0.2
 SLEEP_INTERVAL = "1h"
 
-# WHOLE_NUMBER = [100000, 60000]
+# Targets are now passed via CLI arguments
 ENABLE_PREV_1D_MIDDLE = True
 ENABLE_PREV_1D_CLOSE = False
 ENABLED_TIMEFRAME = ["1d", "4h"]
 
-parser = argparse.ArgumentParser(description="BTC Price Alert Zones Script")
-parser.add_argument("-m", dest="disable_middle", action="store_true", help="Disable 1D Middle")
-parser.add_argument("-4", dest="disable_4h", action="store_true", help="Disable 4H Timeframe")
-parser.add_argument("-e", dest="exit_mode", action="store_true", help="Exit after triggered (Default 1H)")
+def print_usage():
+    print(f"[i] Usage: {os.path.basename(sys.argv[0])} [-m] [-4] [-e]")
+    print("    -m : Disable 1D Middle (Stops midpoint alerts)")
+    print("    -4 : Disable 4H Timeframe (Stops 4H level alerts)")
+    print("    -e : Exit after triggered (Exits after first alert)")
+
+if "-h" in sys.argv or "--help" in sys.argv:
+    print_usage()
+    sys.exit(0)
+
+parser = argparse.ArgumentParser(add_help=False)
+parser.error = lambda message: (print_usage(), sys.exit(1))
+parser.add_argument("-m", dest="disable_middle", action="store_true")
+parser.add_argument("-4", dest="disable_4h", action="store_true")
+parser.add_argument("-e", dest="exit_mode", action="store_true")
 args = parser.parse_args()
 
 if args.disable_middle: ENABLE_PREV_1D_MIDDLE = False
@@ -119,20 +130,6 @@ def price_alert(timeframe, current_minute, levels_data):
             if check_duplicated(timeframe, middle, levels_data): return
             telegram_bot_sendtext(f"\n{emoji} {timeframe.upper()} Middle at {int(middle)}")
 
-def check_whole_numbers(current_minute):
-    if "WHOLE_NUMBER" not in globals() or not WHOLE_NUMBER: return
-    last_high, last_low = current_minute["high"].iloc[-1], current_minute["low"].iloc[-1]
-    last_open, last_close = current_minute["open"].iloc[-1], current_minute["close"].iloc[-1]
-    is_green = last_close > last_open
-
-    for level in WHOLE_NUMBER:
-        buffer_val = get_dynamic_buffer("whole") # Whole numbers have 0 buffer
-        if buffer_val > 0:
-            threshold = level - (level * (buffer_val / 100))
-            triggered = (last_high >= threshold and last_low <= threshold) or (last_high >= level and last_low <= level)
-        else: triggered = (last_high >= level and last_low <= level)
-        if triggered: telegram_bot_sendtext(f"\n💥 WHOLE NUMBER TOUCH 💥 {level}")
-
 def refresh_levels(levels_data):
     for timeframe in ["1w", "1d", "4h"]:
         if timeframe not in ENABLED_TIMEFRAME and timeframe != "1d": continue
@@ -211,7 +208,6 @@ def main():
 
                 current_minute = get_klines(SYMBOL, "15m")
                 # print(current_minute.tail(3))
-                check_whole_numbers(current_minute)
                 for tf in ["1w", "1d", "4h"]: price_alert(tf, current_minute, levels_data)
                 time.sleep(5)
             except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
