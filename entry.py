@@ -77,4 +77,4 @@ try:
             print(f"Network error: {e}")
             time.sleep(10)
             continue
-except KeyboardInterrupt: print("\n\nAborted.\n")
+except KeyboardInterrupt: print("\n\nAborted.")

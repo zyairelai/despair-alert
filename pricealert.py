@@ -3,16 +3,33 @@
 import pandas, requests, time, socket, os, argparse, sys
 
 def print_usage(): print(f"[i] Usage: {os.path.basename(sys.argv[0])} [target1] [target2] [target3]....")
-if "-h" in sys.argv or "--help" in sys.argv or len(sys.argv) == 1:
+if "-h" in sys.argv or "--help" in sys.argv:
     print_usage()
     sys.exit(0)
 
-parser = argparse.ArgumentParser(add_help=False)
-parser.error = lambda message: (print_usage(), sys.exit(1))
-parser.add_argument('targets', type=float, nargs='*')
-args = parser.parse_args()
-targets = args.targets
-for i, t in enumerate(targets, start=1): print(f"Target {i}: {t}")
+targets = []
+if len(sys.argv) == 1:
+    try:
+        target_input = input("[+] Enter target price: ")
+        if target_input.strip():
+            targets = [float(target_input)]
+            print(f"[+] Waiting price to touch {targets[0]}...")
+        else:
+            print_usage()
+            sys.exit(1)
+    except ValueError:
+        print("[!] Invalid price format.")
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("\n\nAborted.")
+        sys.exit(0)
+else:
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.error = lambda message: (print_usage(), sys.exit(1))
+    parser.add_argument('targets', type=float, nargs='*')
+    args = parser.parse_args()
+    targets = args.targets
+    for i, t in enumerate(targets, start=1): print(f"Target {i}: {t}")
 
 def telegram_bot_sendtext(bot_message):
     print(bot_message)
