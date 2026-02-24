@@ -7,6 +7,7 @@ from termcolor import colored
 # ----- Configuration -----
 SYMBOL = "BTCUSDT"
 
+print("\nThe DESPAIR script is running...")
 def telegram_bot_sendtext(bot_message):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
     bot_token = os.environ.get('TELEGRAM_LIVERMORE')
@@ -61,10 +62,7 @@ def show_levels():
     print("===== PREVIOUS 4H =====")
     print(f"Prev 4H High: {colored(str(prev_4h_high), 'green')}")
     print(f"Prev 4H Low: {colored(str(prev_4h_low), 'green')}")
-    print()
-    print("=========================")
-    print("=========================")
-    print()
+    print("\n==================================================\n")
     print("===== CURRENT 1D ======")
     print(f"Current 1D High: {curr_1d_high}")
     print(f"Current 1D Mid: {colored(str(curr_1d_mid), 'red')}")
@@ -74,11 +72,8 @@ def show_levels():
     print(f"Current 4H High: {colored(str(curr_4h_high), 'green')}")
     print(f"Current 4H Low: {colored(str(curr_4h_low), 'green')}")
     print()
-    print("=========================")
-    print("=========================")
 
 show_levels()
-print("\nThe DESPAIR script is running...\n")
 
 def heikin_ashi(klines):
     heikin_ashi_df = pandas.DataFrame(index=klines.index.values, columns=['ha_open', 'ha_high', 'ha_low', 'ha_close'])

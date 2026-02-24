@@ -7,6 +7,7 @@ except ImportError:
     print("Library not found, run:\npip3 install pandas requests --break-system-packages")
     exit(1)
 
+print("\nThe ENTRY script is running...\n")
 def telegram_bot_sendtext(bot_message, interval):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
     bot_token = os.environ.get('TELEGRAM_WOLVESRISE')
@@ -17,7 +18,6 @@ def telegram_bot_sendtext(bot_message, interval):
     return response.json()
 
 # telegram_bot_sendtext("Telegram works!")
-print("Waiting for entry...\n")
 
 session = requests.Session()
 def get_klines(pair, interval):

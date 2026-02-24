@@ -6,6 +6,7 @@ from datetime import datetime
 # ----- Configuration -----
 SYMBOL = "BTCUSDT"
 
+print("\nThe ONE MINUTE script is running...\n")
 def telegram_bot_sendtext(bot_message):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
     bot_token = os.environ.get('TELEGRAM_WOLVESRISE')
@@ -29,8 +30,6 @@ def get_klines(pair, interval):
     candlestick["upper_wick"] = candlestick["high"] - candlestick[["open", "close"]].max(axis=1)
     candlestick["lower_wick"] = candlestick[["open", "close"]].min(axis=1) - candlestick["low"]
     return candlestick
-
-print("\nHUNTING ON THE ONE MINUTE CHART...\n")
 
 def heikin_ashi(klines):
     heikin_ashi_df = pandas.DataFrame(index=klines.index.values, columns=['ha_open', 'ha_high', 'ha_low', 'ha_close'])

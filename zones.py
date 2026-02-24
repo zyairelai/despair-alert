@@ -51,6 +51,7 @@ def sleep_until_next(interval):
     sleep_seconds = (next_time - now).total_seconds()
     if sleep_seconds > 0: time.sleep(sleep_seconds)
 
+print("\nThe ZONES script is running...")
 def telegram_bot_sendtext(bot_message):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S")))
     bot_token = os.environ.get('TELEGRAM_LIVERMORE')
