@@ -86,24 +86,29 @@ def heikin_ashi(klines):
     heikin_ashi_df.insert(0,'timestamp', klines['timestamp'])
     heikin_ashi_df['ha_high'] = heikin_ashi_df.loc[:, ['ha_open', 'ha_close']].join(klines['high']).max(axis=1)
     heikin_ashi_df['ha_low']  = heikin_ashi_df.loc[:, ['ha_open', 'ha_close']].join(klines['low']).min(axis=1)
-    heikin_ashi_df['body'] = (heikin_ashi_df['ha_close'] - heikin_ashi_df['ha_open']).abs()
     heikin_ashi_df['volume'] = klines['volume']
+    heikin_ashi_df['body'] = (heikin_ashi_df['ha_close'] - heikin_ashi_df['ha_open']).abs()
+    heikin_ashi_df['upper_wick'] = heikin_ashi_df['ha_high'] - heikin_ashi_df[['ha_open', 'ha_close']].max(axis=1)
+    heikin_ashi_df['lower_wick'] = heikin_ashi_df[['ha_open', 'ha_close']].min(axis=1) - heikin_ashi_df['ha_low']
     heikin_ashi_df['color'] = heikin_ashi_df.apply(lambda row: 'GREEN' if row['ha_close'] >= row['ha_open'] else 'RED', axis=1)
     heikin_ashi_df['25MA'] = klines['close'].rolling(window=25).mean()
     heikin_ashi_df['100EMA'] = klines['close'].ewm(span=100, adjust=False).mean()
-    result_cols = ['ha_open', 'ha_high', 'ha_low', 'ha_close', 'volume', 'color', '25MA', '100EMA']
+    result_cols = ['ha_open', 'ha_high', 'ha_low', 'ha_close', 'volume', 'color', 'body', 'upper_wick', 'lower_wick', '25MA', '100EMA']
     for col in result_cols: heikin_ashi_df[col] = heikin_ashi_df[col].apply(lambda v: round(v) if isinstance(v, float) and not pandas.isna(v) else v)
     return heikin_ashi_df[result_cols]
 
-def condition_1h(pair):
-    one_hour = heikin_ashi(get_klines(pair, "1h"))
-    low_condition = one_hour['ha_low'].iloc[-1] < one_hour['ha_low'].iloc[-5:-1].min()
-    return low_condition # -4:1 = previous 3 candles
-
 def short_despair():
-    if condition_1h(SYMBOL):
+    # -4:1 = previous 3 candles
+    one_hour = heikin_ashi(get_klines(SYMBOL, "1h"))
+
+    if one_hour['ha_low'].iloc[-1] < one_hour['ha_low'].iloc[-5:-1].min():
         telegram_bot_sendtext("💥 1H STRUCTURE BREAK 💥")
         exit()
+
+    # if one_hour['color'].iloc[-1] == "GREEN":
+    #     if one_hour['upper_wick'].iloc[-1] > one_hour['lower_wick'].iloc[-1] + one_hour['body'].iloc[-1]:
+    #         telegram_bot_sendtext("💥 1H PIN BAR 💥")
+    #         exit()
 
 try:
     while True:

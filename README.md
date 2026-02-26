@@ -11,6 +11,7 @@ alias o="/home/kali/despair-alert/oneminue.py"
 alias p="/home/kali/despair-alert/pricealert.py"
 alias z="/home/kali/despair-alert/zones.py"
 
+alias checkema="cat /home/kali/despair-alert/checkema.txt"
 alias breakout="/home/kali/despair-alert/despair.py"
 alias despair="/home/kali/despair-alert/despair.py"
 alias entry="/home/kali/despair-alert/entry.py"
