@@ -1,11 +1,7 @@
 #!/usr/bin/python3
 
-import time, socket, os
+import pandas, requests, time, socket, os
 from datetime import datetime
-try: import pandas, requests
-except ImportError:
-    print("Library not found, run:\npip3 install pandas requests --break-system-packages")
-    exit(1)
 
 print("\nThe ENTRY script is running...\n")
 def telegram_bot_sendtext(bot_message, interval):

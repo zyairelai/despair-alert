@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import pandas, requests, time, socket, os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from termcolor import colored
 
 # ----- Configuration -----
