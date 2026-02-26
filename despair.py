@@ -105,10 +105,14 @@ def short_despair():
         telegram_bot_sendtext("💥 1H STRUCTURE BREAK 💥")
         exit()
 
-    # if one_hour['color'].iloc[-1] == "GREEN":
-    #     if one_hour['upper_wick'].iloc[-1] > one_hour['lower_wick'].iloc[-1] + one_hour['body'].iloc[-1]:
-    #         telegram_bot_sendtext("💥 1H PIN BAR 💥")
-    #         exit()
+    if one_hour['color'].iloc[-1] == "GREEN":
+        condition_1 = one_hour['upper_wick'].iloc[-1] > (one_hour['body'].iloc[-1] * 2)
+        condition_2 = one_hour['upper_wick'].iloc[-1] > (one_hour['lower_wick'].iloc[-1] * 2)
+        condition_3 = one_hour['upper_wick'].iloc[-1] > (one_hour['lower_wick'].iloc[-1] + one_hour['body'].iloc[-1])
+
+        if condition_1 and condition_2 and condition_3:
+            telegram_bot_sendtext("💥 1H PIN BAR 💥")
+            exit()
 
 try:
     while True:
