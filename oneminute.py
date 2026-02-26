@@ -53,7 +53,7 @@ def heikin_ashi(klines):
 
 def one_minute(pair):
     timeframe = heikin_ashi(get_klines(pair, "1m"))
-    if timeframe['25MA'].iloc[-1] > timeframe['ha_open'].iloc[-1]:
+    if timeframe['25MA'].iloc[-1] > timeframe['ha_open'].iloc[-1] and timeframe['20EMA'].iloc[-1] > timeframe['10EMA'].iloc[-1]:
         telegram_bot_sendtext("🐺 WAR ON THE ONE MINUTE CHART 🐺")
         exit()
 
