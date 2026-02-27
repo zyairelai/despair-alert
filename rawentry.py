@@ -3,7 +3,7 @@
 import pandas, requests, time, socket, os
 from datetime import datetime
 
-print("\nThe ENTRY script is running...\n")
+print("\nThe 15m RAW ENTRY script is running...\n")
 def telegram_bot_sendtext(bot_message, interval):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
     bot_token = os.environ.get('TELEGRAM_WOLVESRISE')

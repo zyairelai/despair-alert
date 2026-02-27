@@ -172,7 +172,7 @@ def refresh_levels(levels_data):
                 all_duplicated = False
                 break
 
-        if all_duplicated and timeframe not in ["1w", "1d"]:
+        if all_duplicated and timeframe not in ["1w", "1d"] and not args.current_mode:
             print("DUPLICATED")
             continue
 
@@ -181,8 +181,22 @@ def refresh_levels(levels_data):
             label = "Mid" if name == "Middle" else name
 
             if match:
-                prefix = f"Prev {timeframe.upper()}"
-                print(f"{prefix} {label}: -")
+                if args.current_mode:
+                    out_val = str(int(val))
+                    if timeframe == "4h": out_val = colored(out_val, "green")
+
+                    # (dup with 1D high)
+                    parts = match.split(" ")
+                    tf_dup = parts[2].upper()
+                    name_dup = parts[3].lower()
+                    if name_dup == "middle": name_dup = "mid"
+                    
+                    dup_info = f"dup with {tf_dup} {name_dup}"
+                    prefix = f"Current {timeframe.upper()}"
+                    print(f"{prefix} {label}: {out_val} ({dup_info})")
+                else:
+                    prefix = f"Prev {timeframe.upper()}"
+                    print(f"{prefix} {label}: -")
             else:
                 out_val = str(int(val))
                 if timeframe == "1w":
