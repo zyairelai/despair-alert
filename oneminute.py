@@ -45,7 +45,7 @@ def heikin_ashi(klines):
     heikin_ashi_df['body'] = (heikin_ashi_df['ha_close'] - heikin_ashi_df['ha_open']).abs()
     heikin_ashi_df['volume'] = klines['volume']
     heikin_ashi_df['color'] = heikin_ashi_df.apply(lambda row: 'GREEN' if row['ha_close'] >= row['ha_open'] else 'RED', axis=1)
-    heikin_ashi_df['25MA'] = klines['close'].rolling(window=25).mean()
+    heikin_ashi_df['25MA'] = klines['close'].rolling(window=20).mean()
     heikin_ashi_df['10EMA'] = klines['close'].ewm(span=10, adjust=False).mean()
     heikin_ashi_df['20EMA'] = klines['close'].ewm(span=20, adjust=False).mean()
     heikin_ashi_df['100EMA'] = klines['close'].ewm(span=100, adjust=False).mean()
