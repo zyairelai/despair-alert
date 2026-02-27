@@ -16,9 +16,11 @@ ENABLED_TIMEFRAME = ["1d", "4h"]
 
 def print_usage():
     print(f"[i] Usage: {os.path.basename(sys.argv[0])} [-m] [-4] [-e]")
-    print("    -m : Disable 1D Middle (Stops midpoint alerts)")
-    print("    -4 : Disable 4H Timeframe (Stops 4H level alerts)")
-    print("    -e : Exit after triggered (Exits after first alert)")
+    print("    -4, --4h : Disable 4H Timeframe (Stops 4H level alerts)")
+    print("    -m, --middle : Disable 1D Middle (Stops midpoint alerts)")
+    print("    -c, --current : Use current timeframe (Default Previous 1D and 4H level)")
+    print("    -e, --exit : Exit after triggered (Exits after first alert)")
+    print("    -n, --no-alert : Disable Telegram Notifications")
 
 if "-h" in sys.argv or "--help" in sys.argv:
     print_usage()
@@ -26,12 +28,15 @@ if "-h" in sys.argv or "--help" in sys.argv:
 
 parser = argparse.ArgumentParser(add_help=False)
 parser.error = lambda message: (print_usage(), sys.exit(1))
-parser.add_argument("-m", dest="disable_middle", action="store_true")
-parser.add_argument("-4", dest="disable_4h", action="store_true")
-parser.add_argument("-e", dest="exit_mode", action="store_true")
+parser.add_argument("-4", "--4h", dest="disable_4h", action="store_true")
+parser.add_argument("-m", "--middle", dest="disable_middle", action="store_true")
+parser.add_argument("-c", "--current", dest="current_mode", action="store_true")
+parser.add_argument("-e", "--exit", dest="exit_mode", action="store_true")
+parser.add_argument("-n", "--no-alert", dest="no_alert", action="store_true")
 args = parser.parse_args()
 
 if args.disable_middle: ENABLE_PREV_1D_MIDDLE = False
+if args.current_mode: ENABLED_TIMEFRAME = ["1d", "4h"]
 if args.disable_4h: ENABLED_TIMEFRAME.remove("4h")
 if args.exit_mode: SLEEP_INTERVAL = "-"
 
@@ -54,6 +59,7 @@ def sleep_until_next(interval):
 print("\nThe ZONES script is running...")
 def telegram_bot_sendtext(bot_message):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S")))
+    if args.no_alert: return
     bot_token = os.environ.get('TELEGRAM_LIVERMORE')
     chat_id = "@swinglivermore"
     send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + chat_id + '&parse_mode=html&text=' + bot_message
@@ -97,7 +103,8 @@ def check_duplicated(timeframe, val, levels_data):
 def price_alert(timeframe, current_minute, levels_data):
     if timeframe not in ENABLED_TIMEFRAME and timeframe != "1d": return
     df = get_klines(SYMBOL, timeframe)
-    high, low = df["high"].iloc[-2], df["low"].iloc[-2]
+    idx = -1 if args.current_mode else -2
+    high, low = df["high"].iloc[idx], df["low"].iloc[idx]
     middle = (high + low) / 2
 
     last_high, last_low = current_minute["high"].iloc[-1], current_minute["low"].iloc[-1]
@@ -136,8 +143,9 @@ def refresh_levels(levels_data):
         if timeframe not in ENABLED_TIMEFRAME and timeframe != "1d": continue
 
         df = get_klines(SYMBOL, timeframe)
-        h, l = df["high"].iloc[-2], df["low"].iloc[-2]
-        c = df["close"].iloc[-2] if timeframe == "1d" else None
+        idx = -1 if args.current_mode else -2
+        h, l = df["high"].iloc[idx], df["low"].iloc[idx]
+        c = df["close"].iloc[idx] if timeframe == "1d" else None
 
         # Only store enabled levels for duplication checks
         temp_levels = {}
@@ -187,7 +195,9 @@ def refresh_levels(levels_data):
                 elif timeframe == "4h": out_val = colored(out_val, "green")
 
                 if timeframe == "1d" and name == "Close": print(f"Daily Open: {out_val}")
-                else: print(f"Prev {timeframe.upper()} {label}: {out_val}")
+                else:
+                    prefix = f"Current {timeframe.upper()}" if args.current_mode else f"Prev {timeframe.upper()}"
+                    print(f"{prefix} {label}: {out_val}")
 
 def main():
     levels_data = {}

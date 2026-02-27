@@ -46,21 +46,31 @@ def heikin_ashi(klines):
     heikin_ashi_df['volume'] = klines['volume']
     heikin_ashi_df['color'] = heikin_ashi_df.apply(lambda row: 'GREEN' if row['ha_close'] >= row['ha_open'] else 'RED', axis=1)
     heikin_ashi_df['25MA'] = klines['close'].rolling(window=25).mean()
+    heikin_ashi_df['10EMA'] = klines['close'].ewm(span=10, adjust=False).mean()
+    heikin_ashi_df['20EMA'] = klines['close'].ewm(span=20, adjust=False).mean()
     heikin_ashi_df['100EMA'] = klines['close'].ewm(span=100, adjust=False).mean()
-    result_cols = ['ha_open', 'ha_high', 'ha_low', 'ha_close', 'volume', 'color', '25MA', '100EMA']
+    result_cols = ['ha_open', 'ha_high', 'ha_low', 'ha_close', 'volume', 'color', '25MA', '10EMA', '20EMA', '100EMA']
     for col in result_cols: heikin_ashi_df[col] = heikin_ashi_df[col].apply(lambda v: round(v) if isinstance(v, float) and not pandas.isna(v) else v)
     return heikin_ashi_df[result_cols]
 
-def one_minute(pair):
+def three_minute_condition(pair):
+    timeframe = heikin_ashi(get_klines(pair, "3m"))
+    if timeframe['25MA'].iloc[-1] > timeframe['ha_close'].iloc[-1]: return True
+
+def one_minute_condition(pair):
     timeframe = heikin_ashi(get_klines(pair, "1m"))
-    if timeframe['25MA'].iloc[-1] > timeframe['ha_open'].iloc[-1] and timeframe['20EMA'].iloc[-1] > timeframe['10EMA'].iloc[-1]:
+    if timeframe['25MA'].iloc[-1] > timeframe['ha_open'].iloc[-1] and \
+       timeframe['20EMA'].iloc[-1] > timeframe['10EMA'].iloc[-1]: return True
+
+def all_condition_matched(pair):
+    if one_minute_condition(pair) and three_minute_condition(pair):
         telegram_bot_sendtext("🐺 WAR ON THE ONE MINUTE CHART 🐺")
         exit()
 
 try:
     while True:
         try:
-            one_minute(SYMBOL)
+            all_condition_matched(SYMBOL)
             time.sleep(1)
         except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
             print(f"Network error: {e}")

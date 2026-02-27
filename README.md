@@ -6,16 +6,21 @@
 alias web='python3 -m http.server 80'
 alias webserver='python3 -m http.server 80'
 
-alias e="/home/kali/despair-alert/rawentry.py"
-alias o="/home/kali/despair-alert/oneminue.py"
-alias p="/home/kali/despair-alert/pricealert.py"
-alias z="/home/kali/despair-alert/zones.py"
-
 alias breakout="/home/kali/despair-alert/despair.py"
 alias despair="/home/kali/despair-alert/despair.py"
-alias entry="/home/kali/despair-alert/rawentry.py"
-alias oneminue="/home/kali/despair-alert/oneminue.py"
+
+alias o="/home/kali/despair-alert/oneminute.py"
+alias oneminute="/home/kali/despair-alert/oneminute.py"
+
+alias p="/home/kali/despair-alert/pricealert.py"
 alias price="/home/kali/despair-alert/pricealert.py"
+alias pricealert="/home/kali/despair-alert/pricealert.py"
+
+alias e="/home/kali/despair-alert/rawentry.py"
+alias entry="/home/kali/despair-alert/rawentry.py"
+alias rawentry="/home/kali/despair-alert/rawentry.py"
+
+alias z="/home/kali/despair-alert/zones.py"
 alias zones="/home/kali/despair-alert/zones.py"
 ```
 

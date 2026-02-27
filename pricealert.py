@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import pandas, requests, time, socket, os, argparse, sys
+import pandas, requests, time, socket, os, sys, argparse
 
 def print_usage(): print(f"[i] Usage: {os.path.basename(sys.argv[0])} [target1] [target2] [target3]....")
 if "-h" in sys.argv or "--help" in sys.argv:
