@@ -5,8 +5,9 @@ print("zones.py     - Previous 1D and 4H")
 print("despair.py   - 1H pattern broken")
 
 print("\n============== ENTRY ==============")
-print("rawentry.py  - 15m raw candlestick entry")
-print("oneminute.py - 1m heikin ashi entry")
+print("entry.py     - 1m heikin ashi entry + 15m + 5m Alignment")
+print("uptrend.py   - 1m heikin ashi entry + 15m + 5m Alignment")
+print("single15m.py - 15m raw candlestick entry")
 
 print("\n=========== PRICE ALERT ===========")
 print("pricealert.py - Setup Price for Alert")

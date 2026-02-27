@@ -6,7 +6,7 @@ from datetime import datetime
 # ----- Configuration -----
 SYMBOL = "BTCUSDT"
 
-print("\nThe PRECISE ENTRY script is running...\n")
+print("\nThe UPTREND script is running...\n")
 def telegram_bot_sendtext(bot_message):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
     bot_token = os.environ.get('TELEGRAM_WOLVESRISE')
@@ -56,17 +56,17 @@ def heikin_ashi(klines):
 def htf_condition(pair, interval):
     timeframe = get_klines(pair, interval)
     timeframe['20MA'] = timeframe['close'].rolling(window=20).mean()
-    if timeframe['20MA'].iloc[-2] > timeframe['20MA'].iloc[-1] and \
-       timeframe['20MA'].iloc[-2] > timeframe['close'].iloc[-2]: return True
+    if timeframe['20MA'].iloc[-2] < timeframe['20MA'].iloc[-1] and \
+       timeframe['20MA'].iloc[-2] < timeframe['close'].iloc[-2]: return True
 
 def one_minute_condition(pair):
     timeframe = heikin_ashi(get_klines(pair, "1m"))
-    if timeframe['20MA'].iloc[-1] > timeframe['ha_open'].iloc[-1] and \
-       timeframe['20EMA'].iloc[-1] > timeframe['10EMA'].iloc[-1]: return True
+    if timeframe['20MA'].iloc[-1] < timeframe['ha_open'].iloc[-1] and \
+       timeframe['20EMA'].iloc[-1] < timeframe['10EMA'].iloc[-1]: return True
 
 def all_condition_matched(pair):
     if one_minute_condition(pair) and htf_condition(pair, '5m') and htf_condition(pair, '15m'):
-        telegram_bot_sendtext("🐺 WAR ON THE ONE MINUTE CHART 🐺")
+        telegram_bot_sendtext("🐺 UPTREND ON THE ONE MINUTE CHART 🐺")
         exit()
 
 try:
