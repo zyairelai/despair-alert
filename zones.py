@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import pandas, requests, time, socket, os, sys, argparse
+import pandas, requests, time, socket, os, sys, argparse, argcomplete
 from datetime import datetime, timedelta, timezone
 from termcolor import colored
 
@@ -14,25 +14,16 @@ ENABLE_PREV_1D_MIDDLE = True
 ENABLE_PREV_1D_CLOSE = False
 ENABLED_TIMEFRAME = ["1d", "4h"]
 
-def print_usage():
-    print(f"[i] Usage: {os.path.basename(sys.argv[0])} [-m] [-4] [-e]")
-    print("    -4, --4h : Disable 4H Timeframe (Stops 4H level alerts)")
-    print("    -m, --middle : Disable 1D Middle (Stops midpoint alerts)")
-    print("    -c, --current : Use current timeframe (Default Previous 1D and 4H level)")
-    print("    -e, --exit : Exit after triggered (Exits after first alert)")
-    print("    -n, --no-alert : Disable Telegram Notifications")
+parser = argparse.ArgumentParser(description='The ZONES script.', add_help=False)
+parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
+parser.add_argument("--4h", dest="disable_4h", action="store_true", help="Disable 4H Timeframe")
+parser.add_argument("--current", dest="current_mode", action="store_true", help="Use Current Timeframe")
+parser.add_argument("--exit", dest="exit_mode", action="store_true", help="Exit after triggered")
+parser.add_argument("--middle", dest="disable_middle", action="store_true", help="Disable 1D Middle")
+parser.add_argument("--no-alert", dest="no_alert", action="store_true", help="Disable Telegram Notifications")
+parser.add_argument("--price", dest="price", type=float, nargs='+', help="Set Custom Price(s) Alerts")
 
-if "-h" in sys.argv or "--help" in sys.argv:
-    print_usage()
-    sys.exit(0)
-
-parser = argparse.ArgumentParser(add_help=False)
-parser.error = lambda message: (print_usage(), sys.exit(1))
-parser.add_argument("-4", "--4h", dest="disable_4h", action="store_true")
-parser.add_argument("-m", "--middle", dest="disable_middle", action="store_true")
-parser.add_argument("-c", "--current", dest="current_mode", action="store_true")
-parser.add_argument("-e", "--exit", dest="exit_mode", action="store_true")
-parser.add_argument("-n", "--no-alert", dest="no_alert", action="store_true")
+argcomplete.autocomplete(parser)
 args = parser.parse_args()
 
 if args.disable_middle: ENABLE_PREV_1D_MIDDLE = False
@@ -62,8 +53,9 @@ def telegram_bot_sendtext(bot_message):
     if args.no_alert: return
     bot_token = os.environ.get('TELEGRAM_LIVERMORE')
     chat_id = "@swinglivermore"
-    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + chat_id + '&parse_mode=html&text=' + bot_message
-    response = requests.get(send_text)
+    url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
+    params = {'chat_id': chat_id, 'parse_mode': 'html', 'text': bot_message}
+    response = requests.get(url, params=params)
     sleep_until_next(globals().get("SLEEP_INTERVAL", "-"))
     return response.json()
 
@@ -137,6 +129,14 @@ def price_alert(timeframe, current_minute, levels_data):
         if triggered:
             if check_duplicated(timeframe, middle, levels_data): return
             telegram_bot_sendtext(f"\n{emoji} {timeframe.upper()} Middle at {int(middle)}")
+
+    # Custom Price Check
+    if args.price:
+        for val in args.price:
+            if (last_high >= val and last_low <= val):
+                # Using a marker to avoid duplicate alerts in the same loop if needed, 
+                # but since this is exactly at price, we'll just send it.
+                telegram_bot_sendtext(f"\n🎯 Custom Price Alert at {int(val)}")
 
 def refresh_levels(levels_data):
     for timeframe in ["1w", "1d", "4h"]:
@@ -213,6 +213,11 @@ def refresh_levels(levels_data):
                     prefix = f"Current {timeframe.upper()}" if args.current_mode else f"Prev {timeframe.upper()}"
                     print(f"{prefix} {label}: {out_val}")
 
+    if args.price:
+        print("\n======= CUSTOM =======")
+        for val in args.price:
+            print(f"Price Target: {colored(str(int(val)), 'yellow')}")
+
 def main():
     levels_data = {}
     refresh_levels(levels_data)
@@ -231,7 +236,7 @@ def main():
                         refresh_levels(levels_data)
                         last_refresh_time = current_period
 
-                current_minute = get_klines(SYMBOL, "15m")
+                current_minute = get_klines(SYMBOL, "5m")
                 # print(current_minute.tail(3))
                 for tf in ["1w", "1d", "4h"]: price_alert(tf, current_minute, levels_data)
                 time.sleep(5)

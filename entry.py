@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import pandas, requests, time, socket, os
+import pandas, requests, time, socket, os, sys, argparse, argcomplete
 from datetime import datetime
 
 # ----- Configuration -----
@@ -11,8 +11,9 @@ def telegram_bot_sendtext(bot_message):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
     bot_token = os.environ.get('TELEGRAM_WOLVESRISE')
     chat_id = "@futures_wolves_rise"
-    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + chat_id + '&parse_mode=html&text=' + bot_message
-    response = requests.get(send_text)
+    url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
+    params = {'chat_id': chat_id, 'parse_mode': 'html', 'text': bot_message}
+    response = requests.get(url, params=params)
     return response.json()
 
 session = requests.Session()
@@ -53,26 +54,64 @@ def heikin_ashi(klines):
     for col in result_cols: heikin_ashi_df[col] = heikin_ashi_df[col].apply(lambda v: round(v) if isinstance(v, float) and not pandas.isna(v) else v)
     return heikin_ashi_df[result_cols]
 
-def htf_condition(pair, interval):
+def one_hour_direction(pair):
+    timeframe = heikin_ashi(get_klines(pair, '1h'))
+    if timeframe['20MA'].iloc[-2] > timeframe['ha_low'].iloc[-1]: return "Downtrend"
+    if timeframe['20MA'].iloc[-2] < timeframe['ha_high'].iloc[-1]: return "Uptrend"
+
+def is_downtrend(pair, interval):
     timeframe = get_klines(pair, interval)
     timeframe['20MA'] = timeframe['close'].rolling(window=20).mean()
     if timeframe['20MA'].iloc[-2] > timeframe['20MA'].iloc[-1] and \
        timeframe['20MA'].iloc[-2] > timeframe['close'].iloc[-2]: return True
 
-def one_minute_condition(pair):
-    timeframe = heikin_ashi(get_klines(pair, "1m"))
-    if timeframe['20MA'].iloc[-1] > timeframe['ha_open'].iloc[-1] and \
-       timeframe['20EMA'].iloc[-1] > timeframe['10EMA'].iloc[-1]: return True
+def is_uptrend(pair, interval):
+    timeframe = get_klines(pair, interval)
+    timeframe['20MA'] = timeframe['close'].rolling(window=20).mean()
+    if timeframe['20MA'].iloc[-2] < timeframe['20MA'].iloc[-1] and \
+       timeframe['20MA'].iloc[-2] < timeframe['close'].iloc[-2]: return True
 
-def all_condition_matched(pair):
-    if one_minute_condition(pair) and htf_condition(pair, '5m') and htf_condition(pair, '15m'):
-        telegram_bot_sendtext("🐺 WAR ON THE ONE MINUTE CHART 🐺")
-        exit()
+def all_condition_matched(pair, side, check_direction):
+    trend = one_hour_direction(pair) if check_direction else None
+    if check_direction and side != 'Both' and trend and trend.lower() != side: return
+
+    if side in ['Downtrend', 'Both']:
+        if not check_direction or trend == "Downtrend":
+            if is_downtrend(pair, '15m') and is_downtrend(pair, '5m'):
+                telegram_bot_sendtext("💥 15m + 5m Downtrend Alignment 💥")
+                exit()
+
+    if side in ['Uptrend', 'Both']:
+        if not check_direction or trend == "Uptrend":
+            if is_uptrend(pair, '15m') and is_uptrend(pair, '5m'):
+                telegram_bot_sendtext("🚀 15m + 5m Uptrend Alignment 🚀")
+                exit()
+
+parser = argparse.ArgumentParser(description='Trade entry script.', add_help=False)
+parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
+parser.add_argument('--both', action='store_true', help='Monitor both sides')
+parser.add_argument('--uptrend', action='store_true', help='Monitor uptrend')
+parser.add_argument('--downtrend', action='store_true', help='Monitor downtrend')
+parser.add_argument('--direction', action='store_true', help='Monitor 1H direction alignment')
+parser.add_argument('--smart', action='store_true', help='Both sides + 1H alignment')
+
+argcomplete.autocomplete(parser)
+args, unknown = parser.parse_known_args()
+side = 'Downtrend'
+if args.both: side = 'Both'
+if args.uptrend: side = 'Uptrend'
+if args.downtrend: side = 'Downtrend'
+
+if args.smart:
+    side = 'Both'
+    args.direction = True
+
+print(f"Monitoring {side} side{' (With 1H Direction)' if args.direction else ''}...\n")
 
 try:
     while True:
         try:
-            all_condition_matched(SYMBOL)
+            all_condition_matched(SYMBOL, side, args.direction)
             time.sleep(1)
         except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
             print(f"Network error: {e}")
