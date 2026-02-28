@@ -227,18 +227,19 @@ def main():
         while True:
             try:
                 now_utc = datetime.now(timezone.utc)
-                refresh_hours = [0, 4, 8, 12, 16, 20]
+                refresh_hours = [0, 4, 8, 12, 16, 20] if args.enable_4h else [0]
 
                 if now_utc.hour in refresh_hours and now_utc.minute == 0 and now_utc.second >= 10:
                     current_period = now_utc.replace(minute=0, second=0, microsecond=0)
                     if last_refresh_time != current_period:
-                        print("\n==================\n= NEW 4H UPDATED =\n==================")
+                        header = "4H" if now_utc.hour != 0 else "1D"
+                        print(f"\n==================\n= NEW {header} UPDATED =\n==================")
                         refresh_levels(levels_data)
                         last_refresh_time = current_period
 
                 current_minute = get_klines(SYMBOL, "5m")
                 # print(current_minute.tail(3))
-                for tf in ["1w", "1d", "4h"]: price_alert(tf, current_minute, levels_data)
+                for tf in ["1d", "4h"]: price_alert(tf, current_minute, levels_data)
                 time.sleep(5)
             except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
                 print(f"Error: {e}")
