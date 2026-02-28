@@ -12,11 +12,11 @@ SLEEP_INTERVAL = "1h"
 # Targets are now passed via CLI arguments
 ENABLE_PREV_1D_MIDDLE = True
 ENABLE_PREV_1D_CLOSE = False
-ENABLED_TIMEFRAME = ["1d", "4h"]
+ENABLED_TIMEFRAME = ["1d"]
 
 parser = argparse.ArgumentParser(description='The ZONES script.', add_help=False)
 parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
-parser.add_argument("--4h", dest="disable_4h", action="store_true", help="Disable 4H Timeframe")
+parser.add_argument("--4h", dest="enable_4h", action="store_true", help="Enable 4H Timeframe")
 parser.add_argument("--current", dest="current_mode", action="store_true", help="Use Current Timeframe")
 parser.add_argument("--exit", dest="exit_mode", action="store_true", help="Exit after triggered")
 parser.add_argument("--middle", dest="disable_middle", action="store_true", help="Disable 1D Middle")
@@ -27,8 +27,8 @@ argcomplete.autocomplete(parser)
 args = parser.parse_args()
 
 if args.disable_middle: ENABLE_PREV_1D_MIDDLE = False
-if args.current_mode: ENABLED_TIMEFRAME = ["1d", "4h"]
-if args.disable_4h: ENABLED_TIMEFRAME.remove("4h")
+if args.current_mode: ENABLED_TIMEFRAME = ["1d"]
+if args.enable_4h: ENABLED_TIMEFRAME.append("4h")
 if args.exit_mode: SLEEP_INTERVAL = "-"
 
 def sleep_until_next(interval):

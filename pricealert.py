@@ -12,8 +12,8 @@ if len(sys.argv) == 1:
     try:
         target_input = input("[+] Enter target price: ")
         if target_input.strip():
-            targets = [float(target_input)]
-            print(f"[+] Waiting price to touch {targets[0]}...")
+            targets = [target_input.strip()]
+            print(f"Set Price Alert: {targets[0]}")
         else:
             print_usage()
             sys.exit(1)
@@ -26,10 +26,15 @@ if len(sys.argv) == 1:
 else:
     parser = argparse.ArgumentParser(add_help=False)
     parser.error = lambda message: (print_usage(), sys.exit(1))
-    parser.add_argument('targets', type=float, nargs='*')
+    parser.add_argument('targets', type=str, nargs='*')
     args = parser.parse_args()
     targets = args.targets
-    for i, t in enumerate(targets, start=1): print(f"Target {i}: {t}")
+    
+    if len(targets) == 1:
+        print(f"Set Price Alert: {targets[0]}")
+    else:
+        for i, t in enumerate(targets, start=1):
+            print(f"Target {i}: {t}")
 
 def telegram_bot_sendtext(bot_message):
     print(bot_message)
@@ -60,9 +65,12 @@ def get_klines(pair, interval):
 
 def price_alert():
     cutloss = get_klines("BTCUSDT", "1m")
-    for target_price in targets:
+    for target_price_str in targets:
+        try: target_price = float(target_price_str)
+        except ValueError: continue
+
         if cutloss["high"].iloc[-1] >= target_price >= cutloss["low"].iloc[-1]:
-            telegram_bot_sendtext(f"Price touched target: {target_price}")
+            telegram_bot_sendtext(f"Price touched target: {target_price_str}")
             exit()
 
 try:
