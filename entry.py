@@ -55,9 +55,10 @@ def heikin_ashi(klines):
     return heikin_ashi_df[result_cols]
 
 def one_hour_direction(pair):
-    timeframe = heikin_ashi(get_klines(pair, '1h'))
-    if timeframe['20MA'].iloc[-2] > timeframe['ha_high'].iloc[-1]: return "Down"
-    if timeframe['20MA'].iloc[-2] < timeframe['ha_low'].iloc[-1]: return "Up"
+    timeframe = get_klines(pair, '1h')
+    timeframe['20MA'] = timeframe['close'].rolling(window=20).mean()
+    if timeframe['20MA'].iloc[-2] > timeframe['close'].iloc[-1]: return "Down"
+    if timeframe['20MA'].iloc[-2] < timeframe['close'].iloc[-1]: return "Up"
     return None
 
 def is_downtrend(pair, interval):
@@ -72,8 +73,7 @@ def is_uptrend(pair, interval):
     if timeframe['20MA'].iloc[-2] < timeframe['20MA'].iloc[-1] and \
        timeframe['20MA'].iloc[-2] < timeframe['close'].iloc[-2]: return True
 
-def all_condition_matched(pair, side, check_direction):
-    trend = one_hour_direction(pair) if check_direction else None
+def all_condition_matched(pair, side, check_direction, trend=None):
     if check_direction and side != 'Both' and trend and trend.lower() != side: return
 
     if side in ['Down', 'Both']:
@@ -92,29 +92,38 @@ parser = argparse.ArgumentParser(description='Trade entry script.', add_help=Fal
 parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
 parser.add_argument('--long', action='store_true', help='Monitor LONG')
 parser.add_argument('--short', action='store_true', help='Monitor SHORT')
-parser.add_argument('--quickscalp', action='store_true', help='Monitor BOTH sides')
+parser.add_argument('--direction', action='store_true', help='Monitor BOTH sides with 1H direction')
 
 argcomplete.autocomplete(parser)
 args, unknown = parser.parse_known_args()
-is_smart = not (args.quickscalp or args.long or args.short)
-side = 'BOTH' if args.quickscalp else 'LONG' if args.long else 'SHORT' if args.short else 'BOTH'
+is_smart = args.direction
+side = 'LONG' if args.long else 'SHORT' if args.short else 'BOTH'
 
-if is_smart:
-    direction = one_hour_direction(SYMBOL)
-    color = "green" if direction == "Up" else "red" if direction == "Down" else "white"
-    print(f"Current 1H Direction: {colored(direction, color)}")
-    
-    monitoring_side = "LONG" if direction == "Up" else "SHORT" if direction == "Down" else "LONG/SHORT"
-    print(f"Monitoring 15m + 5m {colored(monitoring_side, color)} entry\n")
-else:
-    color = "green" if side == "LONG" else "red" if side == "SHORT" else "white"
-    print(f"Monitoring {colored(side, color)} entry\n")
-
+current_direction = None
 try:
     while True:
         try:
+            trend = None
+            if is_smart:
+                new_direction = one_hour_direction(SYMBOL)
+                if new_direction != current_direction:
+                    if current_direction is not None:
+                        print(f"\n{colored('[!!] Direction Changed!', 'yellow', attrs=['bold'])}")
+                    
+                    color = "green" if new_direction == "Up" else "red" if new_direction == "Down" else "white"
+                    print(f"Current 1H Direction: {colored(new_direction, color)}")
+                    
+                    monitoring_side = "LONG" if new_direction == "Up" else "SHORT" if new_direction == "Down" else "INDECISIVE"
+                    print(f"Monitoring 15m + 5m {colored(monitoring_side, color)} entry...")
+                    current_direction = new_direction
+                trend = current_direction
+            elif current_direction is None: # First run for non-smart mode
+                color = "green" if side == "LONG" else "red" if side == "SHORT" else "white"
+                print(f"Monitoring {colored(side, color)} entry...")
+                current_direction = side
+
             target_side = side.capitalize().replace('Short', 'Down').replace('Long', 'Up')
-            all_condition_matched(SYMBOL, target_side, is_smart)
+            all_condition_matched(SYMBOL, target_side, is_smart, trend)
             time.sleep(1)
         except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
             print(f"Network error: {e}")
