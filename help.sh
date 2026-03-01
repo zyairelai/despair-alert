@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# echo -e "\n========== EMA EQUVALENT =========="
+# echo "Divide the EMA by the timeframe (3m 5m 15m)"
+# echo "# 1H 100 EMA = 1m 6000 EMA"
+# echo "- 3m = 2000 EMA"
+# echo "- 5m = 1200 EMA"
+# echo "- 15m = 400 EMA"
+# echo ""
+# echo "# 1H 25 MA = 1m 1500 MA"
+# echo "- 3m =  500 MA"
+# echo "- 5m =  300 MA"
+# echo "- 15m = 100 MA"
+
+echo -e "\n============== SCRIPTS =============="
+echo "despair.py     -  1H Pattern Broken"
+echo "entry.py       -  15m + 5m + 20MA"
+echo "stoploss.py    -  Stoploss Alert"
+echo "pricealert.py  -  Setup Price for Alert"
+echo "zones.py       -  Previous 1D Levels"

@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# python-argcomplete-ok
 
 import pandas, requests, time, socket, os, sys, argparse, argcomplete
 from termcolor import colored
@@ -90,14 +91,27 @@ def all_condition_matched(pair, side, check_direction, trend=None):
 
 parser = argparse.ArgumentParser(description='Trade entry script.', add_help=False)
 parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
-parser.add_argument('--long', action='store_true', help='Monitor LONG')
-parser.add_argument('--short', action='store_true', help='Monitor SHORT')
+parser.add_argument('--long-only', action='store_true', help='Monitor LONG')
+parser.add_argument('--short-only', action='store_true', help='Monitor SHORT')
 parser.add_argument('--direction', action='store_true', help='Monitor BOTH sides with 1H direction')
+parser.add_argument('--quickscalp', action='store_true', help='Monitor BOTH sides WITHOUT 1H direction')
 
 argcomplete.autocomplete(parser)
 args, unknown = parser.parse_known_args()
 is_smart = args.direction
-side = 'LONG' if args.long else 'SHORT' if args.short else 'BOTH'
+if args.quickscalp:
+    side = 'BOTH'
+    is_smart = False
+elif args.direction:
+    side = 'BOTH'
+    is_smart = True
+elif args.long_only:
+    side = 'LONG'
+    is_smart = False
+else:
+    # Default is SHORT
+    side = 'SHORT'
+    is_smart = False
 
 current_direction = None
 try:

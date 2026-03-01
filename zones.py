@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# python-argcomplete-ok
 
 import pandas, requests, time, socket, os, sys, argparse, argcomplete
 from datetime import datetime, timedelta, timezone
