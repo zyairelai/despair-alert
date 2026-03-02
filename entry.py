@@ -65,14 +65,16 @@ def one_hour_direction(pair):
 def is_downtrend(pair, interval):
     timeframe = get_klines(pair, interval)
     timeframe['20MA'] = timeframe['close'].rolling(window=20).mean()
-    if timeframe['20MA'].iloc[-2] > timeframe['20MA'].iloc[-1] and \
-       timeframe['20MA'].iloc[-2] > timeframe['close'].iloc[-2]: return True
+    if (timeframe['20MA'].iloc[-2] > timeframe['20MA'].iloc[-1] or \
+        timeframe['20MA'].iloc[-3] > timeframe['20MA'].iloc[-2]) and \
+        timeframe['20MA'].iloc[-2] > timeframe['close'].iloc[-2]: return True
 
 def is_uptrend(pair, interval):
     timeframe = get_klines(pair, interval)
     timeframe['20MA'] = timeframe['close'].rolling(window=20).mean()
-    if timeframe['20MA'].iloc[-2] < timeframe['20MA'].iloc[-1] and \
-       timeframe['20MA'].iloc[-2] < timeframe['close'].iloc[-2]: return True
+    if (timeframe['20MA'].iloc[-2] < timeframe['20MA'].iloc[-1] or \
+        timeframe['20MA'].iloc[-3] < timeframe['20MA'].iloc[-2]) and \
+        timeframe['20MA'].iloc[-2] < timeframe['close'].iloc[-2]: return True
 
 def all_condition_matched(pair, side, check_direction, trend=None):
     if check_direction and side != 'Both' and trend and trend.lower() != side: return

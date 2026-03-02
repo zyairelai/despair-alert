@@ -15,6 +15,7 @@
 echo -e "\n============== SCRIPTS =============="
 echo "despair.py     -  1H Pattern Broken"
 echo "entry.py       -  15m + 5m + 20MA"
+echo "standing.py    -  15m/5m Above/Below 10/20MA"
 echo "stoploss.py    -  Stoploss Alert"
 echo "pricealert.py  -  Setup Price for Alert"
 echo "zones.py       -  Previous 1D Levels"
