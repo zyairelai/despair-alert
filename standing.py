@@ -38,10 +38,8 @@ def check_standing(pair, interval, condition, ma_period):
     last_close = df['close'].iloc[-2]
     last_ma = df[ma_col].iloc[-2]
     
-    if condition == 'above' and last_close > last_ma:
-        return True, last_close, last_ma
-    if condition == 'below' and last_close < last_ma:
-        return True, last_close, last_ma
+    if condition == 'above' and last_close > last_ma: return True, last_close, last_ma
+    if condition == 'below' and last_close < last_ma: return True, last_close, last_ma
     return False, last_close, last_ma
 
 print("The STANDING script is running...\n")
