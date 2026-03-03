@@ -34,7 +34,7 @@ def get_klines(pair, interval):
 def stoploss_alert(pair, side):
     timeframe = get_klines(pair, '15m')
     timeframe['10MA'] = timeframe['close'].rolling(window=10).mean()
-    
+
     if side == 'SHORT':
         if timeframe['close'].iloc[-2] > timeframe['10MA'].iloc[-2]:
             telegram_bot_sendtext("🛑 SHORT STOPLOSS: 15m standing ABOVE 10MA")

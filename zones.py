@@ -9,8 +9,6 @@ from termcolor import colored
 SYMBOL = "BTCUSDT"
 BUFFER = 0.2
 SLEEP_INTERVAL = "1h"
-
-# Targets are now passed via CLI arguments
 ENABLE_PREV_1D_MIDDLE = True
 ENABLE_PREV_1D_CLOSE = False
 ENABLED_TIMEFRAME = ["1d"]
@@ -186,12 +184,12 @@ def refresh_levels(levels_data):
                     out_val = str(int(val))
                     if timeframe == "4h": out_val = colored(out_val, "green")
 
-                    # (dup with 1D high)
+                    # (duplicated with 1D high)
                     parts = match.split(" ")
                     tf_dup = parts[2].upper()
                     name_dup = parts[3].lower()
                     if name_dup == "middle": name_dup = "mid"
-                    
+
                     dup_info = f"dup with {tf_dup} {name_dup}"
                     prefix = f"Current {timeframe.upper()}"
                     print(f"{prefix} {label}: {out_val} ({dup_info})")

@@ -29,7 +29,7 @@ else:
     parser.add_argument('targets', type=str, nargs='*')
     args = parser.parse_args()
     targets = args.targets
-    
+
     if len(targets) == 1:
         print(f"Set Price Alert: {targets[0]}")
     else:

@@ -125,10 +125,10 @@ try:
                 if new_direction != current_direction:
                     if current_direction is not None:
                         print(f"\n{colored('[!!] Direction Changed!', 'yellow', attrs=['bold'])}")
-                    
+
                     color = "green" if new_direction == "Up" else "red" if new_direction == "Down" else "white"
                     print(f"Current 1H Direction: {colored(new_direction, color)}")
-                    
+
                     monitoring_side = "LONG" if new_direction == "Up" else "SHORT" if new_direction == "Down" else "INDECISIVE"
                     print(f"Monitoring 15m + 5m {colored(monitoring_side, color)} entry...")
                     current_direction = new_direction

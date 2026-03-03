@@ -32,27 +32,25 @@ def get_klines(pair, interval):
 
 def parse_interval(tf_input):
     tf = str(tf_input).strip().lower()
-    if not tf: return "15m"
+    if not tf: return "1h"
     if tf.endswith('h') or tf.endswith('m'): return tf
     if tf.isdigit(): return f"{tf}m"
-    return "15m"
+    return "1h"
 
-def check_standing(pair, interval, condition, period, ma_type='MA'):
+def check_touch(pair, interval, period, ma_type='MA'):
     df = get_klines(pair, interval)
     ma_col = f'{period}{ma_type}'
     if ma_type.upper() == 'EMA': df[ma_col] = df['close'].ewm(span=period, adjust=False).mean()
     else: df[ma_col] = df['close'].rolling(window=period).mean()
 
-    last_close = df['close'].iloc[-2]
-    last_ma = df[ma_col].iloc[-2]
+    curr_high = df['high'].iloc[-1]
+    curr_low = df['low'].iloc[-1]
+    curr_ma = df[ma_col].iloc[-1]
 
-    if condition == 'above' and last_close > last_ma: return True, last_close, last_ma
-    if condition == 'below' and last_close < last_ma: return True, last_close, last_ma
-    return False, last_close, last_ma
+    if curr_low <= curr_ma <= curr_high: return True, curr_ma
+    return False, curr_ma
 
-print("The STANDING script is running...\n")
-
-# Interactive Prompts
+print("The LINETOUCH script is running...\n")
 try:
     tf_input = input("Timeframe (e.g., 1m, 15m, 1h): ")
     interval = parse_interval(tf_input)
@@ -63,23 +61,19 @@ try:
     default_period = 100 if ma_type == 'EMA' else 20
     ma_period_input = input(f"Period (default {default_period}): ")
     ma_period = int(ma_period_input) if ma_period_input.isdigit() else default_period
-
-    cond_input = input("Condition (above or below): ")
-    condition = "below" if cond_input.lower().startswith('b') else "above"
-
 except (KeyboardInterrupt, EOFError):
     print("\nAborted.")
     exit(1)
 
-label = f"{interval} standing {condition.upper()} {ma_period}{ma_type}"
+label = f"{interval} touch {ma_period}{ma_type}"
 print(f"\nMonitoring BTCUSDT: {label}...\n")
 
 try:
     while True:
         try:
-            is_met, close, ma = check_standing("BTCUSDT", interval, condition, ma_period, ma_type)
+            is_met, ma = check_touch("BTCUSDT", interval, ma_period, ma_type)
             if is_met:
-                msg = f"⚠️ BTCUSDT {label}"
+                msg = f"🔔 BTCUSDT {label} TOUCHED at {ma:.2f}"
                 telegram_bot_sendtext(msg)
                 exit()
             time.sleep(10)
