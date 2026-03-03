@@ -60,7 +60,7 @@ try:
     ma_type_input = input("Indicator Type (MA or EMA, default MA): ").upper()
     ma_type = 'EMA' if ma_type_input == 'EMA' else 'MA'
 
-    default_period = 100 if ma_type == 'EMA' else 20
+    default_period = 100 if ma_type == 'EMA' else 10
     ma_period_input = input(f"Period (default {default_period}): ")
     ma_period = int(ma_period_input) if ma_period_input.isdigit() else default_period
 
@@ -82,7 +82,7 @@ try:
                 msg = f"⚠️ BTCUSDT {label}"
                 telegram_bot_sendtext(msg)
                 exit()
-            time.sleep(10)
+            time.sleep(5)
         except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
             print(f"Network error: {e}")
             time.sleep(10)

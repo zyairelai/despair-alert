@@ -73,10 +73,10 @@ try:
         try:
             is_met, ma = check_touch("BTCUSDT", interval, ma_period, ma_type)
             if is_met:
-                msg = f"🔔 BTCUSDT {label} TOUCHED at {ma:.2f}"
+                msg = f"🔔 BTCUSDT {label}"
                 telegram_bot_sendtext(msg)
                 exit()
-            time.sleep(10)
+            time.sleep(5)
         except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
             print(f"Network error: {e}")
             time.sleep(10)
