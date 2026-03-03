@@ -18,6 +18,7 @@ parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
 parser.add_argument("--4h", dest="enable_4h", action="store_true", help="Enable 4H Timeframe")
 parser.add_argument("--current", dest="current_mode", action="store_true", help="Use Current Timeframe")
 parser.add_argument("--exit", dest="exit_mode", action="store_true", help="Exit after triggered")
+parser.add_argument("--fibonacci", dest="fibonacci", action="store_true", help="Enable Fibonacci")
 parser.add_argument("--middle", dest="disable_middle", action="store_true", help="Disable 1D Middle")
 parser.add_argument("--no-alert", dest="no_alert", action="store_true", help="Disable Telegram Notifications")
 parser.add_argument("--price", dest="price", type=float, nargs='+', help="Set Custom Price(s) Alerts")
@@ -161,7 +162,14 @@ def refresh_levels(levels_data):
             current_levels.extend([("High", levels_data[timeframe]["High"]), ("Low", levels_data[timeframe]["Low"])])
 
         if timeframe == "1d":
-            if ENABLE_PREV_1D_MIDDLE: current_levels.insert(1, ("Middle", levels_data[timeframe]["Middle"]))
+            if ENABLE_PREV_1D_MIDDLE:
+                mid = levels_data[timeframe]["Middle"]
+                if args.fibonacci:
+                    current_levels.insert(1, ("Mid-Up", (h + mid) / 2))
+                    current_levels.insert(2, ("Middle", mid))
+                    current_levels.insert(3, ("Mid-Low", (mid + l) / 2))
+                else:
+                    current_levels.insert(1, ("Middle", mid))
             if ENABLE_PREV_1D_CLOSE: current_levels.append(("Close", levels_data[timeframe]["Close"]))
 
         # Check if all enabled levels are duplicated
@@ -177,7 +185,7 @@ def refresh_levels(levels_data):
 
         for name, val in current_levels:
             match = check_duplicated(timeframe, val, levels_data)
-            label = "Mid" if name == "Middle" else name
+            label = name
 
             if match:
                 if args.current_mode:
@@ -204,6 +212,7 @@ def refresh_levels(levels_data):
                     if name == "Middle": out_val = colored(out_val, "magenta")
                     else: out_val = colored(out_val, "blue")
                 elif timeframe == "1d" and name == "Middle": out_val = colored(out_val, "red")
+                elif timeframe == "1d" and name in ["Mid-Up", "Mid-Low"]: out_val = colored(out_val, "green")
                 elif timeframe == "1d" and name == "Close": out_val = f"\033[38;5;208m{out_val}\033[0m"
                 elif timeframe == "4h": out_val = colored(out_val, "green")
 
