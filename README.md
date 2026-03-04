@@ -8,6 +8,7 @@ alias webserver='python3 -m http.server 80'
 
 alias despair="/home/kali/despair-alert/despair.py"
 alias entry="/home/kali/despair-alert/entry.py"
+alias linetouch="/home/kali/despair-alert/linetouch.py"
 alias stoploss="/home/kali/despair-alert/stoploss.py"
 alias pricealert="/home/kali/despair-alert/pricealert.py"
 alias standing="/home/kali/despair-alert/standing.py"

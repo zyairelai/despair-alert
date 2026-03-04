@@ -31,19 +31,6 @@ def get_klines(pair, interval):
     candlestick["lower_wick"] = candlestick[["open", "close"]].min(axis=1) - candlestick["low"]
     return candlestick
 
-def stoploss_alert(pair, side):
-    timeframe = get_klines(pair, '15m')
-    timeframe['10MA'] = timeframe['close'].rolling(window=10).mean()
-
-    if side == 'SHORT':
-        if timeframe['close'].iloc[-2] > timeframe['10MA'].iloc[-2]:
-            telegram_bot_sendtext("🛑 SHORT STOPLOSS: 15m standing ABOVE 10MA")
-            exit()
-    elif side == 'LONG':
-        if timeframe['close'].iloc[-2] < timeframe['10MA'].iloc[-2]:
-            telegram_bot_sendtext("🛑 LONG STOPLOSS: 15m standing BELOW 10MA")
-            exit()
-
 parser = argparse.ArgumentParser(description='Stoploss monitor script.', add_help=False)
 parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
 parser.add_argument('--close-short', action='store_true', help='Monitor SHORT stoploss (default)')
@@ -52,16 +39,34 @@ parser.add_argument('--close-long', action='store_true', help='Monitor LONG stop
 argcomplete.autocomplete(parser)
 args, unknown = parser.parse_known_args()
 
-if args.close_long: side = 'LONG'
-else: side = 'SHORT'
+if args.close_long: 
+    side = 'LONG'
+    condition_text = "15m standing BELOW 10MA"
+else: 
+    side = 'SHORT'
+    condition_text = "15m standing ABOVE 10MA"
 
 color = "red" if side == "SHORT" else "green"
-print(f"Monitoring {colored(side, color)} stoploss...\n")
+print(f"Monitoring {colored(side, color)} stoploss...")
+print(f"({condition_text})\n")
+
+def stoploss_alert(pair, side, condition):
+    timeframe = get_klines(pair, '15m')
+    timeframe['10MA'] = timeframe['close'].rolling(window=10).mean()
+
+    if side == 'SHORT':
+        if timeframe['close'].iloc[-2] > timeframe['10MA'].iloc[-2]:
+            telegram_bot_sendtext(f"🛑 SHORT STOPLOSS: {condition}")
+            exit()
+    elif side == 'LONG':
+        if timeframe['close'].iloc[-2] < timeframe['10MA'].iloc[-2]:
+            telegram_bot_sendtext(f"🛑 LONG STOPLOSS: {condition}")
+            exit()
 
 try:
     while True:
         try:
-            stoploss_alert("BTCUSDT", side)
+            stoploss_alert("BTCUSDT", side, condition_text)
             time.sleep(5)
         except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
             print(f"Network error: {e}")
