@@ -22,9 +22,11 @@ parser.add_argument("--fibonacci", dest="fibonacci", action="store_true", help="
 parser.add_argument("--middle", dest="disable_middle", action="store_true", help="Disable 1D Middle")
 parser.add_argument("--no-alert", dest="no_alert", action="store_true", help="Disable Telegram Notifications")
 parser.add_argument("--price", dest="price", type=float, nargs='+', help="Set Custom Price(s) Alerts")
+parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
 
 argcomplete.autocomplete(parser)
 args = parser.parse_args()
+SYMBOL = args.symbol
 
 if args.disable_middle: ENABLE_PREV_1D_MIDDLE = False
 if args.current_mode: ENABLED_TIMEFRAME = ["1d"]
@@ -245,7 +247,7 @@ def main():
                         refresh_levels(levels_data)
                         last_refresh_time = current_period
 
-                current_minute = get_klines(SYMBOL, "5m")
+                current_minute = get_klines(SYMBOL, "15m")
                 # print(current_minute.tail(3))
                 for tf in ["1d", "4h"]: price_alert(tf, current_minute, levels_data)
                 time.sleep(5)

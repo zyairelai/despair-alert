@@ -1,7 +1,13 @@
 #!/usr/bin/python3
 
-import time, socket, os, pandas, requests
+import time, socket, os, pandas, requests, argparse
 from termcolor import colored
+
+parser = argparse.ArgumentParser(description='Stoploss monitor script.', add_help=False)
+parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
+parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
+args, unknown = parser.parse_known_args()
+SYMBOL = args.symbol
 
 def telegram_bot_sendtext(bot_message):
     print(bot_message)
@@ -66,14 +72,14 @@ except (KeyboardInterrupt, EOFError):
     exit(1)
 
 label = f"{interval} touch {ma_period}{ma_type}"
-print(f"\nMonitoring BTCUSDT: {label}...\n")
+print(f"\nMonitoring {SYMBOL}: {label}...\n")
 
 try:
     while True:
         try:
-            is_met, ma = check_touch("BTCUSDT", interval, ma_period, ma_type)
+            is_met, ma = check_touch(SYMBOL, interval, ma_period, ma_type)
             if is_met:
-                msg = f"🔔 BTCUSDT {label}"
+                msg = f"🔔 {SYMBOL} {label}"
                 telegram_bot_sendtext(msg)
                 exit()
             time.sleep(5)

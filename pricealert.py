@@ -23,12 +23,19 @@ if len(sys.argv) == 1:
     except KeyboardInterrupt:
         print("\n\nAborted.")
         sys.exit(0)
+    # Handle hidden flags when no positional targets provided
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
+    args, _ = parser.parse_known_args()
+    SYMBOL = args.symbol
 else:
     parser = argparse.ArgumentParser(add_help=False)
     parser.error = lambda message: (print_usage(), sys.exit(1))
     parser.add_argument('targets', type=str, nargs='*')
+    parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
     args = parser.parse_args()
     targets = args.targets
+    SYMBOL = args.symbol
 
     if len(targets) == 1:
         print(f"Set Price Alert: {targets[0]}")
@@ -63,8 +70,8 @@ def get_klines(pair, interval):
     candlestick["lower_wick"] = candlestick[["open", "close"]].min(axis=1) - candlestick["low"]
     return candlestick
 
-def price_alert():
-    cutloss = get_klines("BTCUSDT", "1m")
+def price_alert(symbol):
+    cutloss = get_klines(symbol, "1m")
     for target_price_str in targets:
         try: target_price = float(target_price_str)
         except ValueError: continue
@@ -76,7 +83,7 @@ def price_alert():
 try:
     while True:
         try:
-            price_alert()
+            price_alert(SYMBOL)
             time.sleep(5)
         except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
             print(f"Network error: {e}")

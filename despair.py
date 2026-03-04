@@ -1,22 +1,27 @@
 #!/usr/bin/python3
 
-import pandas, requests, time, socket, os, sys
+import pandas, requests, time, socket, os, sys, argparse
 from datetime import datetime
 from termcolor import colored
 
-def print_usage():
-    print(f"[i] Usage: {os.path.basename(sys.argv[0])} [number]")
-    sys.exit(0)
+parser = argparse.ArgumentParser(description='The DESPAIR script.', add_help=False)
+parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
+parser.add_argument('lookback', type=int, nargs='?', default=None, help='Number of candles to look back')
+parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
 
-if len(sys.argv) > 1:
-    arg = sys.argv[1]
-    val = arg[1:] if arg.startswith("-") else arg
-    if val.isdigit(): LOOKBACK = int(val)
-    else: print_usage()
-else: print_usage()
+args, unknown = parser.parse_known_args()
+
+if args.lookback is None:
+    if unknown and unknown[0].isdigit():
+        LOOKBACK = int(unknown[0])
+    else:
+        print(f"[i] Usage: {os.path.basename(sys.argv[0])} [number]")
+        sys.exit(0)
+else:
+    LOOKBACK = args.lookback
 
 # ----- Configuration -----
-SYMBOL = "BTCUSDT"
+SYMBOL = args.symbol
 
 print("\n[i] The DESPAIR script is running...")
 print(f"[i] Comparing with previous {LOOKBACK} candles.\n")

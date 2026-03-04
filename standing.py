@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import time, socket, os, pandas, requests
+import time, socket, os, pandas, requests, argparse
 from termcolor import colored
 
 def telegram_bot_sendtext(bot_message):
@@ -17,6 +17,12 @@ def telegram_bot_sendtext(bot_message):
     except Exception as e:
         print(f"Telegram error: {e}")
         return None
+
+parser = argparse.ArgumentParser(description='Standing monitor script.', add_help=False)
+parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
+parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
+args, unknown = parser.parse_known_args()
+SYMBOL = args.symbol
 
 session = requests.Session()
 def get_klines(pair, interval):
@@ -72,14 +78,14 @@ except (KeyboardInterrupt, EOFError):
     exit(1)
 
 label = f"{interval} standing {condition.upper()} {ma_period}{ma_type}"
-print(f"\nMonitoring BTCUSDT: {label}...\n")
+print(f"\nMonitoring {SYMBOL}: {label}...\n")
 
 try:
     while True:
         try:
-            is_met, close, ma = check_standing("BTCUSDT", interval, condition, ma_period, ma_type)
+            is_met, close, ma = check_standing(SYMBOL, interval, condition, ma_period, ma_type)
             if is_met:
-                msg = f"⚠️ BTCUSDT {label}"
+                msg = f"⚠️ {SYMBOL} {label}"
                 telegram_bot_sendtext(msg)
                 exit()
             time.sleep(5)

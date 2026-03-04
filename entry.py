@@ -97,9 +97,11 @@ parser.add_argument('--long-only', action='store_true', help='Monitor LONG')
 parser.add_argument('--short-only', action='store_true', help='Monitor SHORT')
 parser.add_argument('--direction', action='store_true', help='Monitor BOTH sides with 1H direction')
 parser.add_argument('--quickscalp', action='store_true', help='Monitor BOTH sides WITHOUT 1H direction')
+parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
 
 argcomplete.autocomplete(parser)
 args, unknown = parser.parse_known_args()
+SYMBOL = args.symbol
 is_smart = args.direction
 if args.quickscalp:
     side = 'BOTH'

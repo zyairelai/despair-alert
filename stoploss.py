@@ -35,9 +35,11 @@ parser = argparse.ArgumentParser(description='Stoploss monitor script.', add_hel
 parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
 parser.add_argument('--close-short', action='store_true', help='Monitor SHORT stoploss (default)')
 parser.add_argument('--close-long', action='store_true', help='Monitor LONG stoploss')
+parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
 
 argcomplete.autocomplete(parser)
 args, unknown = parser.parse_known_args()
+SYMBOL = args.symbol
 
 if args.close_long: 
     side = 'LONG'
@@ -66,7 +68,7 @@ def stoploss_alert(pair, side, condition):
 try:
     while True:
         try:
-            stoploss_alert("BTCUSDT", side, condition_text)
+            stoploss_alert(SYMBOL, side, condition_text)
             time.sleep(5)
         except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
             print(f"Network error: {e}")
