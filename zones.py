@@ -5,8 +5,6 @@ import pandas, requests, time, socket, os, sys, argparse, argcomplete
 from datetime import datetime, timedelta, timezone
 from termcolor import colored
 
-# ----- Configuration -----
-SYMBOL = "BTCUSDT"
 BUFFER = 0.2
 SLEEP_INTERVAL = "1h"
 
@@ -21,7 +19,6 @@ parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help
 argcomplete.autocomplete(parser)
 args = parser.parse_args()
 SYMBOL = args.symbol
-
 if args.exit_mode: SLEEP_INTERVAL = "-"
 
 def sleep_until_next(interval):
@@ -67,16 +64,11 @@ def get_levels():
     idx = -1 if args.current_mode else -2
     h, l = df["high"].iloc[idx], df["low"].iloc[idx]
     mid = (h + l) / 2
-    
+
     levels = [("High", h, "white")]
-    if args.fibonacci or args.print_mode:
-        levels.append(("Mid-Up", (h + mid) / 2, "green"))
-    
+    if args.fibonacci or args.print_mode: levels.append(("Mid-Up", (h + mid) / 2, "green"))
     levels.append(("Middle", mid, "red"))
-    
-    if args.fibonacci or args.print_mode:
-        levels.append(("Mid-Low", (mid + l) / 2, "green"))
-        
+    if args.fibonacci or args.print_mode: levels.append(("Mid-Low", (mid + l) / 2, "green"))
     levels.append(("Low", l, "white"))
     return levels
 
@@ -91,9 +83,7 @@ def main():
     levels = get_levels()
     print_levels(levels)
 
-    if args.print_mode:
-        return
-
+    if args.print_mode: return
     try:
         while True:
             try:

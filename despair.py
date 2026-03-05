@@ -10,6 +10,7 @@ parser.add_argument('lookback', type=int, nargs='?', default=None, help='Number 
 parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
 
 args, unknown = parser.parse_known_args()
+SYMBOL = args.symbol
 
 if args.lookback is None:
     if unknown and unknown[0].isdigit():
@@ -17,11 +18,7 @@ if args.lookback is None:
     else:
         print(f"[i] Usage: {os.path.basename(sys.argv[0])} [number]")
         sys.exit(0)
-else:
-    LOOKBACK = args.lookback
-
-# ----- Configuration -----
-SYMBOL = args.symbol
+else: LOOKBACK = args.lookback
 
 print("\n[i] The DESPAIR script is running...")
 print(f"[i] Comparing with previous {LOOKBACK} candles.\n")

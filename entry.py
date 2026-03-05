@@ -5,9 +5,6 @@ import pandas, requests, time, socket, os, sys, argparse, argcomplete
 from termcolor import colored
 from datetime import datetime
 
-# ----- Configuration -----
-SYMBOL = "BTCUSDT"
-
 def telegram_bot_sendtext(bot_message):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
     bot_token = os.environ.get('TELEGRAM_LIVERMORE')
@@ -27,6 +24,7 @@ def get_klines(pair, interval):
     result = [[x[0], float(x[1]), float(x[2]), float(x[3]), float(x[4]), float(x[5])] for x in data]
     cols = ["timestamp", "open", "high", "low", "close", "volume"]
     candlestick = pandas.DataFrame(result, columns=cols).sort_values("timestamp")
+    candlestick['20EMA'] = candlestick['close'].ewm(span=20, adjust=False).mean()
     candlestick["body"] = (candlestick["close"] - candlestick["open"]).abs()
     candlestick["upper_wick"] = candlestick["high"] - candlestick[["open", "close"]].max(axis=1)
     candlestick["lower_wick"] = candlestick[["open", "close"]].min(axis=1) - candlestick["low"]
@@ -54,51 +52,38 @@ def heikin_ashi(klines):
     for col in result_cols: heikin_ashi_df[col] = heikin_ashi_df[col].apply(lambda v: round(v) if isinstance(v, float) and not pandas.isna(v) else v)
     return heikin_ashi_df[result_cols]
 
-def apply_indicator(timeframe):
-    if hasattr(args, 'ema') and args.ma: timeframe['Indicator'] = timeframe['close'].ewm(span=20, adjust=False).mean()
-    else: timeframe['Indicator'] = timeframe['close'].rolling(window=20).mean()
-
 def main_direction(pair):
     timeframe = heikin_ashi(get_klines(pair, '2h'))
     if timeframe['color'].iloc[-1] == 'RED': return "Down"
     if timeframe['color'].iloc[-1] == 'GREEN': return "Up"
     return None
 
-def is_downtrend(pair, interval):
-    timeframe = get_klines(pair, interval)
-    apply_indicator(timeframe)
-    if (timeframe['Indicator'].iloc[-2] > timeframe['Indicator'].iloc[-1] or \
-        timeframe['Indicator'].iloc[-3] > timeframe['Indicator'].iloc[-2]) and \
-        timeframe['Indicator'].iloc[-2] > timeframe['close'].iloc[-2]: return True
-
-def is_uptrend(pair, interval):
-    timeframe = get_klines(pair, interval)
-    apply_indicator(timeframe)
-    if (timeframe['Indicator'].iloc[-2] < timeframe['Indicator'].iloc[-1] or \
-        timeframe['Indicator'].iloc[-3] < timeframe['Indicator'].iloc[-2]) and \
-        timeframe['Indicator'].iloc[-2] < timeframe['close'].iloc[-2]: return True
-
-def all_condition_matched(pair, side, trend):
-    if side != 'Both' and trend and trend != side: return
-
-    if side in ['Down', 'Both'] and trend == "Down":
-        if is_downtrend(pair, '15m') and is_downtrend(pair, '5m'):
-            telegram_bot_sendtext("💥 15m + 5m Downtrend Alignment 💥")
+def check_entry(pair, side, trend):
+    if trend and side != 'Both' and trend != side: return
+    minute_15m = get_klines(pair, '15m')
+    minute_5m = get_klines(pair, '5m')
+    
+    if side in ['Down', 'Both'] and (trend == "Down" or trend is None):
+        if minute_15m['close'].iloc[-2] >= minute_15m['20EMA'].iloc[-2] and \
+            minute_15m['close'].iloc[-1] < minute_15m['20EMA'].iloc[-1] and \
+            minute_5m['close'].iloc[-1] < minute_5m['20EMA'].iloc[-1]:
+            telegram_bot_sendtext("💥 15m + 5m Trend Crossover (Short) 💥")
             exit()
 
-    if side in ['Up', 'Both'] and trend == "Up":
-        if is_uptrend(pair, '15m') and is_uptrend(pair, '5m'):
-            telegram_bot_sendtext("🚀 15m + 5m Uptrend Alignment 🚀")
+    if side in ['Up', 'Both'] and (trend == "Up" or trend is None):
+        if minute_15m['close'].iloc[-2] <= minute_15m['20EMA'].iloc[-2] and \
+            minute_15m['close'].iloc[-1] > minute_15m['20EMA'].iloc[-1] and \
+            minute_5m['close'].iloc[-1] > minute_5m['20EMA'].iloc[-1]:
+            telegram_bot_sendtext("🚀 15m + 5m Trend Crossover (Long) 🚀")
             exit()
 
 parser = argparse.ArgumentParser(description='Trade entry script.', add_help=False)
 parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
-parser.add_argument('--ma', action='store_true', help=argparse.SUPPRESS)
-parser.add_argument('--ema', action='store_true', help=argparse.SUPPRESS)
 parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
 parser.add_argument('--both', dest='both', action='store_true', help='Monitor BOTH sides')
 parser.add_argument('--long-only', action='store_true', help='Monitor LONG')
 parser.add_argument('--short-only', action='store_true', help='Monitor SHORT')
+parser.add_argument('--direction', action='store_true', help='Use 2H trend direction')
 
 argcomplete.autocomplete(parser)
 args, unknown = parser.parse_known_args()
@@ -109,27 +94,31 @@ elif args.long_only: side = 'LONG'
 elif args.short_only: side = 'SHORT'
 else: side = 'BOTH'  # Default is now BOTH
 
-current_direction = None
+current_direction = "INITIALIZING"
 try:
     while True:
         try:
-            trend = main_direction(SYMBOL)
+            trend = main_direction(SYMBOL) if args.direction else None
             if trend != current_direction:
-                if current_direction is not None:
+                if current_direction != "INITIALIZING" and args.direction:
                     print(f"\n{colored('[!!] Direction Changed!', 'yellow', attrs=['bold'])}")
 
-                color = "green" if trend == "Up" else "red" if trend == "Down" else "white"
-                print(f"Main Direction: {colored(trend, color)}")
+                if args.direction:
+                    color = "green" if trend == "Up" else "red" if trend == "Down" else "white"
+                    print(f"Main Direction: {colored(trend, color)}")
+                    trend_side = "LONG" if trend == "Up" else "SHORT"
+                    monitoring_side = trend_side if (side == 'BOTH' or side == trend_side) else f"Waiting for {side} alignment..."
+                else:
+                    monitoring_side = side
+                    color = "white"
 
-                trend_side = "LONG" if trend == "Up" else "SHORT"
-                if side == 'BOTH' or side == trend_side: monitoring_side = trend_side
-                else: monitoring_side = f"Waiting for {side} alignment..."
-                
-                print(f"Monitoring 15m + 5m {colored(monitoring_side, color)} entry...")
+                if args.direction or current_direction == "INITIALIZING":
+                    print(f"Monitoring 15m + 5m {colored(monitoring_side, color)} entry...")
+
                 current_direction = trend
 
             target_side = side.capitalize().replace('Short', 'Down').replace('Long', 'Up')
-            all_condition_matched(SYMBOL, target_side, trend)
+            check_entry(SYMBOL, target_side, trend)
             time.sleep(1)
         except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
             print(f"Network error: {e}")

@@ -57,8 +57,6 @@ def check_standing(pair, interval, condition, period, ma_type='MA'):
     return False, last_close, last_ma
 
 print("The STANDING script is running...\n")
-
-# Interactive Prompts
 try:
     tf_input = input("Timeframe (e.g., 1m, 15m, 1h): ")
     interval = parse_interval(tf_input)
