@@ -14,9 +14,10 @@
 
 echo -e "\n============== SCRIPTS =============="
 echo "despair.py     -  1H Pattern Broken"
-echo "entry.py       -  15m + 5m + 20MA"
+echo "entry.py       -  15m + 5m + 20 EMA"
+echo "heikin.py      -  Heikin Ashi Color"
 echo "linetouch.py   -  Check Line Touch"
 echo "standing.py    -  Close standing Above/Below MA"
 echo "stoploss.py    -  Stoploss Alert"
-echo "pricealert.py  -  Setup Price for Alert"
+echo "pricealert.py  -  Custom Price Alert"
 echo "zones.py       -  Previous 1D Levels"

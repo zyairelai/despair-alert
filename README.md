@@ -8,12 +8,14 @@ alias webserver='python3 -m http.server 80'
 
 alias despair="/home/kali/despair-alert/despair.py"
 alias entry="/home/kali/despair-alert/entry.py"
+alias heikin="/home/kali/despair-alert/heikin.py"
 alias linetouch="/home/kali/despair-alert/linetouch.py"
 alias stoploss="/home/kali/despair-alert/stoploss.py"
 alias pricealert="/home/kali/despair-alert/pricealert.py"
 alias standing="/home/kali/despair-alert/standing.py"
 alias zones="/home/kali/despair-alert/zones.py"
 
+alias ha="/home/kali/despair-alert/heikin.py"
 alias e="/home/kali/despair-alert/entry.py"
 alias z="/home/kali/despair-alert/zones.py"
 ```
@@ -24,12 +26,15 @@ bashcompinit
 
 eval "$(register-python-argcomplete --shell zsh /home/kali/despair-alert/entry.py)"
 eval "$(register-python-argcomplete --shell zsh /home/kali/despair-alert/zones.py)"
+eval "$(register-python-argcomplete --shell zsh /home/kali/despair-alert/heikin.py)"
 eval "$(register-python-argcomplete --shell zsh /home/kali/despair-alert/stoploss.py)"
 
+compdef _python_argcomplete ha
 compdef _python_argcomplete e
-compdef _python_argcomplete entry
 compdef _python_argcomplete z
+compdef _python_argcomplete entry
 compdef _python_argcomplete zones
+compdef _python_argcomplete heikin
 compdef _python_argcomplete stoploss
 ```
 
