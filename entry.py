@@ -10,8 +10,8 @@ SYMBOL = "BTCUSDT"
 
 def telegram_bot_sendtext(bot_message):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
-    bot_token = os.environ.get('TELEGRAM_WOLVESRISE')
-    chat_id = "@futures_wolves_rise"
+    bot_token = os.environ.get('TELEGRAM_LIVERMORE')
+    chat_id = "@swinglivermore"
     url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
     params = {'chat_id': chat_id, 'parse_mode': 'html', 'text': bot_message}
     response = requests.get(url, params=params)
@@ -19,7 +19,6 @@ def telegram_bot_sendtext(bot_message):
 
 session = requests.Session()
 def get_klines(pair, interval):
-    spot_url = "https://api.binance.com/api/v1/klines"
     url = "https://fapi.binance.com/fapi/v1/klines"
     params = {"symbol": pair, "interval": interval, "limit": 100}
     r = session.get(url, params=params, timeout=5)
@@ -55,98 +54,82 @@ def heikin_ashi(klines):
     for col in result_cols: heikin_ashi_df[col] = heikin_ashi_df[col].apply(lambda v: round(v) if isinstance(v, float) and not pandas.isna(v) else v)
     return heikin_ashi_df[result_cols]
 
-def apply_20ma(timeframe):
-    if hasattr(args, 'ema') and args.ema: timeframe['20MA'] = timeframe['close'].ewm(span=20, adjust=False).mean()
-    else: timeframe['20MA'] = timeframe['close'].rolling(window=20).mean()
+def apply_indicator(timeframe):
+    if hasattr(args, 'ema') and args.ma: timeframe['Indicator'] = timeframe['close'].ewm(span=20, adjust=False).mean()
+    else: timeframe['Indicator'] = timeframe['close'].rolling(window=20).mean()
 
-def one_hour_direction(pair):
-    timeframe = get_klines(pair, '1h')
-    apply_20ma(timeframe)
-    if timeframe['20MA'].iloc[-2] > timeframe['close'].iloc[-1]: return "Down"
-    if timeframe['20MA'].iloc[-2] < timeframe['close'].iloc[-1]: return "Up"
+def main_direction(pair):
+    timeframe = heikin_ashi(get_klines(pair, '2h'))
+    if timeframe['color'].iloc[-1] == 'RED': return "Down"
+    if timeframe['color'].iloc[-1] == 'GREEN': return "Up"
     return None
 
 def is_downtrend(pair, interval):
     timeframe = get_klines(pair, interval)
-    apply_20ma(timeframe)
-    if (timeframe['20MA'].iloc[-2] > timeframe['20MA'].iloc[-1] or \
-        timeframe['20MA'].iloc[-3] > timeframe['20MA'].iloc[-2]) and \
-        timeframe['20MA'].iloc[-2] > timeframe['close'].iloc[-2]: return True
+    apply_indicator(timeframe)
+    if (timeframe['Indicator'].iloc[-2] > timeframe['Indicator'].iloc[-1] or \
+        timeframe['Indicator'].iloc[-3] > timeframe['Indicator'].iloc[-2]) and \
+        timeframe['Indicator'].iloc[-2] > timeframe['close'].iloc[-2]: return True
 
 def is_uptrend(pair, interval):
     timeframe = get_klines(pair, interval)
-    apply_20ma(timeframe)
-    if (timeframe['20MA'].iloc[-2] < timeframe['20MA'].iloc[-1] or \
-        timeframe['20MA'].iloc[-3] < timeframe['20MA'].iloc[-2]) and \
-        timeframe['20MA'].iloc[-2] < timeframe['close'].iloc[-2]: return True
+    apply_indicator(timeframe)
+    if (timeframe['Indicator'].iloc[-2] < timeframe['Indicator'].iloc[-1] or \
+        timeframe['Indicator'].iloc[-3] < timeframe['Indicator'].iloc[-2]) and \
+        timeframe['Indicator'].iloc[-2] < timeframe['close'].iloc[-2]: return True
 
-def all_condition_matched(pair, side, check_direction, trend=None):
-    if check_direction and side != 'Both' and trend and trend.lower() != side: return
+def all_condition_matched(pair, side, trend):
+    if side != 'Both' and trend and trend != side: return
 
-    if side in ['Down', 'Both']:
-        if not check_direction or trend == "Down":
-            if is_downtrend(pair, '15m') and is_downtrend(pair, '5m'):
-                telegram_bot_sendtext("💥 15m + 5m Downtrend Alignment 💥")
-                exit()
+    if side in ['Down', 'Both'] and trend == "Down":
+        if is_downtrend(pair, '15m') and is_downtrend(pair, '5m'):
+            telegram_bot_sendtext("💥 15m + 5m Downtrend Alignment 💥")
+            exit()
 
-    if side in ['Up', 'Both']:
-        if not check_direction or trend == "Up":
-            if is_uptrend(pair, '15m') and is_uptrend(pair, '5m'):
-                telegram_bot_sendtext("🚀 15m + 5m Uptrend Alignment 🚀")
-                exit()
+    if side in ['Up', 'Both'] and trend == "Up":
+        if is_uptrend(pair, '15m') and is_uptrend(pair, '5m'):
+            telegram_bot_sendtext("🚀 15m + 5m Uptrend Alignment 🚀")
+            exit()
 
 parser = argparse.ArgumentParser(description='Trade entry script.', add_help=False)
 parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
 parser.add_argument('--ma', action='store_true', help=argparse.SUPPRESS)
 parser.add_argument('--ema', action='store_true', help=argparse.SUPPRESS)
 parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
+parser.add_argument('--both', dest='both', action='store_true', help='Monitor BOTH sides')
 parser.add_argument('--long-only', action='store_true', help='Monitor LONG')
 parser.add_argument('--short-only', action='store_true', help='Monitor SHORT')
-parser.add_argument('--direction', action='store_true', help='Monitor BOTH sides with 1H direction')
-parser.add_argument('--quickscalp', '--both', dest='both', action='store_true', help='Monitor BOTH sides WITHOUT 1H direction')
 
 argcomplete.autocomplete(parser)
 args, unknown = parser.parse_known_args()
 SYMBOL = args.symbol
-is_smart = args.direction
-if args.both:
-    side = 'BOTH'
-    is_smart = False
-elif args.direction:
-    side = 'BOTH'
-    is_smart = True
-elif args.long_only:
-    side = 'LONG'
-    is_smart = False
-else: # Default is SHORT
-    side = 'SHORT'
-    is_smart = False
+
+if args.both: side = 'BOTH'
+elif args.long_only: side = 'LONG'
+elif args.short_only: side = 'SHORT'
+else: side = 'BOTH'  # Default is now BOTH
 
 current_direction = None
 try:
     while True:
         try:
-            trend = None
-            if is_smart:
-                new_direction = one_hour_direction(SYMBOL)
-                if new_direction != current_direction:
-                    if current_direction is not None:
-                        print(f"\n{colored('[!!] Direction Changed!', 'yellow', attrs=['bold'])}")
+            trend = main_direction(SYMBOL)
+            if trend != current_direction:
+                if current_direction is not None:
+                    print(f"\n{colored('[!!] Direction Changed!', 'yellow', attrs=['bold'])}")
 
-                    color = "green" if new_direction == "Up" else "red" if new_direction == "Down" else "white"
-                    print(f"Current 1H Direction: {colored(new_direction, color)}")
+                color = "green" if trend == "Up" else "red" if trend == "Down" else "white"
+                print(f"Main Direction: {colored(trend, color)}")
 
-                    monitoring_side = "LONG" if new_direction == "Up" else "SHORT" if new_direction == "Down" else "INDECISIVE"
-                    print(f"Monitoring 15m + 5m {colored(monitoring_side, color)} entry...")
-                    current_direction = new_direction
-                trend = current_direction
-            elif current_direction is None: # First run for non-smart mode
-                color = "green" if side == "LONG" else "red" if side == "SHORT" else "white"
-                print(f"Monitoring {colored(side, color)} entry...")
-                current_direction = side
+                trend_side = "LONG" if trend == "Up" else "SHORT"
+                if side == 'BOTH' or side == trend_side: monitoring_side = trend_side
+                else: monitoring_side = f"Waiting for {side} alignment..."
+                
+                print(f"Monitoring 15m + 5m {colored(monitoring_side, color)} entry...")
+                current_direction = trend
 
             target_side = side.capitalize().replace('Short', 'Down').replace('Long', 'Up')
-            all_condition_matched(SYMBOL, target_side, is_smart, trend)
+            all_condition_matched(SYMBOL, target_side, trend)
             time.sleep(1)
         except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
             print(f"Network error: {e}")

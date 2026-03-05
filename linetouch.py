@@ -61,8 +61,8 @@ try:
     tf_input = input("Timeframe (e.g., 1m, 15m, 1h): ")
     interval = parse_interval(tf_input)
 
-    ma_type_input = input("Indicator Type (MA or EMA, default MA): ").upper()
-    ma_type = 'EMA' if ma_type_input == 'EMA' else 'MA'
+    ma_type_input = input("Indicator Type (MA or EMA, default EMA): ").upper()
+    ma_type = 'MA' if ma_type_input == 'MA' else 'EMA'
 
     default_period = 100 if ma_type == 'EMA' else 20
     ma_period_input = input(f"Period (default {default_period}): ")
