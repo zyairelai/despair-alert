@@ -55,23 +55,27 @@ def heikin_ashi(klines):
     for col in result_cols: heikin_ashi_df[col] = heikin_ashi_df[col].apply(lambda v: round(v) if isinstance(v, float) and not pandas.isna(v) else v)
     return heikin_ashi_df[result_cols]
 
+def apply_20ma(timeframe):
+    if hasattr(args, 'ema') and args.ema: timeframe['20MA'] = timeframe['close'].ewm(span=20, adjust=False).mean()
+    else: timeframe['20MA'] = timeframe['close'].rolling(window=20).mean()
+
 def one_hour_direction(pair):
     timeframe = get_klines(pair, '1h')
-    timeframe['20MA'] = timeframe['close'].rolling(window=20).mean()
+    apply_20ma(timeframe)
     if timeframe['20MA'].iloc[-2] > timeframe['close'].iloc[-1]: return "Down"
     if timeframe['20MA'].iloc[-2] < timeframe['close'].iloc[-1]: return "Up"
     return None
 
 def is_downtrend(pair, interval):
     timeframe = get_klines(pair, interval)
-    timeframe['20MA'] = timeframe['close'].rolling(window=20).mean()
+    apply_20ma(timeframe)
     if (timeframe['20MA'].iloc[-2] > timeframe['20MA'].iloc[-1] or \
         timeframe['20MA'].iloc[-3] > timeframe['20MA'].iloc[-2]) and \
         timeframe['20MA'].iloc[-2] > timeframe['close'].iloc[-2]: return True
 
 def is_uptrend(pair, interval):
     timeframe = get_klines(pair, interval)
-    timeframe['20MA'] = timeframe['close'].rolling(window=20).mean()
+    apply_20ma(timeframe)
     if (timeframe['20MA'].iloc[-2] < timeframe['20MA'].iloc[-1] or \
         timeframe['20MA'].iloc[-3] < timeframe['20MA'].iloc[-2]) and \
         timeframe['20MA'].iloc[-2] < timeframe['close'].iloc[-2]: return True
@@ -93,17 +97,19 @@ def all_condition_matched(pair, side, check_direction, trend=None):
 
 parser = argparse.ArgumentParser(description='Trade entry script.', add_help=False)
 parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
+parser.add_argument('--ma', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument('--ema', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
 parser.add_argument('--long-only', action='store_true', help='Monitor LONG')
 parser.add_argument('--short-only', action='store_true', help='Monitor SHORT')
 parser.add_argument('--direction', action='store_true', help='Monitor BOTH sides with 1H direction')
-parser.add_argument('--quickscalp', action='store_true', help='Monitor BOTH sides WITHOUT 1H direction')
-parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
+parser.add_argument('--quickscalp', '--both', dest='both', action='store_true', help='Monitor BOTH sides WITHOUT 1H direction')
 
 argcomplete.autocomplete(parser)
 args, unknown = parser.parse_known_args()
 SYMBOL = args.symbol
 is_smart = args.direction
-if args.quickscalp:
+if args.both:
     side = 'BOTH'
     is_smart = False
 elif args.direction:
@@ -112,8 +118,7 @@ elif args.direction:
 elif args.long_only:
     side = 'LONG'
     is_smart = False
-else:
-    # Default is SHORT
+else: # Default is SHORT
     side = 'SHORT'
     is_smart = False
 
