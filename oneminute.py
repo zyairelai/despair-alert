@@ -89,7 +89,7 @@ def one_minute_short(pair, interval, label):
 
         if last_candle['color'] == 'RED':
             name = pair.replace('USDT', '')
-            if last_candle['ha_low'] < min_ind and last_candle['ha_high'] > max_ind:
+            if last_candle['ha_close'] < min_ind and last_candle['ha_open'] > max_ind:
                 telegram_bot_sendtext(f"💥 {name} {label} SWALLOW DUMP 💥")
                 exit()
 
