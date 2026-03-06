@@ -9,17 +9,35 @@ parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
 parser.add_argument('--red', action='store_true', help="Waiting for RED")
 parser.add_argument('--green', action='store_true', help="Waiting for GREEN")
 parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
+parser.add_argument('--1m', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument('--3m', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument('--5m', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument('--15m', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument('--30m', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument('--1h', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument('--2h', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument('--4h', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument('--6h', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument('--1d', action='store_true', help=argparse.SUPPRESS)
 
 argcomplete.autocomplete(parser)
 
 args, unknown = parser.parse_known_args()
 SYMBOL = args.symbol
 
+# Determine timeframe (default to 5m)
+TIMEFRAMES = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '1d']
+INTERVAL = '5m'
+for tf in TIMEFRAMES:
+    if getattr(args, tf):
+        INTERVAL = tf
+        break
+
 # Determine target color (default to RED if neither or both are specified, or if red is specified)
 IF_GREEN = args.green and not args.red
 TARGET_COLOR = "GREEN" if IF_GREEN else "RED"
 COLOR_TERM = "green" if IF_GREEN else "red"
-WOLF_MSG = f"🐺 HUNTING FOR {TARGET_COLOR} 🐺"
+WOLF_MSG = f"🐺 HUNTING FOR {TARGET_COLOR} ({INTERVAL}) 🐺"
 
 print("\n" + colored(WOLF_MSG, COLOR_TERM, attrs=['bold']))
 
@@ -77,10 +95,10 @@ def heikin_ashi(klines):
     return heikin_ashi_df[result_cols]
 
 def heikin_ashi_alert():
-    timeframe = heikin_ashi(get_klines(SYMBOL, "5m"))
+    timeframe = heikin_ashi(get_klines(SYMBOL, INTERVAL))
     last_candle = timeframe.iloc[-1]
     if last_candle['color'] == TARGET_COLOR and last_candle['perfect']:
-        msg = f"🚀 HEIKIN ASHI {TARGET_COLOR} 🚀"
+        msg = f"🚀 HEIKIN ASHI {INTERVAL} {TARGET_COLOR} 🚀"
         telegram_bot_sendtext(msg)
         exit()
 

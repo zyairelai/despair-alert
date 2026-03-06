@@ -1,42 +1,26 @@
 #!/usr/bin/python3
-
-import pandas, requests, time, socket, os, sys, argparse
-from datetime import datetime
+import pandas, requests, time, socket, os, sys
 from termcolor import colored
+from datetime import datetime
 
-parser = argparse.ArgumentParser(description='The DESPAIR script.', add_help=False)
-parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
-parser.add_argument('lookback', type=int, nargs='?', default=None, help='Number of candles to look back')
-parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
-
-args, unknown = parser.parse_known_args()
-SYMBOL = args.symbol
-
-if args.lookback is None:
-    if unknown and unknown[0].isdigit():
-        LOOKBACK = int(unknown[0])
-    else:
-        print(f"[i] Usage: {os.path.basename(sys.argv[0])} [number]")
-        sys.exit(0)
-else: LOOKBACK = args.lookback
-
-print("\n[i] The DESPAIR script is running...")
-print(f"[i] Comparing with previous {LOOKBACK} candles.\n")
+# Configuration
+SYMBOL = "BTCUSDT"
 
 def telegram_bot_sendtext(bot_message):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
-    bot_token = os.environ.get('TELEGRAM_LIVERMORE')
-    chat_id = "@swinglivermore"
+    bot_token = os.environ.get('TELEGRAM_WOLVESRISE')
+    chat_id = "@futures_wolves_rise"
     url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
     params = {'chat_id': chat_id, 'parse_mode': 'html', 'text': bot_message}
-    response = requests.get(url, params=params)
-    return response.json()
-
-# telegram_bot_sendtext("Telegram works!")
+    try:
+        response = requests.get(url, params=params)
+        return response.json()
+    except Exception as e:
+        print(f"Telegram error: {e}")
+        return None
 
 session = requests.Session()
 def get_klines(pair, interval):
-    spot_url = "https://api.binance.com/api/v1/klines"
     url = "https://fapi.binance.com/fapi/v1/klines"
     params = {"symbol": pair, "interval": interval, "limit": 100}
     r = session.get(url, params=params, timeout=5)
@@ -45,6 +29,7 @@ def get_klines(pair, interval):
     result = [[x[0], float(x[1]), float(x[2]), float(x[3]), float(x[4]), float(x[5])] for x in data]
     cols = ["timestamp", "open", "high", "low", "close", "volume"]
     candlestick = pandas.DataFrame(result, columns=cols).sort_values("timestamp")
+    candlestick['20EMA'] = candlestick['close'].ewm(span=20, adjust=False).mean()
     candlestick["body"] = (candlestick["close"] - candlestick["open"]).abs()
     candlestick["upper_wick"] = candlestick["high"] - candlestick[["open", "close"]].max(axis=1)
     candlestick["lower_wick"] = candlestick[["open", "close"]].min(axis=1) - candlestick["low"]
@@ -61,39 +46,52 @@ def heikin_ashi(klines):
     heikin_ashi_df.insert(0,'timestamp', klines['timestamp'])
     heikin_ashi_df['ha_high'] = heikin_ashi_df.loc[:, ['ha_open', 'ha_close']].join(klines['high']).max(axis=1)
     heikin_ashi_df['ha_low']  = heikin_ashi_df.loc[:, ['ha_open', 'ha_close']].join(klines['low']).min(axis=1)
-    heikin_ashi_df['volume'] = klines['volume']
     heikin_ashi_df['body'] = (heikin_ashi_df['ha_close'] - heikin_ashi_df['ha_open']).abs()
-    heikin_ashi_df['upper_wick'] = heikin_ashi_df['ha_high'] - heikin_ashi_df[['ha_open', 'ha_close']].max(axis=1)
-    heikin_ashi_df['lower_wick'] = heikin_ashi_df[['ha_open', 'ha_close']].min(axis=1) - heikin_ashi_df['ha_low']
+    heikin_ashi_df['volume'] = klines['volume']
     heikin_ashi_df['color'] = heikin_ashi_df.apply(lambda row: 'GREEN' if row['ha_close'] >= row['ha_open'] else 'RED', axis=1)
     heikin_ashi_df['20MA'] = klines['close'].rolling(window=20).mean()
+    heikin_ashi_df['10EMA'] = klines['close'].ewm(span=10, adjust=False).mean()
+    heikin_ashi_df['20EMA'] = klines['close'].ewm(span=20, adjust=False).mean()
+    heikin_ashi_df['50EMA'] = klines['close'].ewm(span=50, adjust=False).mean()
     heikin_ashi_df['100EMA'] = klines['close'].ewm(span=100, adjust=False).mean()
-    result_cols = ['ha_open', 'ha_high', 'ha_low', 'ha_close', 'volume', 'color', 'body', 'upper_wick', 'lower_wick', '20MA', '100EMA']
-    for col in result_cols: heikin_ashi_df[col] = heikin_ashi_df[col].apply(lambda v: round(v) if isinstance(v, float) and not pandas.isna(v) else v)
+    result_cols = ['ha_open', 'ha_high', 'ha_low', 'ha_close', 'volume', 'color', '20MA', '10EMA', '20EMA', '50EMA', '100EMA']
+    for col in result_cols: heikin_ashi_df[col] = heikin_ashi_df[col].apply(lambda v: round(v, 2) if isinstance(v, float) and not pandas.isna(v) else v)
     return heikin_ashi_df[result_cols]
 
-def short_despair():
-    one_hour = heikin_ashi(get_klines(SYMBOL, "1h"))
+def one_minute_short(pair):
+    try:
+        timeframe = heikin_ashi(get_klines(pair, '1m'))
+        last_candle = timeframe.iloc[-1]
+        
+        # 💥 Indicators to check 💥
+        ma20 = last_candle['20MA']
+        ema10 = last_candle['10EMA']
+        ema20 = last_candle['20EMA']
+        ema50 = last_candle['50EMA']
+        
+        indicators = [ma20, ema10, ema20]
+        min_ind = min(indicators)
+        max_ind = max(indicators)
 
-    if one_hour['ha_low'].iloc[-1] < one_hour['ha_low'].iloc[-(LOOKBACK+1):-1].min():
-        telegram_bot_sendtext("💥 1H STRUCTURE BREAK 💥")
-        exit()
+        if last_candle['color'] == 'RED':
+            name = pair.replace('USDT', '')
+            if last_candle['ha_low'] < min_ind and last_candle['ha_high'] > max_ind:
+                telegram_bot_sendtext(f"💥 {name} 1 MINUTE MEGA DUMP 💥")
+                exit()
 
-    if one_hour['color'].iloc[-1] == "GREEN":
-        condition_1 = one_hour['body'].iloc[-1] > (one_hour['lower_wick'].iloc[-1] * 2)
-        condition_2 = one_hour['upper_wick'].iloc[-1] > (one_hour['body'].iloc[-1] * 2)
-        condition_3 = one_hour['upper_wick'].iloc[-1] > (one_hour['lower_wick'].iloc[-1] * 2)
-        condition_4 = one_hour['upper_wick'].iloc[-1] > (one_hour['lower_wick'].iloc[-1] + one_hour['body'].iloc[-1])
+            if last_candle['ha_open'] < ema50 and ma20 > ema10 and ema20 > ema10:
+                telegram_bot_sendtext(f"🚨 {name} 1 MINUTE EMA Downtrend 🚨")
+                exit()
+    except Exception as e:
+        print(f"Warning: Failed to fetch {pair} - {e}")
 
-        if condition_1 and condition_2 and condition_3 and condition_4:
-            telegram_bot_sendtext("💥 1H PIN BAR 💥")
-            exit()
+print(f"Monitoring 1m {colored('SHORT', 'red')} entry for {SYMBOL}...")
 
 try:
     while True:
         try:
-            short_despair()
-            time.sleep(5)
+            one_minute_short(SYMBOL)
+            time.sleep(1)
         except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
             print(f"Network error: {e}")
             time.sleep(10)
