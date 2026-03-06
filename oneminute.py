@@ -6,6 +6,20 @@ from datetime import datetime
 # Configuration
 SYMBOL = "BTCUSDT"
 
+# Argument Parsing
+INTERVAL = "1m"
+TIMEFRAME_LABEL = "1 MINUTE"
+
+if "--3m" in sys.argv:
+    INTERVAL = "3m"
+    TIMEFRAME_LABEL = "3 MINUTE"
+elif "--5m" in sys.argv:
+    INTERVAL = "5m"
+    TIMEFRAME_LABEL = "5 MINUTE"
+elif "--1m" in sys.argv:
+    INTERVAL = "1m"
+    TIMEFRAME_LABEL = "1 MINUTE"
+
 def telegram_bot_sendtext(bot_message):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
     bot_token = os.environ.get('TELEGRAM_WOLVESRISE')
@@ -58,9 +72,9 @@ def heikin_ashi(klines):
     for col in result_cols: heikin_ashi_df[col] = heikin_ashi_df[col].apply(lambda v: round(v, 2) if isinstance(v, float) and not pandas.isna(v) else v)
     return heikin_ashi_df[result_cols]
 
-def one_minute_short(pair):
+def one_minute_short(pair, interval, label):
     try:
-        timeframe = heikin_ashi(get_klines(pair, '1m'))
+        timeframe = heikin_ashi(get_klines(pair, interval))
         last_candle = timeframe.iloc[-1]
         
         # 💥 Indicators to check 💥
@@ -68,7 +82,7 @@ def one_minute_short(pair):
         ema10 = last_candle['10EMA']
         ema20 = last_candle['20EMA']
         ema50 = last_candle['50EMA']
-        
+
         indicators = [ma20, ema10, ema20]
         min_ind = min(indicators)
         max_ind = max(indicators)
@@ -76,21 +90,21 @@ def one_minute_short(pair):
         if last_candle['color'] == 'RED':
             name = pair.replace('USDT', '')
             if last_candle['ha_low'] < min_ind and last_candle['ha_high'] > max_ind:
-                telegram_bot_sendtext(f"💥 {name} 1 MINUTE MEGA DUMP 💥")
+                telegram_bot_sendtext(f"💥 {name} {label} SWALLOW DUMP 💥")
                 exit()
 
             if last_candle['ha_open'] < ema50 and ma20 > ema10 and ema20 > ema10:
-                telegram_bot_sendtext(f"🚨 {name} 1 MINUTE EMA Downtrend 🚨")
+                telegram_bot_sendtext(f"🚨 {name} {label} EMA Downtrend 🚨")
                 exit()
     except Exception as e:
         print(f"Warning: Failed to fetch {pair} - {e}")
 
-print(f"Monitoring 1m {colored('SHORT', 'red')} entry for {SYMBOL}...")
+print(f"Monitoring {INTERVAL} {colored('SHORT', 'red')} entry for {SYMBOL}...")
 
 try:
     while True:
         try:
-            one_minute_short(SYMBOL)
+            one_minute_short(SYMBOL, INTERVAL, TIMEFRAME_LABEL)
             time.sleep(1)
         except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
             print(f"Network error: {e}")
