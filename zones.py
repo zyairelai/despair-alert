@@ -7,6 +7,7 @@ from termcolor import colored
 
 BUFFER = 0.2
 SLEEP_INTERVAL = "1h"
+# CUSTOM_BTC_ZONES = [73137, 70545, 62868]
 
 parser = argparse.ArgumentParser(description='The ZONES script.', add_help=False)
 parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
@@ -72,8 +73,14 @@ def get_levels():
     levels.append(("Low", l, "white"))
     return levels
 
-def print_levels(levels):
-    prefix = "Current 1D" if args.current_mode else "Prev 1D"
+def get_4h_levels():
+    df = get_klines(SYMBOL, "4h")
+    idx = -1 if args.current_mode else -2
+    h, l = df["high"].iloc[idx], df["low"].iloc[idx]
+    return [("High", h, "white"), ("Low", l, "white")]
+
+def print_levels(levels, timeframe="1D"):
+    prefix = f"{'Current' if args.current_mode else 'Prev'} {timeframe}"
     print(f"\n======= {prefix} =======")
     for name, val, color in levels:
         print(f"{prefix} {name}: {colored(str(int(val)), color)}")
@@ -81,9 +88,12 @@ def print_levels(levels):
 def main():
     print("\nThe ZONES script is running...")
     levels = get_levels()
-    print_levels(levels)
+    print_levels(levels, "1D")
 
-    if args.print_mode: return
+    if args.print_mode:
+        levels_4h = get_4h_levels()
+        print_levels(levels_4h, "4H")
+        return
     try:
         while True:
             try:
