@@ -38,7 +38,7 @@ def get_klines(pair, interval):
 
 def parse_interval(tf_input):
     tf = str(tf_input).strip().lower()
-    if not tf: return "1h"
+    if not tf: return "5m"
     if tf.endswith('h') or tf.endswith('m'): return tf
     if tf.isdigit(): return f"{tf}m"
     return "1h"
@@ -58,7 +58,7 @@ def check_touch(pair, interval, period, ma_type='MA'):
 
 print("The LINETOUCH script is running...\n")
 try:
-    tf_input = input("Timeframe (e.g., 1m, 15m, 1h): ")
+    tf_input = input("Timeframe (e.g., 5m, 15m, 1h): ")
     interval = parse_interval(tf_input)
 
     ma_type_input = input("Indicator Type (MA or EMA, default EMA): ").upper()
