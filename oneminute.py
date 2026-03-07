@@ -89,16 +89,16 @@ def one_minute_short(pair, interval, label):
 
         if last_candle['color'] == 'RED':
             name = pair.replace('USDT', '')
-            if last_candle['ha_close'] < min_ind and last_candle['ha_open'] > max_ind:
-                telegram_bot_sendtext(f"💥 {name} {label} SWALLOW DUMP 💥")
+            if last_candle['ha_close'] < min(ema20, ema50) and last_candle['ha_open'] > max(ema20, ema50):
+                telegram_bot_sendtext(f"💥 {name} {label} SWALLOW EMA20 EMA50 💥")
                 exit()
-
+            if last_candle['ha_close'] < min_ind and last_candle['ha_open'] > max_ind:
+                telegram_bot_sendtext(f"💥 {name} {label} SWALLOW MA20 EMA10 EMA20 💥")
+                exit()
             if last_candle['ha_open'] < ema50 and ma20 > ema10 and ema20 > ema10:
                 telegram_bot_sendtext(f"🚨 {name} {label} EMA Downtrend 🚨")
                 exit()
-    except Exception as e:
-        print(f"Warning: Failed to fetch {pair} - {e}")
-
+    except Exception as e: print(f"Warning: Failed to fetch {pair} - {e}")
 print(f"Monitoring {INTERVAL} {colored('SHORT', 'red')} entry for {SYMBOL}...")
 
 try:
