@@ -62,7 +62,7 @@ def check_entry(pair, side, trend):
     if trend and side != 'Both' and trend != side: return
     minute_15m = get_klines(pair, '15m')
     minute_5m = get_klines(pair, '5m')
-    
+
     if side in ['Down', 'Both'] and (trend == "Down" or trend is None):
         if minute_15m['close'].iloc[-2] >= minute_15m['20EMA'].iloc[-2] and \
             minute_15m['close'].iloc[-1] < minute_15m['20EMA'].iloc[-1] and \

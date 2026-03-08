@@ -41,10 +41,10 @@ argcomplete.autocomplete(parser)
 args, unknown = parser.parse_known_args()
 SYMBOL = args.symbol
 
-if args.close_long: 
+if args.close_long:
     side = 'LONG'
     condition_text = "15m standing BELOW 10MA"
-else: 
+else:
     side = 'SHORT'
     condition_text = "15m standing ABOVE 10MA"
 

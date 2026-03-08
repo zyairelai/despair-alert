@@ -15,7 +15,7 @@ PROCESSES=$(ps -ao pid,args | grep -E "($PY_FILES)" | grep -v grep | grep -v "$0
 if [ -n "$PROCESSES" ]; then
     echo "Killing the following local .py processes:"
     echo "$PROCESSES" | awk '{printf "  PID: %-6s -> %s\n", $1, substr($0, index($0,$2))}'
-    
+
     PIDS=$(echo "$PROCESSES" | awk '{print $1}')
     kill -9 $PIDS 2>/dev/null
     echo "Done."

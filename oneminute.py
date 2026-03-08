@@ -76,7 +76,7 @@ def one_minute_short(pair, interval, label):
     try:
         timeframe = heikin_ashi(get_klines(pair, interval))
         last_candle = timeframe.iloc[-1]
-        
+
         # 💥 Indicators to check 💥
         ma20 = last_candle['20MA']
         ema10 = last_candle['10EMA']
