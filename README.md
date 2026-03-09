@@ -11,10 +11,10 @@ alias entry="/home/kali/despair-alert/entry.py"
 alias heikin="/home/kali/despair-alert/heikin.py"
 alias linetouch="/home/kali/despair-alert/linetouch.py"
 alias miniema="/home/kali/despair-alert/miniema.py"
-alias stoploss="/home/kali/despair-alert/stoploss.py"
 alias oneminute="/home/kali/despair-alert/oneminute.py"
 alias pricealert="/home/kali/despair-alert/pricealert.py"
 alias standing="/home/kali/despair-alert/standing.py"
+alias stoploss="/home/kali/despair-alert/stoploss.py"
 alias zones="/home/kali/despair-alert/zones.py"
 ```
 ```
@@ -22,18 +22,8 @@ alias zones="/home/kali/despair-alert/zones.py"
 autoload -U bashcompinit
 bashcompinit
 
-eval "$(register-python-argcomplete --shell zsh /home/kali/despair-alert/entry.py)"
 eval "$(register-python-argcomplete --shell zsh /home/kali/despair-alert/zones.py)"
-eval "$(register-python-argcomplete --shell zsh /home/kali/despair-alert/heikin.py)"
-eval "$(register-python-argcomplete --shell zsh /home/kali/despair-alert/stoploss.py)"
-
-compdef _python_argcomplete ha
-compdef _python_argcomplete e
-compdef _python_argcomplete z
-compdef _python_argcomplete entry
 compdef _python_argcomplete zones
-compdef _python_argcomplete heikin
-compdef _python_argcomplete stoploss
 ```
 
 ### To-Do

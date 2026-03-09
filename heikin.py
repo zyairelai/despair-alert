@@ -1,10 +1,14 @@
 #!/usr/bin/python3
 
-import pandas, requests, time, socket, os, sys
+import pandas, requests, time, socket, os, sys, argparse
 from datetime import datetime
 from termcolor import colored
 
-SYMBOL = "BTCUSDT"
+parser = argparse.ArgumentParser(description='Stoploss monitor script.', add_help=False)
+parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
+parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
+args, unknown = parser.parse_known_args()
+SYMBOL = args.symbol
 
 # Determine timeframe
 INTERVAL = input("Enter timeframe (default 3m): ") or "3m"
@@ -89,7 +93,8 @@ def heikin_ashi_alert():
 
     if last_candle['color'] == TARGET_COLOR and last_candle['perfect']:
         emoji = "🚀" if TARGET_COLOR == "GREEN" else "💥"
-        msg = f"{emoji} HEIKIN ASHI {INTERVAL} {TARGET_COLOR} {emoji}"
+        name = SYMBOL.replace('USDT', '')
+        msg = f"{emoji} HEIKIN ASHI {INTERVAL} {name} {TARGET_COLOR} {emoji}"
         print("\n")
         print(colored(msg, COLOR_TERM))
         telegram_bot_sendtext(msg)

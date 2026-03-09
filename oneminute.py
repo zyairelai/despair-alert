@@ -1,10 +1,14 @@
 #!/usr/bin/python3
-import pandas, requests, time, socket, os, sys
+import pandas, requests, time, socket, os, sys, argparse
 from termcolor import colored
 from datetime import datetime
 
 # Configuration
-SYMBOL = "BTCUSDT"
+parser = argparse.ArgumentParser(description='Stoploss monitor script.', add_help=False)
+parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
+parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
+args, unknown = parser.parse_known_args()
+SYMBOL = args.symbol
 
 # Argument Parsing
 INTERVAL = "1m"

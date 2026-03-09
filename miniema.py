@@ -1,16 +1,20 @@
 #!/usr/bin/python3
 
-import pandas, requests, time, socket, os, sys
+import pandas, requests, time, socket, os, sys, argparse
 from datetime import datetime
 from termcolor import colored
 
-SYMBOL = "BTCUSDT"
+parser = argparse.ArgumentParser(description='Stoploss monitor script.', add_help=False)
+parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
+parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
+args, unknown = parser.parse_known_args()
+SYMBOL = args.symbol
 
 # Determine timeframe
 INTERVAL = input("Enter timeframe (default 3m): ") or "3m"
 
 # Determine target trend
-prompt = f"Check {colored('UPTREND', 'green')}, {colored('DOWNTREND', 'red')}, or {colored('BOTH', 'cyan')}? (u/d/b, default down): "
+prompt = f"Check {colored('UPTREND', 'green')}, {colored('DOWNTREND', 'red')}, or {colored('BOTH', 'cyan')}? (Default down): "
 trend_choice = input(prompt).lower()
 if trend_choice in ['u', 'up', '1']:
     TARGET_TREND = "UPTREND"
@@ -100,7 +104,8 @@ def monitor_ema():
 
     if triggered:
         emoji = "🚀" if trigger_trend == "UPTREND" else "💥"
-        msg = f"{emoji} {SYMBOL} {INTERVAL} EMA 10/20 {trigger_type}: {trigger_trend} {emoji}"
+        name = SYMBOL.replace('USDT', '')
+        msg = f"{emoji} {name} {INTERVAL} EMA 10/20 {trigger_type}: {trigger_trend} {emoji}"
         print("\n")
         print(colored(msg, trigger_color))
         telegram_bot_sendtext(msg)
