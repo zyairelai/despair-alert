@@ -10,15 +10,12 @@ alias despair="/home/kali/despair-alert/despair.py"
 alias entry="/home/kali/despair-alert/entry.py"
 alias heikin="/home/kali/despair-alert/heikin.py"
 alias linetouch="/home/kali/despair-alert/linetouch.py"
+alias miniema="/home/kali/despair-alert/miniema.py"
 alias stoploss="/home/kali/despair-alert/stoploss.py"
 alias oneminute="/home/kali/despair-alert/oneminute.py"
 alias pricealert="/home/kali/despair-alert/pricealert.py"
 alias standing="/home/kali/despair-alert/standing.py"
 alias zones="/home/kali/despair-alert/zones.py"
-
-alias ha="/home/kali/despair-alert/heikin.py"
-alias e="/home/kali/despair-alert/entry.py"
-alias z="/home/kali/despair-alert/zones.py"
 ```
 ```
 # Enable python-argcomplete

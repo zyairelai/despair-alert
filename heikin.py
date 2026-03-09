@@ -1,55 +1,40 @@
 #!/usr/bin/python3
 
-import pandas, requests, time, socket, os, sys, argparse, argcomplete
+import pandas, requests, time, socket, os, sys
 from datetime import datetime
 from termcolor import colored
 
-parser = argparse.ArgumentParser(description='The DESPAIR script.', add_help=False)
-parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
-parser.add_argument('--red', action='store_true', help="Waiting for RED")
-parser.add_argument('--green', action='store_true', help="Waiting for GREEN")
-parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
-parser.add_argument('--1m', action='store_true', help=argparse.SUPPRESS)
-parser.add_argument('--3m', action='store_true', help=argparse.SUPPRESS)
-parser.add_argument('--5m', action='store_true', help=argparse.SUPPRESS)
-parser.add_argument('--15m', action='store_true', help=argparse.SUPPRESS)
-parser.add_argument('--30m', action='store_true', help=argparse.SUPPRESS)
-parser.add_argument('--1h', action='store_true', help=argparse.SUPPRESS)
-parser.add_argument('--2h', action='store_true', help=argparse.SUPPRESS)
-parser.add_argument('--4h', action='store_true', help=argparse.SUPPRESS)
-parser.add_argument('--6h', action='store_true', help=argparse.SUPPRESS)
-parser.add_argument('--1d', action='store_true', help=argparse.SUPPRESS)
+SYMBOL = "BTCUSDT"
 
-argcomplete.autocomplete(parser)
+# Determine timeframe
+INTERVAL = input("Enter timeframe (default 3m): ") or "3m"
 
-args, unknown = parser.parse_known_args()
-SYMBOL = args.symbol
+# Determine target trend
+prompt = f"Check {colored('GREEN', 'green')} or {colored('RED', 'red')} candle? (Default {colored('RED', 'red')}): "
+trend_choice = input(prompt).lower()
+if trend_choice in ['g', 'green', '1']:
+    TARGET_COLOR = "GREEN"
+    COLOR_TERM = "green"
+else:
+    TARGET_COLOR = "RED"
+    COLOR_TERM = "red"
 
-# Determine timeframe (default to 5m)
-TIMEFRAMES = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '1d']
-INTERVAL = '5m'
-for tf in TIMEFRAMES:
-    if getattr(args, tf):
-        INTERVAL = tf
-        break
-
-# Determine target color (default to RED if neither or both are specified, or if red is specified)
-IF_GREEN = args.green and not args.red
-TARGET_COLOR = "GREEN" if IF_GREEN else "RED"
-COLOR_TERM = "green" if IF_GREEN else "red"
 WOLF_MSG = f"🐺 HUNTING FOR {TARGET_COLOR} ({INTERVAL}) 🐺"
-
-print("\n" + colored(WOLF_MSG, COLOR_TERM, attrs=['bold']))
+print("\n" + colored(WOLF_MSG, COLOR_TERM))
 
 def telegram_bot_sendtext(bot_message):
-    print(colored(bot_message, COLOR_TERM, attrs=['bold']))
     print("Triggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S")))
     bot_token = os.environ.get('TELEGRAM_WOLVESRISE')
+    if not bot_token:
+        return
     chat_id = "@futures_wolves_rise"
     url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
     params = {'chat_id': chat_id, 'parse_mode': 'html', 'text': bot_message}
-    response = requests.get(url, params=params)
-    return response.json()
+    try:
+        response = requests.get(url, params=params, timeout=5)
+        return response.json()
+    except Exception as e:
+        print(f"Telegram error: {e}")
 
 session = requests.Session()
 def get_klines(pair, interval):
@@ -97,8 +82,16 @@ def heikin_ashi(klines):
 def heikin_ashi_alert():
     timeframe = heikin_ashi(get_klines(SYMBOL, INTERVAL))
     last_candle = timeframe.iloc[-1]
+    
+    status_label = "(Perfect)" if last_candle['perfect'] else "(Indecisive)"
+    status_msg = f"[{INTERVAL}] {SYMBOL} HEIKIN: {last_candle['color']} {status_label}"
+    print(f"\r{status_msg}", end="", flush=True)
+
     if last_candle['color'] == TARGET_COLOR and last_candle['perfect']:
-        msg = f"🚀 HEIKIN ASHI {INTERVAL} {TARGET_COLOR} 🚀"
+        emoji = "🚀" if TARGET_COLOR == "GREEN" else "💥"
+        msg = f"{emoji} HEIKIN ASHI {INTERVAL} {TARGET_COLOR} {emoji}"
+        print("\n")
+        print(colored(msg, COLOR_TERM))
         telegram_bot_sendtext(msg)
         exit()
 
