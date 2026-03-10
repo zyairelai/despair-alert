@@ -59,13 +59,13 @@ def get_klines(pair, interval):
 def check_entry():
     df_htf = get_klines(SYMBOL, htf)
     df_ltf = get_klines(SYMBOL, ltf)
-    
+
     last_htf = df_htf.iloc[-1]
     last_ltf = df_ltf.iloc[-1]
-    
+
     trend_htf = "UP" if last_htf['10EMA'] > last_htf['20EMA'] else "DOWN"
     trend_ltf = "UP" if last_ltf['10EMA'] > last_ltf['20EMA'] else "DOWN"
-    
+
     status_msg = f"[{SYMBOL}] {htf}: {trend_htf} | {ltf}: {trend_ltf} ({htf}_10: {last_htf['10EMA']:.2f}, {ltf}_10: {last_ltf['10EMA']:.2f})"
     print(f"\r{status_msg}", end="", flush=True)
 
@@ -74,7 +74,7 @@ def check_entry():
         trend_label = "UPTREND" if side == "LONG" else "DOWNTREND"
         color = "green" if side == "LONG" else "red"
         emoji = "🚀" if side == "LONG" else "💥"
-        
+
         if TARGET_SIDE == "BOTH" or TARGET_SIDE == side:
             name = SYMBOL.replace('USDT', '')
             msg = f"{emoji} {name} {htf} + {ltf} EMA {trend_label} {emoji}"

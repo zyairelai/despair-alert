@@ -67,21 +67,21 @@ def monitor_ema():
 
     e10 = df['10EMA'].tolist()
     e20 = df['20EMA'].tolist()
-    
+
     # Current state
     cur_e10, cur_e20 = e10[-1], e20[-1]
     current_trend = "UPTREND" if cur_e10 > cur_e20 else "DOWNTREND"
-    
+
     # Movement detection for status message
     is_curving_up = (e10[-1] > e10[-2] > e10[-3] > e10[-4]) and (e20[-1] > e20[-2] > e20[-3] > e20[-4])
     is_curving_down = (e10[-1] < e10[-2] < e10[-3] < e10[-4]) and (e20[-1] < e20[-2] < e20[-3] < e20[-4])
-    
+
     curve_status = "Curving Up" if is_curving_up else "Curving Down" if is_curving_down else "Flat"
-    
+
     # Detect CROSS transitions
     is_cross_up = (current_trend == "UPTREND") and (PREV_CROSS == "DOWNTREND")
     is_cross_down = (current_trend == "DOWNTREND") and (PREV_CROSS == "UPTREND")
-    
+
     # First run initialization
     if PREV_CROSS is None:
         PREV_CROSS = current_trend
@@ -98,7 +98,7 @@ def monitor_ema():
     if TARGET_TREND == "UPTREND" or TARGET_TREND == "BOTH":
         if is_cross_up: triggered, trigger_type, trigger_trend, trigger_color = True, "CROSS", "UPTREND", "green"
         elif check_is_curving and is_curving_up: triggered, trigger_type, trigger_trend, trigger_color = True, "CURVING", "UPTREND", "green"
-        
+
     if not triggered and (TARGET_TREND == "DOWNTREND" or TARGET_TREND == "BOTH"):
         if is_cross_down: triggered, trigger_type, trigger_trend, trigger_color = True, "CROSS", "DOWNTREND", "red"
         elif check_is_curving and is_curving_down: triggered, trigger_type, trigger_trend, trigger_color = True, "CURVING", "DOWNTREND", "red"

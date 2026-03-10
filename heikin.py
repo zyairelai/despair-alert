@@ -86,7 +86,7 @@ def heikin_ashi(klines):
 def heikin_ashi_alert():
     timeframe = heikin_ashi(get_klines(SYMBOL, INTERVAL))
     last_candle = timeframe.iloc[-1]
-    
+
     status_label = "(Perfect)" if last_candle['perfect'] else "(Indecisive)"
     status_msg = f"[{INTERVAL}] {SYMBOL} HEIKIN: {last_candle['color']} {status_label}"
     print(f"\r{status_msg}", end="", flush=True)

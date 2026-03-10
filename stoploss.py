@@ -52,10 +52,10 @@ def get_klines(pair, interval):
 def stoploss_alert():
     df = get_klines(SYMBOL, INTERVAL)
     if len(df) < 2: return
-    
+
     last = df.iloc[-1]
     prev = df.iloc[-2]
-    
+
     if SIDE == 'LONG':
         status_msg = f"[{INTERVAL}] {SYMBOL} LOW: {last['low']:.2f} (Prev Low: {prev['low']:.2f})"
         print(f"\r{status_msg}", end="", flush=True)
