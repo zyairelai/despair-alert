@@ -10,7 +10,8 @@ parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help
 args, unknown = parser.parse_known_args()
 SYMBOL = args.symbol
 
-# Determine timeframe
+# Curving status configuration: Set to True to enable CURVING alerts, False for CROSS ONLY
+check_is_curving = False
 INTERVAL = input("Enter timeframe (default 3m): ") or "3m"
 
 # Determine target trend
@@ -96,11 +97,11 @@ def monitor_ema():
 
     if TARGET_TREND == "UPTREND" or TARGET_TREND == "BOTH":
         if is_cross_up: triggered, trigger_type, trigger_trend, trigger_color = True, "CROSS", "UPTREND", "green"
-        elif is_curving_up: triggered, trigger_type, trigger_trend, trigger_color = True, "CURVING", "UPTREND", "green"
+        elif check_is_curving and is_curving_up: triggered, trigger_type, trigger_trend, trigger_color = True, "CURVING", "UPTREND", "green"
         
     if not triggered and (TARGET_TREND == "DOWNTREND" or TARGET_TREND == "BOTH"):
         if is_cross_down: triggered, trigger_type, trigger_trend, trigger_color = True, "CROSS", "DOWNTREND", "red"
-        elif is_curving_down: triggered, trigger_type, trigger_trend, trigger_color = True, "CURVING", "DOWNTREND", "red"
+        elif check_is_curving and is_curving_down: triggered, trigger_type, trigger_trend, trigger_color = True, "CURVING", "DOWNTREND", "red"
 
     if triggered:
         emoji = "🚀" if trigger_trend == "UPTREND" else "💥"
