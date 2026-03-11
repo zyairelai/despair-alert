@@ -67,12 +67,11 @@ def heikin_ashi(klines):
     heikin_ashi_df['body'] = (heikin_ashi_df['ha_close'] - heikin_ashi_df['ha_open']).abs()
     heikin_ashi_df['volume'] = klines['volume']
     heikin_ashi_df['color'] = heikin_ashi_df.apply(lambda row: 'GREEN' if row['ha_close'] >= row['ha_open'] else 'RED', axis=1)
-    heikin_ashi_df['20MA'] = klines['close'].rolling(window=20).mean()
     heikin_ashi_df['10EMA'] = klines['close'].ewm(span=10, adjust=False).mean()
     heikin_ashi_df['20EMA'] = klines['close'].ewm(span=20, adjust=False).mean()
     heikin_ashi_df['50EMA'] = klines['close'].ewm(span=50, adjust=False).mean()
     heikin_ashi_df['100EMA'] = klines['close'].ewm(span=100, adjust=False).mean()
-    result_cols = ['ha_open', 'ha_high', 'ha_low', 'ha_close', 'volume', 'color', '20MA', '10EMA', '20EMA', '50EMA', '100EMA']
+    result_cols = ['ha_open', 'ha_high', 'ha_low', 'ha_close', 'volume', 'color', '10EMA', '20EMA', '50EMA', '100EMA']
     for col in result_cols: heikin_ashi_df[col] = heikin_ashi_df[col].apply(lambda v: round(v, 2) if isinstance(v, float) and not pandas.isna(v) else v)
     return heikin_ashi_df[result_cols]
 
@@ -82,26 +81,25 @@ def one_minute_short(pair, interval, label):
         last_candle = timeframe.iloc[-1]
 
         # 💥 Indicators to check 💥
-        ma20 = last_candle['20MA']
         ema10 = last_candle['10EMA']
         ema20 = last_candle['20EMA']
         ema50 = last_candle['50EMA']
 
-        indicators = [ma20, ema10, ema20]
-        min_ind = min(indicators)
-        max_ind = max(indicators)
-
         if last_candle['color'] == 'RED':
             name = pair.replace('USDT', '')
+
+            # Consecutive 3 candles open below EMA10
+            last_3 = timeframe.tail(3)
+            if len(last_3) == 3 and (last_3['ha_open'] < last_3['10EMA']).all():
+                telegram_bot_sendtext(f"🚨 {name} {label} EMA 10 pressing hard 🚨")
+                exit()
             if last_candle['ha_close'] < min(ema20, ema50) and last_candle['ha_open'] > max(ema20, ema50):
                 telegram_bot_sendtext(f"💥 {name} {label} SWALLOW EMA20 EMA50 💥")
                 exit()
-            if last_candle['ha_close'] < min_ind and last_candle['ha_open'] > max_ind:
-                telegram_bot_sendtext(f"💥 {name} {label} SWALLOW MA20 EMA10 EMA20 💥")
-                exit()
-            if last_candle['ha_open'] < ema50 and ma20 > ema10 and ema20 > ema10:
+            if last_candle['ha_open'] < ema50 and ema20 > ema10:
                 telegram_bot_sendtext(f"🚨 {name} {label} EMA Downtrend 🚨")
                 exit()
+
     except Exception as e: print(f"Warning: Failed to fetch {pair} - {e}")
 print(f"Monitoring {INTERVAL} {colored('SHORT', 'red')} entry for {SYMBOL}...")
 
