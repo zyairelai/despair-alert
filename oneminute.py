@@ -100,8 +100,8 @@ def one_minute_short(pair, interval, label):
             # 1. Consecutive 3 candles open below EMA10
             if CONDITION_SELECTION in [0, 1]:
                 last_3 = timeframe.tail(3)
-                if len(last_3) == 3 and (last_3['ha_open'] < last_3['10EMA']).all():
-                    telegram_bot_sendtext(f"🚨 {name} {label} PRESSING EMA10 🚨")
+                if len(last_3) == 3 and (last_3['ha_open'] < last_3['10EMA']).all() and (last_3['ha_open'] < last_3['20EMA']).all():
+                    telegram_bot_sendtext(f"🚨 {name} {label} PRESSING EMA 10 & 20 🚨")
                     exit()
 
             # 2. Swallow EMA20 EMA50
