@@ -88,33 +88,31 @@ def one_minute_short(pair, interval, label):
     try:
         timeframe = heikin_ashi(get_klines(pair, interval))
         last_candle = timeframe.iloc[-1]
+        name = pair.replace('USDT', '')
 
         # 💥 Indicators to check 💥
         ema10 = last_candle['10EMA']
         ema20 = last_candle['20EMA']
         ema50 = last_candle['50EMA']
 
-        if last_candle['color'] == 'RED':
-            name = pair.replace('USDT', '')
+        # 1. Consecutive 3 candles open below EMA10
+        if CONDITION_SELECTION in [0, 1]:
+            last_3 = timeframe.tail(3)
+            if len(last_3) == 3 and (last_3['ha_open'] < last_3['10EMA']).all() and (last_3['ha_open'] < last_3['20EMA']).all():
+                telegram_bot_sendtext(f"🚨 {name} {label} PRESSING EMA 10 & 20 🚨")
+                exit()
 
-            # 1. Consecutive 3 candles open below EMA10
-            if CONDITION_SELECTION in [0, 1]:
-                last_3 = timeframe.tail(3)
-                if len(last_3) == 3 and (last_3['ha_open'] < last_3['10EMA']).all() and (last_3['ha_open'] < last_3['20EMA']).all():
-                    telegram_bot_sendtext(f"🚨 {name} {label} PRESSING EMA 10 & 20 🚨")
-                    exit()
+        # 2. Swallow EMA20 EMA50
+        if CONDITION_SELECTION in [0, 2]:
+            if last_candle['ha_close'] < min(ema20, ema50) and last_candle['ha_open'] > max(ema20, ema50):
+                telegram_bot_sendtext(f"💥 {name} {label} SWALLOW EMA20 EMA50 💥")
+                exit()
 
-            # 2. Swallow EMA20 EMA50
-            if CONDITION_SELECTION in [0, 2]:
-                if last_candle['ha_close'] < min(ema20, ema50) and last_candle['ha_open'] > max(ema20, ema50):
-                    telegram_bot_sendtext(f"💥 {name} {label} SWALLOW EMA20 EMA50 💥")
-                    exit()
-
-            # 3. EMA Downtrend
-            if CONDITION_SELECTION in [0, 3]:
-                if last_candle['ha_open'] < ema50 and ema20 > ema10:
-                    telegram_bot_sendtext(f"🚨 {name} {label} EMA Downtrend 🚨")
-                    exit()
+        # 3. EMA Downtrend
+        if CONDITION_SELECTION in [0, 3]:
+            if last_candle['ha_open'] < ema50 and ema20 > ema10:
+                telegram_bot_sendtext(f"🚨 {name} {label} EMA Downtrend 🚨")
+                exit()
 
     except Exception as e: print(f"Warning: Failed to fetch {pair} - {e}")
 print(f"Monitoring {INTERVAL} {colored('SHORT', 'red')} entry for {SYMBOL}...")
