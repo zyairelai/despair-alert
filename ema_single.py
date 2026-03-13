@@ -10,8 +10,7 @@ parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help
 args, unknown = parser.parse_known_args()
 SYMBOL = args.symbol
 
-# Curving status configuration: Set to True to enable CURVING alerts, False for CROSS ONLY
-check_is_curving = False
+# Configuration
 INTERVAL = input("Enter timeframe (default 5m): ") or "5m"
 
 # Determine target trend
@@ -28,7 +27,6 @@ else:
     TARGET_COLOR = "red"
 
 WOLF_MSG = f"🐺 MONITORING EMA 10/20 FOR {TARGET_TREND} ({INTERVAL}) 🐺"
-print("\n" + colored(WOLF_MSG, TARGET_COLOR))
 
 def telegram_bot_sendtext(bot_message):
     print("Triggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S")))
@@ -62,55 +60,60 @@ PREV_CROSS = None
 
 def ema_single():
     global PREV_CROSS
-    df = get_klines(SYMBOL, INTERVAL)
-    if len(df) < 4: return
+    try:
+        df = get_klines(SYMBOL, INTERVAL)
+        if len(df) < 4: return
 
-    e10 = df['10EMA'].tolist()
-    e20 = df['20EMA'].tolist()
+        e10 = df['10EMA'].tolist()
+        e20 = df['20EMA'].tolist()
 
-    # Current state
-    cur_e10, cur_e20 = e10[-1], e20[-1]
-    current_trend = "UPTREND" if cur_e10 > cur_e20 else "DOWNTREND"
+        # Current state
+        cur_e10, cur_e20 = e10[-1], e20[-1]
+        current_trend = "UPTREND" if cur_e10 > cur_e20 else "DOWNTREND"
+        current_color = "green" if current_trend == "UPTREND" else "red"
 
-    # Movement detection for status message
-    is_curving_up = (e10[-1] > e10[-2] > e10[-3] > e10[-4]) and (e20[-1] > e20[-2] > e20[-3] > e20[-4])
-    is_curving_down = (e10[-1] < e10[-2] < e10[-3] < e10[-4]) and (e20[-1] < e20[-2] < e20[-3] < e20[-4])
+        # Detect CROSS transitions
+        is_cross_up = (current_trend == "UPTREND") and (PREV_CROSS == "DOWNTREND")
+        is_cross_down = (current_trend == "DOWNTREND") and (PREV_CROSS == "UPTREND")
 
-    curve_status = "Curving Up" if is_curving_up else "Curving Down" if is_curving_down else "Flat"
+        # First run initialization
+        if PREV_CROSS is None: PREV_CROSS = current_trend
 
-    # Detect CROSS transitions
-    is_cross_up = (current_trend == "UPTREND") and (PREV_CROSS == "DOWNTREND")
-    is_cross_down = (current_trend == "DOWNTREND") and (PREV_CROSS == "UPTREND")
+        # Display lines
+        lines = [
+            f"\n\r[{colored(SYMBOL, 'cyan')}]",
+            colored(WOLF_MSG, TARGET_COLOR),
+            "", # Spacer line
+            colored(f"CURRENT: {current_trend} ", current_color) + f"(10: {cur_e10:.2f}, 20: {cur_e20:.2f})"
+        ]
 
-    # First run initialization
-    if PREV_CROSS is None: PREV_CROSS = current_trend
-    status_msg = f"[{INTERVAL}] {SYMBOL}: {current_trend} | {curve_status} (10: {cur_e10:.2f}, 20: {cur_e20:.2f})"
-    print(f"\r{status_msg}", end="", flush=True)
+        # Clear current lines and rewrite dynamically
+        output_str = "\033[K" + "\n\033[K".join(lines)
+        num_newlines = output_str.count('\n')
+        sys.stdout.write(output_str + f"\033[{num_newlines}A")
+        sys.stdout.flush()
 
-    # Check for triggers based on targeting mode
-    triggered = False
-    trigger_type = ""
-    trigger_trend = ""
-    trigger_color = ""
+        # Check for triggers based on targeting mode
+        triggered = False
+        trigger_trend = ""
+        trigger_color = ""
 
-    if TARGET_TREND == "UPTREND" or TARGET_TREND == "BOTH":
-        if is_cross_up: triggered, trigger_type, trigger_trend, trigger_color = True, "CROSS", "UPTREND", "green"
-        elif check_is_curving and is_curving_up: triggered, trigger_type, trigger_trend, trigger_color = True, "CURVING", "UPTREND", "green"
+        if (TARGET_TREND == "UPTREND" or TARGET_TREND == "BOTH") and is_cross_up:
+            triggered, trigger_trend, trigger_color = True, "UPTREND", "green"
 
-    if not triggered and (TARGET_TREND == "DOWNTREND" or TARGET_TREND == "BOTH"):
-        if is_cross_down: triggered, trigger_type, trigger_trend, trigger_color = True, "CROSS", "DOWNTREND", "red"
-        elif check_is_curving and is_curving_down: triggered, trigger_type, trigger_trend, trigger_color = True, "CURVING", "DOWNTREND", "red"
+        if not triggered and (TARGET_TREND == "DOWNTREND" or TARGET_TREND == "BOTH") and is_cross_down:
+            triggered, trigger_trend, trigger_color = True, "DOWNTREND", "red"
 
-    if triggered:
-        emoji = "🚀" if trigger_trend == "UPTREND" else "💥"
-        name = SYMBOL.replace('USDT', '')
-        msg = f"{emoji} {name} {INTERVAL} EMA 10/20 {trigger_type}: {trigger_trend} {emoji}"
-        print("\n")
-        print(colored(msg, trigger_color))
-        telegram_bot_sendtext(msg)
-        exit()
+        if triggered:
+            emoji = "🚀" if trigger_trend == "UPTREND" else "💥"
+            name = SYMBOL.replace('USDT', '')
+            msg = f"{emoji} {name} {INTERVAL} EMA 10/20 CROSS: {trigger_trend} {emoji}"
+            print("\n" * 5 + colored(msg, trigger_color))
+            telegram_bot_sendtext(msg)
+            exit()
 
-    PREV_CROSS = current_trend
+        PREV_CROSS = current_trend
+    except: pass
 
 try:
     while True:
