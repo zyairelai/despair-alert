@@ -46,6 +46,7 @@ def get_klines(pair, interval):
     candlestick = pandas.DataFrame(result, columns=cols).sort_values("timestamp")
     candlestick['10EMA'] = candlestick['close'].ewm(span=10, adjust=False).mean()
     candlestick['20EMA'] = candlestick['close'].ewm(span=20, adjust=False).mean()
+    candlestick['50EMA'] = candlestick['close'].ewm(span=50, adjust=False).mean()
     return candlestick
 
 def monitor():
@@ -57,12 +58,9 @@ def monitor():
         last_htf = df_htf.iloc[-1]
         last_ltf = df_ltf.iloc[-1]
         
-        # Trend logic: UP (10 > 20), DOWN (10 < 20)
-        htf_up = last_htf['10EMA'] > last_htf['20EMA']
-        ltf_up = last_ltf['10EMA'] > last_ltf['20EMA']
-        
-        htf_label = colored("UP", "green") if htf_up else colored("DOWN", "red")
-        ltf_label = colored("UP", "green") if ltf_up else colored("DOWN", "red")
+        # Trend logic: UP (10 > 20 > 50), DOWN (10 < 20)
+        htf_up = last_htf['10EMA'] > last_htf['20EMA'] > last_htf['50EMA']
+        ltf_up = last_ltf['10EMA'] > last_ltf['20EMA'] > last_ltf['50EMA']
         
         # Overall Trend
         if htf_up and ltf_up: current_trend = "UPTREND"
@@ -70,14 +68,13 @@ def monitor():
         else: current_trend = "NO TRADE ZONE"
         
         trend_color = "green" if current_trend == "UPTREND" else "red" if current_trend == "DOWNTREND" else "yellow"
-        trend_label = colored(current_trend, trend_color)
         
-        # Output lines
+        # Output lines with full-line coloring
         lines = [
             f"\r[{colored(SYMBOL, 'cyan')}]",
-            f"{HTF}: {htf_label} (EMA10: {last_htf['10EMA']:.2f} | EMA20: {last_htf['20EMA']:.2f})",
-            f"{LTF}: {ltf_label} (EMA10: {last_ltf['10EMA']:.2f} | EMA20: {last_ltf['20EMA']:.2f})",
-            f"Overall TREND: {trend_label}"
+            colored(f"{HTF}: {'UP' if htf_up else 'DOWN'} (10:{last_htf['10EMA']:.2f} | 20:{last_htf['20EMA']:.2f} | 50:{last_htf['50EMA']:.2f})", trend_color),
+            colored(f" {LTF}: {'UP' if ltf_up else 'DOWN'} (10:{last_ltf['10EMA']:.2f} | 20:{last_ltf['20EMA']:.2f} | 50:{last_ltf['50EMA']:.2f})", trend_color),
+            colored(f"OVERALL TREND: {current_trend}", trend_color)
         ]
         
         # Clear current lines and rewrite

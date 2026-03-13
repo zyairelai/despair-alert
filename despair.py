@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import os, sys, subprocess, shutil
 
 # Get the absolute path of the directory where despair.py is located
@@ -8,7 +9,7 @@ SCRIPTS_LIST = [
     ("ema_double.py",  "EMA 10/20/50 Alignment (15m + 5m)"),
     ("heikin.py",      "Heikin Ashi Color Change"),
     ("hourbreak.py",   "1H Structure Break"),
-    ("linetouch.py",   "Check Specific Price Touch"),
+    ("linetouch.py",   "Check Specific Line Touch"),
     ("monitoring.py",  "Live Trend Dashboard"),
     ("oneminute.py",   "One Minute Entry Alert"),
     ("pricealert.py",  "Custom Price Alert"),
@@ -19,6 +20,14 @@ SCRIPTS_LIST = [
 
 # Sort alphabetically by filename (the first element of each tuple)
 SCRIPTS_LIST.sort(key=lambda x: x[0])
+
+SHORTCUTS = {
+    "l": "linetouch.py",
+    "m": "monitoring.py",
+    "o": "oneminute.py",
+    "p": "pricealert.py",
+    "z": "zones.py"
+}
 
 def clear_pycache():
     """Delete all __pycache__ folders in the project directory and subdirectories."""
@@ -34,35 +43,49 @@ def clear_pycache():
 
 def display_menu(sorted_scripts):
     print("\n========================= SCRIPTS =========================")
+    shortcut_rev = {v: k for k, v in SHORTCUTS.items()}
     for idx, (script, desc) in enumerate(sorted_scripts, start=1):
-        print(f"{idx:>2}. {script:<13} -  {desc}")
+        sc = shortcut_rev.get(script, "")
+        sc_label = f"({sc})" if sc else "   "
+        print(f"{idx:>2}. {script:<13} {sc_label}  -  {desc}")
     print("==========================================================")
 
 def main():
     try:
         display_menu(SCRIPTS_LIST)
         user_input = input("\nEnter Script: ").strip()
-        if not user_input: return
-
-        parts = user_input.split()
-        try:
-            choice_idx = int(parts[0]) - 1
+        
+        if not user_input:
+            script_name = "monitoring.py"
+            args = []
+        else:
+            parts = user_input.split()
+            choice = parts[0].lower()
             args = parts[1:]
-        except ValueError:
-            print(f"[!] Invalid input: {parts[0]} is not a number.")
-            return
-
-        if 0 <= choice_idx < len(SCRIPTS_LIST):
-            script_name, _ = SCRIPTS_LIST[choice_idx]
-            script_path = os.path.join(SCRIPT_DIR, script_name)
             
-            # Use subprocess.run with a list to prevent shell injection
+            script_name = None
+            
+            if choice in SHORTCUTS:
+                script_name = SHORTCUTS[choice]
+            elif choice in ['0', '00']:
+                script_name = "monitoring.py"
+            else:
+                try:
+                    choice_idx = int(choice) - 1
+                    if 0 <= choice_idx < len(SCRIPTS_LIST):
+                        script_name, _ = SCRIPTS_LIST[choice_idx]
+                    else:
+                        script_name = "monitoring.py"
+                except ValueError:
+                    script_name = "monitoring.py"
+
+        if script_name:
+            script_path = os.path.join(SCRIPT_DIR, script_name)
             cmd = [sys.executable, script_path] + args
             
             print(f"\n[+] Running: {' '.join(cmd)}")
             try: subprocess.run(cmd)
             except KeyboardInterrupt: print("\n[!] Script execution interrupted.")
-        else: print(f"[!] Invalid choice number: {choice_idx + 1}")
 
     except KeyboardInterrupt: print("\n\nAborted.")
     except Exception as e: print(f"[!] Unexpected error: {e}")

@@ -90,12 +90,14 @@ def ema_double():
         overall_side = "INDECISIVE"
         overall_label = colored(overall_side, "yellow")
 
-    # Multi-line output
+    # Multi-line output with full coloring
+    trend_color = "green" if overall_side == "LONG" else "red" if overall_side == "SHORT" else "yellow"
+    
     output = [
         f"\r[{colored(SYMBOL, 'cyan')}]",
-        f"{htf}: {label_htf} (EMA10: {last_htf['10EMA']:.2f} | EMA20: {last_htf['20EMA']:.2f})",
-        f"{ltf}: {label_ltf} (EMA10: {last_ltf['10EMA']:.2f} | EMA20: {last_ltf['20EMA']:.2f})",
-        f"Overall: {overall_label}"
+        colored(f"{htf}: {'UP' if trend_htf_val == 'UP' else 'DOWN' if trend_htf_val == 'DOWN' else 'NONE'} (10:{last_htf['10EMA']:.2f} | 20:{last_htf['20EMA']:.2f} | 50:{last_htf['50EMA']:.2f})", trend_color),
+        colored(f" {ltf}: {'UP' if trend_ltf_val == 'UP' else 'DOWN' if trend_ltf_val == 'DOWN' else 'NONE'} (10:{last_ltf['10EMA']:.2f} | 20:{last_ltf['20EMA']:.2f} | 50:{last_ltf['50EMA']:.2f})", trend_color),
+        colored(f"OVERALL TREND: {overall_side}", trend_color)
     ]
     
     # Use ANSI escape sequences to clear the lines and move cursor up

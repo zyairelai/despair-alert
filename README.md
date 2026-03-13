@@ -6,6 +6,7 @@
 alias web='python3 -m http.server 80'
 alias webserver='python3 -m http.server 80'
 
+alias de="/home/kali/despair-alert/despair.py"
 alias despair="/home/kali/despair-alert/despair.py"
 alias ema_double="/home/kali/despair-alert/ema_double.py"
 alias ema_single="/home/kali/despair-alert/ema_single.py"
