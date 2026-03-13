@@ -67,13 +67,15 @@ def monitor():
         elif not htf_up and not ltf_up: current_trend = "DOWNTREND"
         else: current_trend = "NO TRADE ZONE"
         
+        htf_color = "green" if htf_up else "red"
+        ltf_color = "green" if ltf_up else "red"
         trend_color = "green" if current_trend == "UPTREND" else "red" if current_trend == "DOWNTREND" else "yellow"
         
-        # Output lines with full-line coloring
+        # Output lines with independent coloring
         lines = [
             f"\r[{colored(SYMBOL, 'cyan')}]",
-            colored(f"{HTF}: {'UP' if htf_up else 'DOWN'} (10:{last_htf['10EMA']:.2f} | 20:{last_htf['20EMA']:.2f} | 50:{last_htf['50EMA']:.2f})", trend_color),
-            colored(f" {LTF}: {'UP' if ltf_up else 'DOWN'} (10:{last_ltf['10EMA']:.2f} | 20:{last_ltf['20EMA']:.2f} | 50:{last_ltf['50EMA']:.2f})", trend_color),
+            colored(f"{HTF}: {'  UP' if htf_up else 'DOWN'} (10:{last_htf['10EMA']:.2f} | 20:{last_htf['20EMA']:.2f} | 50:{last_htf['50EMA']:.2f})", htf_color),
+            colored(f" {LTF}: {'  UP' if ltf_up else 'DOWN'} (10:{last_ltf['10EMA']:.2f} | 20:{last_ltf['20EMA']:.2f} | 50:{last_ltf['50EMA']:.2f})", ltf_color),
             colored(f"OVERALL TREND: {current_trend}", trend_color)
         ]
         
