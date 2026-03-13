@@ -13,7 +13,9 @@ SYMBOL = args.symbol
 # Configuration
 HTF = "15m"
 LTF = "5m"
+VLTF = "1m"
 LAST_TREND = None
+LAST_ALERT_TREND = None
 
 def telegram_bot_sendtext(bot_message):
     bot_token = os.environ.get('TELEGRAM_LIVERMORE')
@@ -50,22 +52,31 @@ def get_klines(pair, interval):
     return candlestick
 
 def monitor():
-    global LAST_TREND
+    global LAST_TREND, LAST_ALERT_TREND
     try:
         df_htf = get_klines(SYMBOL, HTF)
         df_ltf = get_klines(SYMBOL, LTF)
+        df_vltf = get_klines(SYMBOL, VLTF)
         
         last_htf = df_htf.iloc[-1]
         last_ltf = df_ltf.iloc[-1]
+        last_vltf = df_vltf.iloc[-1]
         
         # Trend logic: UP (10 > 20 > 50), DOWN (10 < 20)
         htf_up = last_htf['10EMA'] > last_htf['20EMA'] > last_htf['50EMA']
         ltf_up = last_ltf['10EMA'] > last_ltf['20EMA'] > last_ltf['50EMA']
+        vltf_up = last_vltf['10EMA'] > last_vltf['20EMA']
+        vltf_down = last_vltf['10EMA'] < last_vltf['20EMA']
         
-        # Overall Trend
+        # Overall Trend (Console)
         if htf_up and ltf_up: current_trend = "UPTREND"
         elif not htf_up and not ltf_up: current_trend = "DOWNTREND"
         else: current_trend = "NO TRADE ZONE"
+        
+        # Alert Trend (Hidden 1m Condition)
+        if htf_up and ltf_up and vltf_up: alert_trend = "UPTREND"
+        elif not htf_up and not ltf_up and vltf_down: alert_trend = "DOWNTREND"
+        else: alert_trend = "NO TRADE ZONE"
         
         htf_color = "green" if htf_up else "red"
         ltf_color = "green" if ltf_up else "red"
@@ -83,14 +94,15 @@ def monitor():
         sys.stdout.write("\033[K" + "\n\033[K".join(lines) + f"\033[{len(lines)-1}A")
         sys.stdout.flush()
         
-        # Telegram Alert only on Change
-        if LAST_TREND is not None and current_trend != LAST_TREND:
-            emoji = "🚀" if current_trend == "UPTREND" else "💥" if current_trend == "DOWNTREND" else "⏳"
+        # Telegram Alert only on Alert Trend Change
+        if LAST_ALERT_TREND is not None and alert_trend != LAST_ALERT_TREND:
+            emoji = "🚀" if alert_trend == "UPTREND" else "💥" if alert_trend == "DOWNTREND" else "⏳"
             name = SYMBOL.replace('USDT', '')
-            msg = f"{emoji} {name} Trend: {current_trend} {emoji}"
+            msg = f"{emoji} {name} Trend: {alert_trend} {emoji}"
             telegram_bot_sendtext(msg)
             
         LAST_TREND = current_trend
+        LAST_ALERT_TREND = alert_trend
         
     except Exception as e:
         # Avoid crashing the loop on network errors
