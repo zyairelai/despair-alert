@@ -1,101 +1,72 @@
-#!/usr/bin/python3
+import os, sys, subprocess, shutil
 
-import pandas, requests, time, socket, os, sys, argparse
-from datetime import datetime
-from termcolor import colored
+# Get the absolute path of the directory where despair.py is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-parser = argparse.ArgumentParser(description='The DESPAIR script.', add_help=False)
-parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
-parser.add_argument('lookback', type=int, nargs='?', default=None, help='Number of candles to look back')
-parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
+SCRIPTS_LIST = [
+    ("ema_single.py",  "EMA 10/20 Cross Single Timeframe"),
+    ("ema_double.py",  "EMA 10/20/50 Alignment (15m + 5m)"),
+    ("heikin.py",      "Heikin Ashi Color Change"),
+    ("hourbreak.py",   "1H Structure Break"),
+    ("linetouch.py",   "Check Specific Price Touch"),
+    ("monitoring.py",  "Live Trend Dashboard"),
+    ("oneminute.py",   "One Minute Entry Alert"),
+    ("pricealert.py",  "Custom Price Alert"),
+    ("standing.py",    "Close Above/Below MA Check"),
+    ("stoploss.py",    "Stoploss Multi-Price Alert"),
+    ("zones.py",       "Prev 1D/4H Levels")
+]
 
-args, unknown = parser.parse_known_args()
-SYMBOL = args.symbol
+# Sort alphabetically by filename (the first element of each tuple)
+SCRIPTS_LIST.sort(key=lambda x: x[0])
 
-if args.lookback is None:
-    if unknown and unknown[0].isdigit():
-        LOOKBACK = int(unknown[0])
-    else:
-        print(f"[i] Usage: {os.path.basename(sys.argv[0])} [number]")
-        sys.exit(0)
-else: LOOKBACK = args.lookback
+def clear_pycache():
+    """Delete all __pycache__ folders in the project directory and subdirectories."""
+    count = 0
+    for root, dirs, _ in os.walk(SCRIPT_DIR):
+        if '__pycache__' in dirs:
+            pycache_path = os.path.join(root, '__pycache__')
+            try:
+                shutil.rmtree(pycache_path)
+                count += 1
+            except Exception as e: print(f"[!] Error cleaning {pycache_path}: {e}")
+    if count > 0: print(f"[i] Cleaned up {count} __pycache__ folder(s).")
 
-print("\n[i] The DESPAIR script is running...")
-print(f"[i] Comparing with previous {LOOKBACK} candles.\n")
+def display_menu(sorted_scripts):
+    print("\n========================= SCRIPTS =========================")
+    for idx, (script, desc) in enumerate(sorted_scripts, start=1):
+        print(f"{idx:>2}. {script:<13} -  {desc}")
+    print("==========================================================")
 
-def telegram_bot_sendtext(bot_message):
-    print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
-    bot_token = os.environ.get('TELEGRAM_LIVERMORE')
-    chat_id = "@swinglivermore"
-    url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
-    params = {'chat_id': chat_id, 'parse_mode': 'html', 'text': bot_message}
-    response = requests.get(url, params=params)
-    return response.json()
+def main():
+    try:
+        display_menu(SCRIPTS_LIST)
+        user_input = input("\nEnter Script: ").strip()
+        if not user_input: return
 
-# telegram_bot_sendtext("Telegram works!")
-
-session = requests.Session()
-def get_klines(pair, interval):
-    spot_url = "https://api.binance.com/api/v1/klines"
-    url = "https://fapi.binance.com/fapi/v1/klines"
-    params = {"symbol": pair, "interval": interval, "limit": 100}
-    r = session.get(url, params=params, timeout=5)
-    r.raise_for_status()
-    data = r.json()
-    result = [[x[0], float(x[1]), float(x[2]), float(x[3]), float(x[4]), float(x[5])] for x in data]
-    cols = ["timestamp", "open", "high", "low", "close", "volume"]
-    candlestick = pandas.DataFrame(result, columns=cols).sort_values("timestamp")
-    candlestick["body"] = (candlestick["close"] - candlestick["open"]).abs()
-    candlestick["upper_wick"] = candlestick["high"] - candlestick[["open", "close"]].max(axis=1)
-    candlestick["lower_wick"] = candlestick[["open", "close"]].min(axis=1) - candlestick["low"]
-    return candlestick
-
-def heikin_ashi(klines):
-    heikin_ashi_df = pandas.DataFrame(index=klines.index.values, columns=['ha_open', 'ha_high', 'ha_low', 'ha_close'])
-    heikin_ashi_df['ha_close'] = (klines['open'] + klines['high'] + klines['low'] + klines['close']) / 4
-
-    for i in range(len(klines)):
-        if i == 0: heikin_ashi_df.iat[0, 0] = klines['open'].iloc[0]
-        else: heikin_ashi_df.iat[i, 0] = (heikin_ashi_df.iat[i-1, 0] + heikin_ashi_df.iat[i-1, 3]) / 2
-
-    heikin_ashi_df.insert(0,'timestamp', klines['timestamp'])
-    heikin_ashi_df['ha_high'] = heikin_ashi_df.loc[:, ['ha_open', 'ha_close']].join(klines['high']).max(axis=1)
-    heikin_ashi_df['ha_low']  = heikin_ashi_df.loc[:, ['ha_open', 'ha_close']].join(klines['low']).min(axis=1)
-    heikin_ashi_df['volume'] = klines['volume']
-    heikin_ashi_df['body'] = (heikin_ashi_df['ha_close'] - heikin_ashi_df['ha_open']).abs()
-    heikin_ashi_df['upper_wick'] = heikin_ashi_df['ha_high'] - heikin_ashi_df[['ha_open', 'ha_close']].max(axis=1)
-    heikin_ashi_df['lower_wick'] = heikin_ashi_df[['ha_open', 'ha_close']].min(axis=1) - heikin_ashi_df['ha_low']
-    heikin_ashi_df['color'] = heikin_ashi_df.apply(lambda row: 'GREEN' if row['ha_close'] >= row['ha_open'] else 'RED', axis=1)
-    heikin_ashi_df['20MA'] = klines['close'].rolling(window=20).mean()
-    heikin_ashi_df['100EMA'] = klines['close'].ewm(span=100, adjust=False).mean()
-    result_cols = ['ha_open', 'ha_high', 'ha_low', 'ha_close', 'volume', 'color', 'body', 'upper_wick', 'lower_wick', '20MA', '100EMA']
-    for col in result_cols: heikin_ashi_df[col] = heikin_ashi_df[col].apply(lambda v: round(v) if isinstance(v, float) and not pandas.isna(v) else v)
-    return heikin_ashi_df[result_cols]
-
-def short_despair():
-    one_hour = heikin_ashi(get_klines(SYMBOL, "1h"))
-
-    if one_hour['ha_low'].iloc[-1] < one_hour['ha_low'].iloc[-(LOOKBACK+1):-1].min():
-        telegram_bot_sendtext("💥 1H STRUCTURE BREAK 💥")
-        exit()
-
-    if one_hour['color'].iloc[-1] == "GREEN":
-        condition_1 = one_hour['body'].iloc[-1] > (one_hour['lower_wick'].iloc[-1] * 2)
-        condition_2 = one_hour['upper_wick'].iloc[-1] > (one_hour['body'].iloc[-1] * 2)
-        condition_3 = one_hour['upper_wick'].iloc[-1] > (one_hour['lower_wick'].iloc[-1] * 2)
-        condition_4 = one_hour['upper_wick'].iloc[-1] > (one_hour['lower_wick'].iloc[-1] + one_hour['body'].iloc[-1])
-
-        if condition_1 and condition_2 and condition_3 and condition_4:
-            telegram_bot_sendtext("💥 1H PIN BAR 💥")
-            exit()
-
-try:
-    while True:
+        parts = user_input.split()
         try:
-            short_despair()
-            time.sleep(5)
-        except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
-            print(f"Network error: {e}")
-            time.sleep(10)
-            continue
-except KeyboardInterrupt: print("\n\nAborted.")
+            choice_idx = int(parts[0]) - 1
+            args = parts[1:]
+        except ValueError:
+            print(f"[!] Invalid input: {parts[0]} is not a number.")
+            return
+
+        if 0 <= choice_idx < len(SCRIPTS_LIST):
+            script_name, _ = SCRIPTS_LIST[choice_idx]
+            script_path = os.path.join(SCRIPT_DIR, script_name)
+            
+            # Use subprocess.run with a list to prevent shell injection
+            cmd = [sys.executable, script_path] + args
+            
+            print(f"\n[+] Running: {' '.join(cmd)}")
+            try: subprocess.run(cmd)
+            except KeyboardInterrupt: print("\n[!] Script execution interrupted.")
+        else: print(f"[!] Invalid choice number: {choice_idx + 1}")
+
+    except KeyboardInterrupt: print("\n\nAborted.")
+    except Exception as e: print(f"[!] Unexpected error: {e}")
+    finally: clear_pycache()
+
+if __name__ == "__main__":
+    main()

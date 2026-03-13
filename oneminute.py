@@ -35,8 +35,8 @@ elif "--1m" in sys.argv:
 
 def telegram_bot_sendtext(bot_message):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S\n")))
-    bot_token = os.environ.get('TELEGRAM_WOLVESRISE')
-    chat_id = "@futures_wolves_rise"
+    bot_token = os.environ.get('TELEGRAM_LIVERMORE')
+    chat_id = "@swinglivermore"
     url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
     params = {'chat_id': chat_id, 'parse_mode': 'html', 'text': bot_message}
     try:

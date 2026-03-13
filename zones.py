@@ -11,10 +11,10 @@ SLEEP_INTERVAL = "1h"
 
 parser = argparse.ArgumentParser(description='The ZONES script.', add_help=False)
 parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
+parser.add_argument("--alert", dest="alert_mode", action="store_true", help="Enable Alert Mode")
 parser.add_argument("--current", dest="current_mode", action="store_true", help="Use Current Timeframe")
 parser.add_argument("--exit", dest="exit_mode", action="store_true", help="Exit after triggered")
 parser.add_argument("--fibonacci", dest="fibonacci", action="store_true", help="Enable Fibonacci Levels")
-parser.add_argument("--print", dest="print_mode", action="store_true", help="Print levels and exit")
 parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
 
 argcomplete.autocomplete(parser)
@@ -67,9 +67,10 @@ def get_levels():
     mid = (h + l) / 2
 
     levels = [("High", h, "white")]
-    if args.fibonacci or args.print_mode: levels.append(("Mid-Up", (h + mid) / 2, "green"))
+    # If not in alert mode (default print mode) or fibonacci is requested, show more levels
+    if args.fibonacci or not args.alert_mode: levels.append(("Mid-Up", (h + mid) / 2, "green"))
     levels.append(("Middle", mid, "red"))
-    if args.fibonacci or args.print_mode: levels.append(("Mid-Low", (mid + l) / 2, "green"))
+    if args.fibonacci or not args.alert_mode: levels.append(("Mid-Low", (mid + l) / 2, "green"))
     levels.append(("Low", l, "white"))
     return levels
 
@@ -90,7 +91,7 @@ def main():
     levels = get_levels()
     print_levels(levels, "1D")
 
-    if args.print_mode:
+    if not args.alert_mode:
         levels_4h = get_4h_levels()
         print_levels(levels_4h, "4H")
         return

@@ -7,10 +7,12 @@ alias web='python3 -m http.server 80'
 alias webserver='python3 -m http.server 80'
 
 alias despair="/home/kali/despair-alert/despair.py"
-alias emacross="/home/kali/despair-alert/emacross.py"
-alias entry="/home/kali/despair-alert/entry.py"
+alias ema_double="/home/kali/despair-alert/ema_double.py"
+alias ema_single="/home/kali/despair-alert/ema_single.py"
 alias heikin="/home/kali/despair-alert/heikin.py"
+alias hourbreak="/home/kali/despair-alert/hourbreak.py"
 alias linetouch="/home/kali/despair-alert/linetouch.py"
+alias monitoring="/home/kali/despair-alert/monitoring.py"
 alias oneminute="/home/kali/despair-alert/oneminute.py"
 alias pricealert="/home/kali/despair-alert/pricealert.py"
 alias standing="/home/kali/despair-alert/standing.py"
@@ -22,8 +24,13 @@ alias zones="/home/kali/despair-alert/zones.py"
 autoload -U bashcompinit
 bashcompinit
 
+# Only zones.py currently has complex flag completion
 eval "$(register-python-argcomplete --shell zsh /home/kali/despair-alert/zones.py)"
 compdef _python_argcomplete zones
+
+# Note: All scripts support --symbol [PAIR]
+# pricealert.py also accepts positional targets: pricealert 12345 67890
+```
 ```
 
 ### To-Do

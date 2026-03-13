@@ -10,7 +10,7 @@ parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help
 args, unknown = parser.parse_known_args()
 SYMBOL = args.symbol
 htf = "15m"
-ltf = "3m"
+ltf = "5m"
 
 # Determine target side
 prompt = f"Check {colored('LONG', 'green')}, {colored('SHORT', 'red')}, or {colored('BOTH', 'cyan')}? (Default both): "
@@ -54,42 +54,72 @@ def get_klines(pair, interval):
     candlestick = pandas.DataFrame(result, columns=cols).sort_values("timestamp")
     candlestick['10EMA'] = candlestick['close'].ewm(span=10, adjust=False).mean()
     candlestick['20EMA'] = candlestick['close'].ewm(span=20, adjust=False).mean()
+    candlestick['50EMA'] = candlestick['close'].ewm(span=50, adjust=False).mean()
     return candlestick
 
-def check_entry():
+def get_trend_label(df_row, side="UP"):
+    if side == "UP":
+        # Stricter UP: 10 > 20 > 50
+        if df_row['10EMA'] > df_row['20EMA'] > df_row['50EMA']: return colored("UP", "green")
+        if df_row['10EMA'] < df_row['20EMA']: return colored("DOWN", "red")
+    else:
+        # DOWN: 10 < 20 (stays same)
+        if df_row['10EMA'] < df_row['20EMA']: return colored("DOWN", "red")
+        if df_row['10EMA'] > df_row['20EMA']: return colored("UP", "green")
+    return colored("NONE", "yellow")
+
+def ema_double():
     df_htf = get_klines(SYMBOL, htf)
     df_ltf = get_klines(SYMBOL, ltf)
 
     last_htf = df_htf.iloc[-1]
     last_ltf = df_ltf.iloc[-1]
 
-    trend_htf = "UP" if last_htf['10EMA'] > last_htf['20EMA'] else "DOWN"
-    trend_ltf = "UP" if last_ltf['10EMA'] > last_ltf['20EMA'] else "DOWN"
+    # Stricter Long check for HTF/LTF
+    trend_htf_val = "UP" if last_htf['10EMA'] > last_htf['20EMA'] > last_htf['50EMA'] else "DOWN" if last_htf['10EMA'] < last_htf['20EMA'] else "NONE"
+    trend_ltf_val = "UP" if last_ltf['10EMA'] > last_ltf['20EMA'] > last_ltf['50EMA'] else "DOWN" if last_ltf['10EMA'] < last_ltf['20EMA'] else "NONE"
+    
+    label_htf = get_trend_label(last_htf, "UP")
+    label_ltf = get_trend_label(last_ltf, "UP")
 
-    status_msg = f"[{SYMBOL}] {htf}: {trend_htf} | {ltf}: {trend_ltf} ({htf}_10: {last_htf['10EMA']:.2f}, {ltf}_10: {last_ltf['10EMA']:.2f})"
-    print(f"\r{status_msg}", end="", flush=True)
+    # Determine Overall status
+    if trend_htf_val == trend_ltf_val and trend_htf_val != "NONE":
+        overall_side = "LONG" if trend_htf_val == "UP" else "SHORT"
+        overall_label = colored(overall_side, "green" if overall_side == "LONG" else "red")
+    else:
+        overall_side = "INDECISIVE"
+        overall_label = colored(overall_side, "yellow")
 
-    if trend_htf == trend_ltf:
-        side = "LONG" if trend_htf == "UP" else "SHORT"
-        trend_label = "UPTREND" if side == "LONG" else "DOWNTREND"
-        color = "green" if side == "LONG" else "red"
-        emoji = "🚀" if side == "LONG" else "💥"
+    # Multi-line output
+    output = [
+        f"\r[{colored(SYMBOL, 'cyan')}]",
+        f"{htf}: {label_htf} (EMA10: {last_htf['10EMA']:.2f} | EMA20: {last_htf['20EMA']:.2f})",
+        f"{ltf}: {label_ltf} (EMA10: {last_ltf['10EMA']:.2f} | EMA20: {last_ltf['20EMA']:.2f})",
+        f"Overall: {overall_label}"
+    ]
+    
+    # Use ANSI escape sequences to clear the lines and move cursor up
+    sys.stdout.write("\033[K" + "\n\033[K".join(output) + f"\033[{len(output)-1}A")
+    sys.stdout.flush()
 
-        if TARGET_SIDE == "BOTH" or TARGET_SIDE == side:
+    if overall_side in ["LONG", "SHORT"]:
+        if TARGET_SIDE == "BOTH" or TARGET_SIDE == overall_side:
+            emoji = "🚀" if overall_side == "LONG" else "💥"
+            trend_name = "UPTREND" if overall_side == "LONG" else "DOWNTREND"
             name = SYMBOL.replace('USDT', '')
-            msg = f"{emoji} {name} {htf} + {ltf} EMA {trend_label} {emoji}"
-            print("\n")
-            print(colored(msg, color))
+            msg = f"{emoji} {name} {htf} + {ltf} EMA {trend_name} {emoji}"
+            print("\n" * len(output)) # Move past the live status
+            print(colored(msg, "green" if overall_side == "LONG" else "red"))
             telegram_bot_sendtext(msg)
             exit()
 
 try:
     while True:
         try:
-            check_entry()
+            ema_double()
             time.sleep(1)
         except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
             print(f"Network error: {e}")
             time.sleep(10)
             continue
-except KeyboardInterrupt: print("\n\nAborted.")
+except KeyboardInterrupt: print("\n" * 4 + "Aborted.")

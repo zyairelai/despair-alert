@@ -12,7 +12,7 @@ SYMBOL = args.symbol
 
 # Curving status configuration: Set to True to enable CURVING alerts, False for CROSS ONLY
 check_is_curving = False
-INTERVAL = input("Enter timeframe (default 3m): ") or "3m"
+INTERVAL = input("Enter timeframe (default 5m): ") or "5m"
 
 # Determine target trend
 prompt = f"Check {colored('UPTREND', 'green')}, {colored('DOWNTREND', 'red')}, or {colored('BOTH', 'cyan')}? (Default down): "
@@ -32,10 +32,10 @@ print("\n" + colored(WOLF_MSG, TARGET_COLOR))
 
 def telegram_bot_sendtext(bot_message):
     print("Triggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S")))
-    bot_token = os.environ.get('TELEGRAM_WOLVESRISE')
+    bot_token = os.environ.get('TELEGRAM_LIVERMORE')
     if not bot_token:
         return
-    chat_id = "@futures_wolves_rise"
+    chat_id = "@swinglivermore"
     url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
     params = {'chat_id': chat_id, 'parse_mode': 'html', 'text': bot_message}
     try:
@@ -60,7 +60,7 @@ def get_klines(pair, interval):
 
 PREV_CROSS = None
 
-def monitor_ema():
+def ema_single():
     global PREV_CROSS
     df = get_klines(SYMBOL, INTERVAL)
     if len(df) < 4: return
@@ -83,9 +83,7 @@ def monitor_ema():
     is_cross_down = (current_trend == "DOWNTREND") and (PREV_CROSS == "UPTREND")
 
     # First run initialization
-    if PREV_CROSS is None:
-        PREV_CROSS = current_trend
-
+    if PREV_CROSS is None: PREV_CROSS = current_trend
     status_msg = f"[{INTERVAL}] {SYMBOL}: {current_trend} | {curve_status} (10: {cur_e10:.2f}, 20: {cur_e20:.2f})"
     print(f"\r{status_msg}", end="", flush=True)
 
@@ -117,7 +115,7 @@ def monitor_ema():
 try:
     while True:
         try:
-            monitor_ema()
+            ema_single()
             time.sleep(1)
         except (ConnectionResetError, socket.timeout, requests.exceptions.RequestException) as e:
             print(f"Network error: {e}")

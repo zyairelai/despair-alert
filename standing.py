@@ -5,11 +5,11 @@ from termcolor import colored
 
 def telegram_bot_sendtext(bot_message):
     print(bot_message)
-    bot_token = os.environ.get('TELEGRAM_WOLVESRISE')
+    bot_token = os.environ.get('TELEGRAM_LIVERMORE')
     if not bot_token:
-        print("Error: TELEGRAM_WOLVESRISE environment variable not set.")
+        print("Error: TELEGRAM_LIVERMORE environment variable not set.")
         return None
-    chat_id = "@futures_wolves_rise"
+    chat_id = "@swinglivermore"
     send_text = f'https://api.telegram.org/bot{bot_token}/sendMessage?chat_id={chat_id}&parse_mode=html&text={bot_message}'
     try:
         response = requests.get(send_text)
