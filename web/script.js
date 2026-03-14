@@ -51,15 +51,67 @@ async function updateTrend() {
         if (htfUp && ltfUp) {
             trendDisplay.innerText = "CURRENTLY UPTREND";
             trendDisplay.className = "overall-trend trend-up";
+            checkAndSendAlert("UPTREND");
         } else if (htfDown && ltfDown) {
             trendDisplay.innerText = "CURRENTLY DOWNTREND";
             trendDisplay.className = "overall-trend trend-down";
+            checkAndSendAlert("DOWNTREND");
         } else {
             trendDisplay.innerText = "NO TRADE ZONE";
             trendDisplay.className = "overall-trend trend-neutral";
+            checkAndSendAlert("NO TRADE ZONE");
         }
     } catch (e) {
         console.error("Trend update failed", e);
+    }
+}
+
+async function sendTelegramAlert(message) {
+    const bots = [
+        { token: ENV.TELEGRAM_LIVERMORE, chat_id: "@swinglivermore" },
+        { token: ENV.TELEGRAM_WOLVESRISE, chat_id: "@futures_wolves_rise" }
+    ];
+
+    for (const bot of bots) {
+        if (!bot.token) continue;
+        const url = `https://api.telegram.org/bot${bot.token}/sendMessage`;
+        const params = new URLSearchParams({
+            chat_id: bot.chat_id,
+            parse_mode: 'html',
+            text: message
+        });
+        try {
+            await fetch(`${url}?${params}`);
+        } catch (e) { }
+    }
+}
+
+function checkAndSendAlert(currentTrend) {
+    const lastAlertTrend = localStorage.getItem('lastAlertTrend');
+    const lastAlertCandle = localStorage.getItem('lastAlertCandle');
+
+    // We get the current 5m candle timestamp by rounding down now() to 5m
+    const now = new Date();
+    const currentCandleTs = Math.floor(now.getTime() / (5 * 60 * 1000)) * (5 * 60 * 1000);
+
+    const isNewCandle = !lastAlertCandle || currentCandleTs > parseInt(lastAlertCandle);
+
+    if (isNewCandle && currentTrend !== lastAlertTrend) {
+        // Don't alert on the very first run (like monitoring.py)
+        if (lastAlertTrend !== null) {
+            let emoji = "";
+            if (currentTrend === "UPTREND") emoji = "🚀";
+            else if (currentTrend === "DOWNTREND") emoji = "💥";
+            else if (currentTrend === "NO TRADE ZONE") emoji = "⏳";
+
+            const symbolShort = SYMBOL.replace("USDT", "");
+            const msg = `${emoji} ${symbolShort} Trend: ${currentTrend} ${emoji}`;
+
+            sendTelegramAlert(msg);
+        }
+
+        localStorage.setItem('lastAlertTrend', currentTrend);
+        localStorage.setItem('lastAlertCandle', currentCandleTs.toString());
     }
 }
 
