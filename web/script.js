@@ -141,7 +141,7 @@ function checkAndSendAlert(currentTrend, isEmergency = false) {
 
         if (sessionStarted) {
             sendTelegramAlert(msg);
-            if (beepMode === 'trend') beep();
+            beep(); // Always beep for emergency breakdown
         }
 
         localStorage.setItem('lastEmergencyHour', currentHourTs.toString());
@@ -164,7 +164,6 @@ function checkAndSendAlert(currentTrend, isEmergency = false) {
 
             if (sessionStarted) {
                 sendTelegramAlert(msg);
-                if (beepMode === 'trend') beep();
             }
         }
 
@@ -207,10 +206,15 @@ function tick() {
     // Triple-check for beep
     // 1. Should be exactly at the 5-minute mark (r === 0)
     // 2. Or if we just passed it (r === 299) and haven't beeped in the last 10 seconds
-    if (beepMode === 'interval' && (r === 0 || r === 299) && (nowTime - lastBeepTime > 10000)) {
-        console.log("Beeping at", now.toLocaleTimeString());
-        beep();
-        lastBeepTime = nowTime;
+    if ((r === 0 || r === 299) && (nowTime - lastBeepTime > 10000)) {
+        const trendText = document.getElementById("trendDisplay").innerText;
+        const isNoTrade = trendText === "NO TRADE ZONE";
+
+        if (beepMode === 'interval' || (beepMode === 'trend' && !isNoTrade)) {
+            console.log("Beeping at", now.toLocaleTimeString());
+            beep();
+            lastBeepTime = nowTime;
+        }
     }
 
     if (s % 3 === 0) updateTrend(); // Update trend every 3s
