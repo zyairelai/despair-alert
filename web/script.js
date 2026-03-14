@@ -1,6 +1,10 @@
 const SYMBOL = "BTCUSDT";
 let started = false;
 let lastBeepTime = 0; // Prevent duplicate beeps in the same second
+const CONFIG = {
+    wickDetection: false,
+    wickMultiplier: 1.2
+};
 
 async function fetchKlines(interval) {
     const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${SYMBOL}&interval=${interval}&limit=100`;
@@ -46,7 +50,7 @@ async function updateTrend() {
         const e15mPrev = getEMAs(p15mPrev);
         const prevClose15m = p15m[p15m.length - 2].close;
 
-        const htfUp = prevClose15m > e15mPrev.ema20;
+        const htfUp = prevClose15m > e15mPrev.ema20 && prevClose15m > e15mPrev.ema50;
         const htfDown = prevClose15m < e15mPrev.ema20;
 
         // 5m (LTF): Remain 10/20 crossing for down, 10/20/50 for up
@@ -61,7 +65,8 @@ async function updateTrend() {
         // Pattern Detection: 5m LONG UPPER WICK
         const current5m = p5m[p5m.length - 1];
         const prev5m = p5m[p5m.length - 2];
-        const hasLongWick = current5m.upperWick > prev5m.body &&
+        const hasLongWick = CONFIG.wickDetection &&
+            current5m.upperWick > (prev5m.body * CONFIG.wickMultiplier) &&
             current5m.upperWick > prev5m.upperWick &&
             current5m.upperWick > prev5m.lowerWick;
 

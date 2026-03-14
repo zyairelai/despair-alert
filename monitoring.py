@@ -65,7 +65,7 @@ def monitor():
         # 5m (LTF): Remain 10/20 crossing for down, 10/20/50 for up
         
         prev_htf = df_htf.iloc[-2]
-        htf_up = prev_htf['close'] > prev_htf['20EMA']
+        htf_up = prev_htf['close'] > prev_htf['20EMA'] and prev_htf['close'] > prev_htf['50EMA']
         htf_down = prev_htf['close'] < prev_htf['20EMA']
         
         ltf_up = last_ltf['10EMA'] > last_ltf['20EMA'] > last_ltf['50EMA']
@@ -125,9 +125,7 @@ def monitor():
             LAST_ALERT_CANDLE = current_candle_ts
             
         LAST_TREND = current_trend
-        
     except Exception as e: pass
-
 
 def main():
     print(colored(f"\n🐺 MONITORING {SYMBOL} {HTF}/{LTF} TREND CHANGES 🐺\n", "cyan"))
