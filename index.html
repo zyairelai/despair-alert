@@ -4,204 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Signal - 5M Beeper</title>
+    <title>DESPAIR ALERT</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #050608;
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --accent-green: #00ff88;
-            --text-main: #e0e6ed;
-            --text-dim: #94a3b8;
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --glow-green: rgba(0, 255, 136, 0.2);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Outfit', sans-serif;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            position: relative;
-        }
-
-        /* Abstract Background Visuals */
-        body::before {
-            content: '';
-            position: absolute;
-            top: -10%;
-            left: -10%;
-            width: 40%;
-            height: 40%;
-            background: radial-gradient(circle, var(--glow-green) 0%, transparent 70%);
-            z-index: -1;
-        }
-
-        body::after {
-            content: '';
-            position: absolute;
-            bottom: -10%;
-            right: -10%;
-            width: 50%;
-            height: 50%;
-            background: radial-gradient(circle, rgba(0, 150, 255, 0.1) 0%, transparent 70%);
-            z-index: -1;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 480px;
-            padding: 2rem;
-            z-index: 1;
-        }
-
-        .terminal-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 28px;
-            padding: 3rem 2rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .terminal-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
-        }
-
-        header h1 {
-            font-weight: 600;
-            font-size: 1rem;
-            letter-spacing: 0.2em;
-            color: var(--accent-green);
-            text-transform: uppercase;
-            margin-bottom: 0.5rem;
-        }
-
-        header p {
-            color: var(--text-dim);
-            font-size: 0.875rem;
-            margin-bottom: 2.5rem;
-        }
-
-        .timer-display {
-            margin-bottom: 3rem;
-        }
-
-        #countdown {
-            font-size: 5rem;
-            font-weight: 700;
-            font-variant-numeric: tabular-nums;
-            color: var(--text-main);
-            text-shadow: 0 0 30px var(--glow-green);
-            letter-spacing: -0.02em;
-        }
-
-        .timer-label {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-top: -0.5rem;
-        }
-
-        .controls button {
-            background: var(--accent-green);
-            color: #00331a;
-            border: none;
-            padding: 1.25rem 3rem;
-            border-radius: 16px;
-            font-weight: 700;
-            font-size: 1.125rem;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 255, 136, 0.3);
-        }
-
-        .controls button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 20px 25px -5px rgba(0, 255, 136, 0.4);
-            filter: brightness(1.1);
-        }
-
-        .controls button:active {
-            transform: translateY(0);
-        }
-
-        .controls button:disabled {
-            background: var(--glass-border);
-            color: var(--text-dim);
-            cursor: default;
-            box-shadow: none;
-            transform: none;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background: currentColor;
-            border-radius: 50%;
-            box-shadow: 0 0 10px currentColor;
-        }
-
-        /* Scanline Overlay Effect */
-        .scanlines {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            background-size: 100% 4px, 3px 100%;
-            z-index: 100;
-            opacity: 0.2;
-        }
-
-        @keyframes pulse {
-            0% {
-                opacity: 0.6;
-            }
-
-            50% {
-                opacity: 1;
-            }
-
-            100% {
-                opacity: 0.6;
-            }
-        }
-
-        .running-dot {
-            animation: pulse 1.5s infinite;
-        }
-    </style>
+    <link rel="stylesheet" href="web/style.css">
 </head>
 
 <body>
@@ -210,95 +17,29 @@
     <div class="container">
         <div class="terminal-card">
             <header>
-                <h1>Quantum Signal</h1>
-                <p>5-Minute Trading Alert Platform</p>
+                <h1 id="symbolLabel">BTCUSDT</h1>
             </header>
+
+            <div class="status-display">
+                <div id="htfRow" class="status-row">
+                    <span class="label">15m :</span> <span id="htfStatus">LOADING...</span>
+                </div>
+                <div id="ltfRow" class="status-row">
+                    <span class="label">5m :</span> <span id="ltfStatus">LOADING...</span>
+                </div>
+                <div id="trendDisplay" class="overall-trend trend-neutral">INITIALIZING...</div>
+            </div>
 
             <div class="timer-display">
                 <div id="countdown">00:00</div>
-                <div class="timer-label">Next High-Probability Signal In</div>
-            </div>
-
-            <div class="controls">
-                <button id="startBtn" onclick="start()">
-                    <span class="status-dot"></span>
-                    START MONITORING
-                </button>
+                <div class="controls">
+                    <button id="startBtn" onclick="start()">START MONITORING</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        let started = false;
-
-        function beep() {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                if (ctx.state === 'suspended') {
-                    ctx.resume();
-                }
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-
-                osc.type = "sine";
-                osc.frequency.setValueAtTime(1200, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.3);
-
-                gain.gain.setValueAtTime(0.5, ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
-
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-
-                osc.start();
-                osc.stop(ctx.currentTime + 0.3);
-            } catch (e) {
-                console.error("Audio failed:", e);
-            }
-        }
-
-        function secondsUntilNext5() {
-            const now = new Date();
-            const m = now.getMinutes();
-            const s = now.getSeconds();
-            const next = 5 - (m % 5);
-            let remaining = next * 60 - s;
-            if (remaining === 300) remaining = 0;
-            return remaining;
-        }
-
-        function tick() {
-            const r = secondsUntilNext5();
-            const m = Math.floor(r / 60);
-            const s = r % 60;
-
-            const mStr = String(m).padStart(2, '0');
-            const sStr = String(s).padStart(2, '0');
-
-            document.getElementById("countdown").innerText = `${mStr}:${sStr}`;
-
-            if (r === 0) {
-                beep();
-            }
-        }
-
-        function start() {
-            if (started) return;
-            started = true;
-
-            const btn = document.getElementById("startBtn");
-            const dot = btn.querySelector('.status-dot');
-
-            btn.innerHTML = '<span class="status-dot running-dot"></span> MONITORING ACTIVE';
-            btn.disabled = true;
-
-            setInterval(tick, 1000);
-            tick();
-
-            // Initial beep to signal start (requires user interaction)
-            beep();
-        }
-    </script>
+    <script src="web/script.js"></script>
 </body>
 
 </html>
