@@ -1,7 +1,6 @@
 #!/usr/bin/python3
-import pandas, requests, time, socket, os, sys, argparse
+import pandas, requests, time, socket, os, sys, argparse, shutil
 from termcolor import colored
-import shutil
 
 # Argument Parsing
 parser = argparse.ArgumentParser(description='Continuous Candle Pattern Monitoring.', add_help=False)
@@ -52,45 +51,16 @@ def get_klines(pair, interval):
 
 def detect_pattern(df):
     current = df.iloc[-1]
-    prev_5 = df.iloc[-6:-1]
-    prev_2 = df.iloc[-3:-1]
+    prev = df.iloc[-2]
     
-    # 1. Structure Break (Lower Low + Momentum)
-    low_condition = current['close'] < prev_5['low'].min()
-    momentum_condition = current['body'] > prev_5['body'].sum()
-    if low_condition and momentum_condition: return "MOMENTUM BREAKDOWN", "📉"
-
-    # 2. Shooting Star
-    is_shooting_star = (
-        current['close'] < current['open'] and
-        current['high'] >= prev_5['high'].max() and
-        (current['upper_wick'] > (current['body'] * 2 + current['lower_wick']) or 
-         current['upper_wick'] > (current['body'] + current['lower_wick']) * 2)
+    # Simple Short Condition:
+    is_short = (
+        current['upper_wick'] > prev['body'] and
+        current['upper_wick'] > prev['upper_wick'] and
+        current['upper_wick'] > prev['lower_wick']
     )
-    if is_shooting_star: return "SHOOTING STAR", "🎯"
-
-    # 3. Bearish Engulfing
-    is_bearish_engulfing = (
-        current['close'] < prev_2['low'].min() and
-        current['body'] > prev_2['body'].max()
-    )
-    if is_bearish_engulfing: return "BEARISH ENGULFING", "🐻"
-
-    # 4. Bullish Engulfing
-    is_bullish_engulfing = (
-        current['close'] > prev_2['high'].max() and
-        current['body'] > prev_2['body'].max()
-    )
-    if is_bullish_engulfing: return "BULLISH ENGULFING", "🐮"
-
-    # 5. Hanging Man
-    is_hanging_man = (
-        current['close'] > current['open'] and
-        current['close'] <= prev_5['low'].min() and
-        current['lower_wick'] > (current['body'] * 2 + current['upper_wick'])
-    )
-    if is_hanging_man: return "HANGING MAN", "🪂"
-
+    
+    if is_short: return "LONG WICK DETECTED", "💥"
     return None, None
 
 def monitor():
@@ -101,26 +71,30 @@ def monitor():
         pattern, emoji = detect_pattern(df)
         
         # UI Rendering
-        status_line = f"[{colored(SYMBOL, 'cyan')}] {INTERVAL} Candle: O:{last_candle['open']:.2f} H:{last_candle['high']:.2f} L:{last_candle['low']:.2f} C:{last_candle['close']:.2f}"
-        pattern_line = f" [+] Current Pattern: {colored(pattern if pattern else 'None', 'yellow')}"
+        candle_status = colored("GREEN", "green") if last_candle['close'] > last_candle['open'] else colored("RED", "red")
         
-        lines = [status_line, pattern_line]
+        lines = [
+            f"[{colored(SYMBOL, 'cyan')}]",
+            f"{INTERVAL} Candle: {candle_status}"
+        ]
+        
+        if pattern: lines.append(f"{emoji} {pattern} {emoji}")
+        
+        # Clear current lines and rewrite
         output_str = "\033[K" + "\n\033[K".join(lines)
         num_newlines = output_str.count('\n')
-        sys.stdout.write(output_str + f"\033[{num_newlines}A")
+        sys.stdout.write(output_str + f"\033[{num_newlines}A\r")
         sys.stdout.flush()
 
         # Alert Logic
         current_candle_ts = last_candle['timestamp']
         if pattern and (current_candle_ts != LAST_ALERT_CANDLE or pattern != LAST_ALERT_PATTERN):
-            msg = f"{emoji} {SYMBOL} {INTERVAL} {pattern} {emoji}"
+            msg = f"{emoji} {SYMBOL.replace('USDT', '')} {pattern} {emoji}"
             telegram_bot_sendtext(msg)
             LAST_ALERT_CANDLE = current_candle_ts
             LAST_ALERT_PATTERN = pattern
             
-    except Exception as e:
-        # print(f"Error: {e}") # Debug
-        pass
+    except Exception as e: pass
 
 def main():
     print(colored(f"\n🐺 MONITORING {SYMBOL} {INTERVAL} CANDLE PATTERNS 🐺\n", "cyan"))
@@ -128,10 +102,8 @@ def main():
         while True:
             monitor()
             time.sleep(2)
-    except KeyboardInterrupt:
-        print("\n" * 3 + "Aborted.")
-    finally:
-        clear_pycache()
+    except KeyboardInterrupt: print("\n" * 3 + "Aborted.")
+    finally: clear_pycache()
 
 if __name__ == "__main__":
     main()

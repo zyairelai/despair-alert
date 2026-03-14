@@ -61,12 +61,14 @@ def monitor():
         last_ltf = df_ltf.iloc[-1]
         
         # Trend logic:
-        # Uptrend: 10 > 20 > 50 on both 15m + 5m
-        # Downtrend: 10 < 20 on both 15m + 5m
-        htf_up = last_htf['10EMA'] > last_htf['20EMA'] > last_htf['50EMA']
-        ltf_up = last_ltf['10EMA'] > last_ltf['20EMA'] > last_ltf['50EMA']
+        # 15m (HTF): Simple check on previous close (-2 candle)
+        # 5m (LTF): Remain 10/20 crossing for down, 10/20/50 for up
         
-        htf_down = last_htf['10EMA'] < last_htf['20EMA']
+        prev_htf = df_htf.iloc[-2]
+        htf_up = prev_htf['close'] > prev_htf['20EMA']
+        htf_down = prev_htf['close'] < prev_htf['20EMA']
+        
+        ltf_up = last_ltf['10EMA'] > last_ltf['20EMA'] > last_ltf['50EMA']
         ltf_down = last_ltf['10EMA'] < last_ltf['20EMA']
         
         if htf_up and ltf_up: current_trend = "UPTREND"
@@ -85,8 +87,8 @@ def monitor():
         # Output lines with independent coloring
         lines = [
             f"\r[{colored(SYMBOL, 'cyan')}]",
-            colored(f"{HTF}: {htf_label} (EMA10:{last_htf['10EMA']:.2f} | EMA20:{last_htf['20EMA']:.2f} | EMA50:{last_htf['50EMA']:.2f})", htf_color),
-            colored(f" {LTF}: {ltf_label} (EMA10:{last_ltf['10EMA']:.2f} | EMA20:{last_ltf['20EMA']:.2f} | EMA50:{last_ltf['50EMA']:.2f})", ltf_color),
+            colored(f"{HTF}: {htf_label}", htf_color),
+            colored(f" {LTF}: {ltf_label}", ltf_color),
             "", # Spacer line
             colored(f" [+] OVERALL TREND: {current_trend}", trend_color)
         ]

@@ -6,10 +6,20 @@ async function fetchKlines(interval) {
     const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${SYMBOL}&interval=${interval}&limit=100`;
     const resp = await fetch(url);
     const data = await resp.json();
-    return data.map(d => parseFloat(d[4])); // Close prices
+    return data.map(d => ({
+        timestamp: d[0],
+        open: parseFloat(d[1]),
+        high: parseFloat(d[2]),
+        low: parseFloat(d[3]),
+        close: parseFloat(d[4]),
+        body: Math.abs(parseFloat(d[4]) - parseFloat(d[1])),
+        upperWick: parseFloat(d[2]) - Math.max(parseFloat(d[4]), parseFloat(d[1])),
+        lowerWick: Math.min(parseFloat(d[4]), parseFloat(d[1])) - parseFloat(d[3])
+    }));
 }
 
-function calculateEMA(prices, period) {
+function calculateEMA(candles, period) {
+    const prices = candles.map(c => c.close);
     const k = 2 / (period + 1);
     let ema = prices[0];
     for (let i = 1; i < prices.length; i++) {
@@ -18,25 +28,51 @@ function calculateEMA(prices, period) {
     return ema;
 }
 
-function getEMAs(prices) {
+function getEMAs(candles) {
+    const sliced = candles.slice(-60);
     return {
-        ema10: calculateEMA(prices.slice(-60), 10),
-        ema20: calculateEMA(prices.slice(-60), 20),
-        ema50: calculateEMA(prices.slice(-60), 50)
+        ema10: calculateEMA(sliced, 10),
+        ema20: calculateEMA(sliced, 20),
+        ema50: calculateEMA(sliced, 50)
     };
 }
 
 async function updateTrend() {
     try {
         const [p15m, p5m] = await Promise.all([fetchKlines("15m"), fetchKlines("5m")]);
-        const e15m = getEMAs(p15m);
+
+        // 15m (HTF): Previous close (-2) vs 20 EMA
+        const p15mPrev = p15m.slice(0, -1);
+        const e15mPrev = getEMAs(p15mPrev);
+        const prevClose15m = p15m[p15m.length - 2].close;
+
+        const htfUp = prevClose15m > e15mPrev.ema20;
+        const htfDown = prevClose15m < e15mPrev.ema20;
+
+        // 5m (LTF): Remain 10/20 crossing for down, 10/20/50 for up
         const e5m = getEMAs(p5m);
-
-        const htfUp = e15m.ema10 > e15m.ema20 && e15m.ema20 > e15m.ema50;
-        const htfDown = e15m.ema10 < e15m.ema20;
-
         const ltfUp = e5m.ema10 > e5m.ema20 && e5m.ema20 > e5m.ema50;
         const ltfDown = e5m.ema10 < e5m.ema20;
+
+        let currentTrend = "NO TRADE ZONE";
+        if (htfUp && ltfUp) currentTrend = "UPTREND";
+        else if (htfDown && ltfDown) currentTrend = "DOWNTREND";
+
+        // Pattern Detection: 5m LONG UPPER WICK
+        const current5m = p5m[p5m.length - 1];
+        const prev5m = p5m[p5m.length - 2];
+        const hasLongWick = current5m.upperWick > prev5m.body &&
+            current5m.upperWick > prev5m.upperWick &&
+            current5m.upperWick > prev5m.lowerWick;
+
+        if (hasLongWick && currentTrend === "DOWNTREND") {
+            const lastAlertPattern = localStorage.getItem('lastAlertPattern');
+            if (lastAlertPattern !== current5m.timestamp.toString()) {
+                const symbolShort = SYMBOL.replace("USDT", "");
+                sendTelegramAlert(`💥 ${symbolShort} LONG WICK DETECTED 💥`, "@futures_wolves_rise");
+                localStorage.setItem('lastAlertPattern', current5m.timestamp.toString());
+            }
+        }
 
         const htfStatus = document.getElementById("htfStatus");
         const ltfStatus = document.getElementById("ltfStatus");
@@ -48,56 +84,47 @@ async function updateTrend() {
         ltfStatus.innerText = ltfUp ? 'UP' : (ltfDown ? 'DOWN' : 'NEUTRAL');
         document.getElementById("ltfRow").className = `status-row ${ltfUp ? 'status-up' : (ltfDown ? 'status-down' : 'status-neutral')}`;
 
-        if (htfUp && ltfUp) {
+        if (currentTrend === "UPTREND") {
             trendDisplay.innerText = "CURRENTLY UPTREND";
             trendDisplay.className = "overall-trend trend-up";
-            checkAndSendAlert("UPTREND");
-        } else if (htfDown && ltfDown) {
+        } else if (currentTrend === "DOWNTREND") {
             trendDisplay.innerText = "CURRENTLY DOWNTREND";
             trendDisplay.className = "overall-trend trend-down";
-            checkAndSendAlert("DOWNTREND");
         } else {
             trendDisplay.innerText = "NO TRADE ZONE";
             trendDisplay.className = "overall-trend trend-neutral";
-            checkAndSendAlert("NO TRADE ZONE");
         }
+
+        checkAndSendAlert(currentTrend);
     } catch (e) {
         console.error("Trend update failed", e);
     }
 }
 
-async function sendTelegramAlert(message) {
-    const bots = [
-        { token: ENV.TELEGRAM_LIVERMORE, chat_id: "@swinglivermore" },
-        { token: ENV.TELEGRAM_WOLVESRISE, chat_id: "@futures_wolves_rise" }
-    ];
+async function sendTelegramAlert(message, customChatId = null) {
+    const botToken = customChatId === "@futures_wolves_rise" ? ENV.TELEGRAM_WOLVESRISE : ENV.TELEGRAM_LIVERMORE;
+    const chatId = customChatId || "@swinglivermore";
 
-    for (const bot of bots) {
-        if (!bot.token) continue;
-        const url = `https://api.telegram.org/bot${bot.token}/sendMessage`;
-        const params = new URLSearchParams({
-            chat_id: bot.chat_id,
-            parse_mode: 'html',
-            text: message
-        });
-        try {
-            await fetch(`${url}?${params}`);
-        } catch (e) { }
-    }
+    if (!botToken) return;
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    const params = new URLSearchParams({
+        chat_id: chatId,
+        parse_mode: 'html',
+        text: message
+    });
+    try {
+        await fetch(`${url}?${params}`);
+    } catch (e) { }
 }
 
 function checkAndSendAlert(currentTrend) {
     const lastAlertTrend = localStorage.getItem('lastAlertTrend');
     const lastAlertCandle = localStorage.getItem('lastAlertCandle');
-
-    // We get the current 5m candle timestamp by rounding down now() to 5m
     const now = new Date();
     const currentCandleTs = Math.floor(now.getTime() / (5 * 60 * 1000)) * (5 * 60 * 1000);
-
     const isNewCandle = !lastAlertCandle || currentCandleTs > parseInt(lastAlertCandle);
 
     if (isNewCandle && currentTrend !== lastAlertTrend) {
-        // Don't alert on the very first run (like monitoring.py)
         if (lastAlertTrend !== null) {
             let emoji = "";
             if (currentTrend === "UPTREND") emoji = "🚀";
@@ -120,12 +147,9 @@ function beep() {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         if (ctx.state === 'suspended') ctx.resume();
         const osc = ctx.createOscillator();
-
         osc.type = "sine";
         osc.frequency.setValueAtTime(1000, ctx.currentTime);
-
         osc.connect(ctx.destination);
-
         osc.start();
         osc.stop(ctx.currentTime + 0.3);
     } catch (e) {

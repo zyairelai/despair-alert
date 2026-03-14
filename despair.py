@@ -13,6 +13,7 @@ SCRIPTS_LIST = [
     ("monitoring.py",  "Live Trend Dashboard"),
     ("oneminute.py",   "One Minute Entry Alert"),
     ("pricealert.py",  "Custom Price Alert"),
+    ("rawcandle.py",   "5m Long Upper Wick Monitoring"),
     ("standing.py",    "Close Above/Below MA Check"),
     ("stoploss.py",    "Stoploss Multi-Price Alert"),
     ("zones.py",       "Prev 1D/4H Levels")
@@ -26,6 +27,7 @@ SHORTCUTS = {
     "m": "monitoring.py",
     "o": "oneminute.py",
     "p": "pricealert.py",
+    "r": "rawcandle.py",
     "z": "zones.py"
 }
 
