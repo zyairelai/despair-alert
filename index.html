@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>5 Minute Beeper</title>
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background: #111;
+            color: white;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 600px;
+        }
+
+        h1 {
+            font-size: 64px;
+            margin-bottom: 40px;
+        }
+
+        button {
+            font-size: 48px;
+            padding: 20px 60px;
+            border: none;
+            border-radius: 12px;
+            background: #28a745;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button.running {
+            background: #666;
+            cursor: default;
+        }
+
+        #countdown {
+            font-size: 56px;
+            margin-top: 40px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>5 Minute Beeper</h1>
+
+        <button id="startBtn" onclick="start()">START</button>
+
+        <div id="countdown">--</div>
+
+    </div>
+
+    <script>
+
+        let started = false
+
+        function beep() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)()
+            const osc = ctx.createOscillator()
+
+            osc.type = "sine"
+            osc.frequency.setValueAtTime(1000, ctx.currentTime)
+
+            osc.connect(ctx.destination)
+
+            osc.start()
+            osc.stop(ctx.currentTime + 0.3)
+        }
+
+        function secondsUntilNext5() {
+
+            const now = new Date()
+
+            const m = now.getMinutes()
+            const s = now.getSeconds()
+
+            const next = 5 - (m % 5)
+
+            let remaining = next * 60 - s
+
+            if (remaining === 300) remaining = 0
+
+            return remaining
+        }
+
+        function tick() {
+
+            const r = secondsUntilNext5()
+
+            const m = Math.floor(r / 60)
+            const s = r % 60
+
+            document.getElementById("countdown").innerText =
+                m + "m " + s + "s"
+
+            if (r === 0) {
+                beep()
+            }
+
+        }
+
+        function start() {
+
+            if (started) return
+            started = true
+
+            const btn = document.getElementById("startBtn")
+
+            btn.innerText = "RUNNING"
+            btn.classList.add("running")
+            btn.disabled = true
+
+            setInterval(tick, 1000)
+            tick()
+
+        }
+
+    </script>
+
+</body>
+
+</html>

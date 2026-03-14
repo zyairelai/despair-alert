@@ -11,10 +11,8 @@ args, unknown = parser.parse_known_args()
 SYMBOL = args.symbol
 
 # Configuration
-THTF = "1h"
 HTF = "15m"
 LTF = "5m"
-VLTF = "1m"
 LAST_TREND = None # Immediate trend for display
 LAST_ALERT_TREND = None # Trend that was actually alerted
 LAST_ALERT_CANDLE = None # Timestamp of the last candle we alerted on
@@ -58,42 +56,35 @@ def monitor():
     try:
         df_htf = get_klines(SYMBOL, HTF)
         df_ltf = get_klines(SYMBOL, LTF)
-        df_vltf = get_klines(SYMBOL, VLTF)
-        df_thtf = get_klines(SYMBOL, THTF)
         
         last_htf = df_htf.iloc[-1]
         last_ltf = df_ltf.iloc[-1]
-        last_vltf = df_vltf.iloc[-1]
-        last_thtf = df_thtf.iloc[-1]
         
-        # Trend logic: UP (10 > 20 > 50), DOWN (10 < 20)
+        # Trend logic:
+        # Uptrend: 10 > 20 > 50 on both 15m + 5m
+        # Downtrend: 10 < 20 on both 15m + 5m
         htf_up = last_htf['10EMA'] > last_htf['20EMA'] > last_htf['50EMA']
         ltf_up = last_ltf['10EMA'] > last_ltf['20EMA'] > last_ltf['50EMA']
-        thtf_up = last_thtf['10EMA'] > last_thtf['20EMA'] > last_thtf['50EMA']
-        vltf_up = last_vltf['10EMA'] > last_vltf['20EMA']
-        vltf_down = last_vltf['10EMA'] < last_vltf['20EMA']
         
-        # Overall Trend (15m + 5m)
+        htf_down = last_htf['10EMA'] < last_htf['20EMA']
+        ltf_down = last_ltf['10EMA'] < last_ltf['20EMA']
+        
         if htf_up and ltf_up: current_trend = "UPTREND"
-        elif not htf_up and not ltf_up: current_trend = "DOWNTREND"
+        elif htf_down and ltf_down: current_trend = "DOWNTREND"
         else: current_trend = "NO TRADE ZONE"
         
-        htf_color = "green" if htf_up else "red"
-        ltf_color = "green" if ltf_up else "red"
-        thtf_color = "green" if thtf_up else "red"
+        htf_color = "green" if htf_up else "red" if htf_down else "yellow"
+        ltf_color = "green" if ltf_up else "red" if ltf_down else "yellow"
         trend_color = "green" if current_trend == "UPTREND" else "red" if current_trend == "DOWNTREND" else "yellow"
         
-        # Status labels: only use double space when alignment is needed (any one is DOWN)
-        all_up = thtf_up and htf_up and ltf_up
-        thtf_label = 'UP' if all_up else ('  UP' if thtf_up else 'DOWN')
-        htf_label = 'UP' if all_up else ('  UP' if htf_up else 'DOWN')
-        ltf_label = 'UP' if all_up else ('  UP' if ltf_up else 'DOWN')
+        # Formatting: if one up one down (or neutral), give 2 space for that up
+        all_up = htf_up and ltf_up
+        htf_label = 'UP' if all_up else ('  UP' if htf_up else ('DOWN' if htf_down else 'NEUTRAL'))
+        ltf_label = 'UP' if all_up else ('  UP' if ltf_up else ('DOWN' if ltf_down else 'NEUTRAL'))
         
         # Output lines with independent coloring
-        # Note: Separating the empty line ensures \033[K clears the entire row
         lines = [
             f"\r[{colored(SYMBOL, 'cyan')}]",
-            colored(f" {THTF}: {thtf_label} (EMA10:{last_thtf['10EMA']:.2f} | EMA20:{last_thtf['20EMA']:.2f} | EMA50:{last_thtf['50EMA']:.2f})", thtf_color),
             colored(f"{HTF}: {htf_label} (EMA10:{last_htf['10EMA']:.2f} | EMA20:{last_htf['20EMA']:.2f} | EMA50:{last_htf['50EMA']:.2f})", htf_color),
             colored(f" {LTF}: {ltf_label} (EMA10:{last_ltf['10EMA']:.2f} | EMA20:{last_ltf['20EMA']:.2f} | EMA50:{last_ltf['50EMA']:.2f})", ltf_color),
             "", # Spacer line
@@ -115,26 +106,26 @@ def monitor():
             trigger_msg = None
             emoji = ""
             
-            if current_trend == "NO TRADE ZONE":
-                emoji = "⏳"
-                trigger_msg = f"{emoji} {SYMBOL.replace('USDT', '')} Trend: {current_trend} {emoji}"
-            elif current_trend == "UPTREND" and vltf_up:
+            if current_trend == "UPTREND":
                 emoji = "🚀"
                 trigger_msg = f"{emoji} {SYMBOL.replace('USDT', '')} Trend: {current_trend} {emoji}"
-            elif current_trend == "DOWNTREND" and vltf_down:
+            elif current_trend == "DOWNTREND":
                 emoji = "💥"
+                trigger_msg = f"{emoji} {SYMBOL.replace('USDT', '')} Trend: {current_trend} {emoji}"
+            elif current_trend == "NO TRADE ZONE":
+                emoji = "⏳"
                 trigger_msg = f"{emoji} {SYMBOL.replace('USDT', '')} Trend: {current_trend} {emoji}"
             
             if trigger_msg and not first_run:
                 telegram_bot_sendtext(trigger_msg)
             
-            # Always record to prevent first-run alert
             LAST_ALERT_TREND = current_trend
             LAST_ALERT_CANDLE = current_candle_ts
             
         LAST_TREND = current_trend
         
     except Exception as e: pass
+
 
 def main():
     print(colored(f"\n🐺 MONITORING {SYMBOL} {HTF}/{LTF} TREND CHANGES 🐺\n", "cyan"))
