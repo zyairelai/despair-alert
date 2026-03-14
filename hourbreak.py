@@ -72,7 +72,16 @@ def heikin_ashi(klines):
     return heikin_ashi_df[result_cols]
 
 def short_despair():
-    one_hour = heikin_ashi(get_klines(SYMBOL, "1h"))
+    klines_raw = get_klines(SYMBOL, "1h")
+    
+    # Emergency 1h Logic: Current high > previous high AND current 1h candle is RED
+    last_1h = klines_raw.iloc[-1]
+    prev_1h = klines_raw.iloc[-2]
+    if last_1h['high'] > prev_1h['high'] and last_1h['close'] < last_1h['open']:
+        telegram_bot_sendtext(f"🚨 {SYMBOL.replace('USDT', '')} 1H EMERGENCY DOWNTREND 🚨")
+        exit()
+
+    one_hour = heikin_ashi(klines_raw)
 
     if one_hour['ha_low'].iloc[-1] < one_hour['ha_low'].iloc[-(LOOKBACK+1):-1].min():
         telegram_bot_sendtext("💥 1H STRUCTURE BREAK 💥")

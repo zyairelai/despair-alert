@@ -16,6 +16,7 @@ LTF = "5m"
 LAST_TREND = None # Immediate trend for display
 LAST_ALERT_TREND = None # Trend that was actually alerted
 LAST_ALERT_CANDLE = None # Timestamp of the last candle we alerted on
+LAST_EMERGENCY_HOUR = None # Timestamp of the last emergency alert (hourly lock)
 
 def telegram_bot_sendtext(bot_message):
     bot_token = os.environ.get('TELEGRAM_LIVERMORE')
@@ -52,14 +53,20 @@ def get_klines(pair, interval):
     return candlestick
 
 def monitor():
-    global LAST_TREND, LAST_ALERT_TREND, LAST_ALERT_CANDLE
+    global LAST_TREND, LAST_ALERT_TREND, LAST_ALERT_CANDLE, LAST_EMERGENCY_HOUR
     try:
+        df_1h = get_klines(SYMBOL, "1h")
         df_htf = get_klines(SYMBOL, HTF)
         df_ltf = get_klines(SYMBOL, LTF)
         
+        last_1h = df_1h.iloc[-1]
+        prev_1h = df_1h.iloc[-2]
         last_htf = df_htf.iloc[-1]
         last_ltf = df_ltf.iloc[-1]
         
+        # Emergency 1h Logic: Current high > previous high AND current 1h candle is RED
+        is_emergency = last_1h['high'] > prev_1h['high'] and last_1h['close'] < last_1h['open']
+
         # Trend logic:
         # 15m (HTF): Simple check on previous close (-2 candle)
         # 5m (LTF): Remain 10/20 crossing for down, 10/20/50 for up
@@ -71,7 +78,8 @@ def monitor():
         ltf_up = last_ltf['10EMA'] > last_ltf['20EMA'] > last_ltf['50EMA']
         ltf_down = last_ltf['10EMA'] < last_ltf['20EMA']
         
-        if htf_up and ltf_up: current_trend = "UPTREND"
+        if is_emergency: current_trend = "DOWNTREND"
+        elif htf_up and ltf_up: current_trend = "UPTREND"
         elif htf_down and ltf_down: current_trend = "DOWNTREND"
         else: current_trend = "NO TRADE ZONE"
         
@@ -85,12 +93,13 @@ def monitor():
         ltf_label = 'UP' if all_up else ('  UP' if ltf_up else ('DOWN' if ltf_down else 'NEUTRAL'))
         
         # Output lines with independent coloring
+        display_trend = "EMERGENCY DOWNTREND" if is_emergency else current_trend
         lines = [
             f"\r[{colored(SYMBOL, 'cyan')}]",
             colored(f"{HTF}: {htf_label}", htf_color),
             colored(f" {LTF}: {ltf_label}", ltf_color),
             "", # Spacer line
-            colored(f" [+] OVERALL TREND: {current_trend}", trend_color)
+            colored(f" [+] OVERALL TREND: {display_trend}", trend_color)
         ]
         
         # Clear current lines and rewrite
@@ -101,8 +110,27 @@ def monitor():
         
         # Alert Logic: Trigger once per 15m candle on trend alignment
         current_candle_ts = last_htf['timestamp']
-        is_new_candle = LAST_ALERT_CANDLE is None or current_candle_ts > LAST_ALERT_CANDLE
+        current_hour_ts = last_1h['timestamp']
         
+        is_new_candle = LAST_ALERT_CANDLE is None or current_candle_ts > LAST_ALERT_CANDLE
+        is_new_emergency_hour = LAST_EMERGENCY_HOUR is None or current_hour_ts > LAST_EMERGENCY_HOUR
+
+        # Global Lock: If an emergency alert was sent this hour, all Telegram alerts are muted
+        if not is_new_emergency_hour:
+            LAST_TREND = current_trend
+            return
+
+        # 1. Emergency Case: Bypass 15m rule
+        if is_emergency:
+            trigger_msg = f"🚨 {SYMBOL.replace('USDT', '')} 1H EMERGENCY DOWNTREND 🚨"
+            telegram_bot_sendtext(trigger_msg)
+            LAST_ALERT_TREND = "DOWNTREND"
+            LAST_ALERT_CANDLE = current_candle_ts
+            LAST_EMERGENCY_HOUR = current_hour_ts
+            LAST_TREND = current_trend
+            return
+
+        # 2. Standard Case: Once per 15m candle on trend change
         if is_new_candle and current_trend != LAST_ALERT_TREND:
             first_run = LAST_ALERT_TREND is None
             trigger_msg = None

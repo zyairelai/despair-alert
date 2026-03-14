@@ -37,7 +37,12 @@ function getEMAs(candles) {
 
 async function updateTrend() {
     try {
-        const [p15m, p5m] = await Promise.all([fetchKlines("15m"), fetchKlines("5m")]);
+        const [p1h, p15m, p5m] = await Promise.all([fetchKlines("1h"), fetchKlines("15m"), fetchKlines("5m")]);
+
+        // Emergency 1h Logic: Current high > previous high AND current 1h candle is RED
+        const cur1h = p1h[p1h.length - 1];
+        const prev1h = p1h[p1h.length - 2];
+        const isEmergency = cur1h.high > prev1h.high && cur1h.close < cur1h.open;
 
         // 15m (HTF): Previous close (-2) vs 20 EMA
         const p15mPrev = p15m.slice(0, -1);
@@ -53,7 +58,8 @@ async function updateTrend() {
         const ltfDown = e5m.ema10 < e5m.ema20;
 
         let currentTrend = "NO TRADE ZONE";
-        if (htfUp && ltfUp) currentTrend = "UPTREND";
+        if (isEmergency) currentTrend = "DOWNTREND";
+        else if (htfUp && ltfUp) currentTrend = "UPTREND";
         else if (htfDown && ltfDown) currentTrend = "DOWNTREND";
 
 
@@ -72,7 +78,7 @@ async function updateTrend() {
             trendDisplay.className = "overall-trend trend-up";
             updateFavicon("web/favicon.png");
         } else if (currentTrend === "DOWNTREND") {
-            trendDisplay.innerText = "CURRENTLY DOWNTREND";
+            trendDisplay.innerText = isEmergency ? "EMERGENCY DOWNTREND" : "CURRENTLY DOWNTREND";
             trendDisplay.className = "overall-trend trend-down";
             updateFavicon("web/favicon_red.png");
         } else {
@@ -81,7 +87,7 @@ async function updateTrend() {
             updateFavicon("web/favicon_yellow.png");
         }
 
-        checkAndSendAlert(currentTrend);
+        checkAndSendAlert(currentTrend, isEmergency);
     } catch (e) {
         console.error("Trend update failed", e);
     }
@@ -113,14 +119,39 @@ async function sendTelegramAlert(message, customChatId = null) {
     } catch (e) { }
 }
 
-function checkAndSendAlert(currentTrend) {
+function checkAndSendAlert(currentTrend, isEmergency = false) {
     const lastAlertTrend = localStorage.getItem('lastAlertTrend');
     const lastAlertCandle = localStorage.getItem('lastAlertCandle');
-    // We get the current 15m candle timestamp by rounding down now() to 15m
-    const now = new Date();
-    const currentCandleTs = Math.floor(now.getTime() / (15 * 60 * 1000)) * (15 * 60 * 1000);
-    const isNewCandle = !lastAlertCandle || currentCandleTs > parseInt(lastAlertCandle);
+    const lastEmergencyHour = localStorage.getItem('lastEmergencyHour');
 
+    const now = new Date();
+    const current15mTs = Math.floor(now.getTime() / (15 * 60 * 1000)) * (15 * 60 * 1000);
+    const currentHourTs = Math.floor(now.getTime() / (60 * 60 * 1000)) * (60 * 60 * 1000);
+
+    const isNewCandle = !lastAlertCandle || current15mTs > parseInt(lastAlertCandle);
+    const isNewEmergencyHour = !lastEmergencyHour || currentHourTs > parseInt(lastEmergencyHour);
+
+    // Global Lock: If an emergency alert was sent this hour, all Telegram alerts are muted until next hour resets it
+    if (!isNewEmergencyHour) return;
+
+    // 1. Emergency Case: Bypass 15m rule
+    if (isEmergency) {
+        const symbolShort = SYMBOL.replace("USDT", "");
+        const msg = `🚨 ${symbolShort} 1H EMERGENCY DOWNTREND 🚨`;
+
+        if (sessionStarted) {
+            sendTelegramAlert(msg);
+            if (beepMode === 'trend') beep();
+        }
+
+        localStorage.setItem('lastEmergencyHour', currentHourTs.toString());
+        localStorage.setItem('lastAlertTrend', "DOWNTREND");
+        localStorage.setItem('lastAlertCandle', current15mTs.toString());
+        sessionStarted = true;
+        return;
+    }
+
+    // 2. Standard Case: Once per 15m candle on trend change
     if (isNewCandle && currentTrend !== lastAlertTrend) {
         if (lastAlertTrend !== null) {
             let emoji = "";
@@ -138,8 +169,8 @@ function checkAndSendAlert(currentTrend) {
         }
 
         localStorage.setItem('lastAlertTrend', currentTrend);
-        localStorage.setItem('lastAlertCandle', currentCandleTs.toString());
-        sessionStarted = true; // First trend established, mark session as started for future alerts
+        localStorage.setItem('lastAlertCandle', current15mTs.toString());
+        sessionStarted = true;
     }
 }
 
@@ -182,7 +213,7 @@ function tick() {
         lastBeepTime = nowTime;
     }
 
-    if (s % 10 === 0) updateTrend(); // Update trend every 10s
+    if (s % 3 === 0) updateTrend(); // Update trend every 3s
 }
 
 function start() {
