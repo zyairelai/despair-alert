@@ -99,8 +99,8 @@ def monitor():
         sys.stdout.write(output_str + f"\033[{num_newlines}A")
         sys.stdout.flush()
         
-        # Alert Logic: Trigger once per 5m candle on trend alignment
-        current_candle_ts = last_ltf['timestamp']
+        # Alert Logic: Trigger once per 15m candle on trend alignment
+        current_candle_ts = last_htf['timestamp']
         is_new_candle = LAST_ALERT_CANDLE is None or current_candle_ts > LAST_ALERT_CANDLE
         
         if is_new_candle and current_trend != LAST_ALERT_TREND:

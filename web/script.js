@@ -120,8 +120,9 @@ async function sendTelegramAlert(message, customChatId = null) {
 function checkAndSendAlert(currentTrend) {
     const lastAlertTrend = localStorage.getItem('lastAlertTrend');
     const lastAlertCandle = localStorage.getItem('lastAlertCandle');
+    // We get the current 15m candle timestamp by rounding down now() to 15m
     const now = new Date();
-    const currentCandleTs = Math.floor(now.getTime() / (5 * 60 * 1000)) * (5 * 60 * 1000);
+    const currentCandleTs = Math.floor(now.getTime() / (15 * 60 * 1000)) * (15 * 60 * 1000);
     const isNewCandle = !lastAlertCandle || currentCandleTs > parseInt(lastAlertCandle);
 
     if (isNewCandle && currentTrend !== lastAlertTrend) {
