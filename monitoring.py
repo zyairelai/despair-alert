@@ -39,7 +39,7 @@ def clear_pycache():
 
 def get_klines(pair, interval):
     url = "https://fapi.binance.com/fapi/v1/klines"
-    params = {"symbol": pair, "interval": interval, "limit": 100}
+    params = {"symbol": pair, "interval": interval, "limit": 200}
     r = requests.get(url, params=params, timeout=5)
     r.raise_for_status()
     data = r.json()

@@ -35,6 +35,16 @@
                 <div class="controls">
                     <button id="startBtn" onclick="start()">START MONITORING</button>
                 </div>
+
+                <div class="settings-panel">
+                    <div class="setting-group">
+                        <label>BEEP MODE</label>
+                        <div class="segmented-control">
+                            <button id="beepInterval" class="active" onclick="setBeepMode('interval')">5 MINS</button>
+                            <button id="beepTrend" onclick="setBeepMode('trend')">TREND</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

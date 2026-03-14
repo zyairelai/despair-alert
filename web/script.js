@@ -1,13 +1,11 @@
 const SYMBOL = "BTCUSDT";
 let started = false;
+let sessionStarted = false;
 let lastBeepTime = 0; // Prevent duplicate beeps in the same second
-const CONFIG = {
-    wickDetection: false,
-    wickMultiplier: 1.2
-};
+let beepMode = 'interval';
 
 async function fetchKlines(interval) {
-    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${SYMBOL}&interval=${interval}&limit=100`;
+    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${SYMBOL}&interval=${interval}&limit=200`;
     const resp = await fetch(url);
     const data = await resp.json();
     return data.map(d => ({
@@ -15,10 +13,7 @@ async function fetchKlines(interval) {
         open: parseFloat(d[1]),
         high: parseFloat(d[2]),
         low: parseFloat(d[3]),
-        close: parseFloat(d[4]),
-        body: Math.abs(parseFloat(d[4]) - parseFloat(d[1])),
-        upperWick: parseFloat(d[2]) - Math.max(parseFloat(d[4]), parseFloat(d[1])),
-        lowerWick: Math.min(parseFloat(d[4]), parseFloat(d[1])) - parseFloat(d[3])
+        close: parseFloat(d[4])
     }));
 }
 
@@ -33,11 +28,10 @@ function calculateEMA(candles, period) {
 }
 
 function getEMAs(candles) {
-    const sliced = candles.slice(-60);
     return {
-        ema10: calculateEMA(sliced, 10),
-        ema20: calculateEMA(sliced, 20),
-        ema50: calculateEMA(sliced, 50)
+        ema10: calculateEMA(candles, 10),
+        ema20: calculateEMA(candles, 20),
+        ema50: calculateEMA(candles, 50)
     };
 }
 
@@ -62,22 +56,6 @@ async function updateTrend() {
         if (htfUp && ltfUp) currentTrend = "UPTREND";
         else if (htfDown && ltfDown) currentTrend = "DOWNTREND";
 
-        // Pattern Detection: 5m LONG UPPER WICK
-        const current5m = p5m[p5m.length - 1];
-        const prev5m = p5m[p5m.length - 2];
-        const hasLongWick = CONFIG.wickDetection &&
-            current5m.upperWick > (prev5m.body * CONFIG.wickMultiplier) &&
-            current5m.upperWick > prev5m.upperWick &&
-            current5m.upperWick > prev5m.lowerWick;
-
-        if (hasLongWick && currentTrend === "DOWNTREND") {
-            const lastAlertPattern = localStorage.getItem('lastAlertPattern');
-            if (lastAlertPattern !== current5m.timestamp.toString()) {
-                const symbolShort = SYMBOL.replace("USDT", "");
-                sendTelegramAlert(`💥 ${symbolShort} LONG WICK DETECTED 💥`, "@futures_wolves_rise");
-                localStorage.setItem('lastAlertPattern', current5m.timestamp.toString());
-            }
-        }
 
         const htfStatus = document.getElementById("htfStatus");
         const ltfStatus = document.getElementById("ltfStatus");
@@ -140,11 +118,15 @@ function checkAndSendAlert(currentTrend) {
             const symbolShort = SYMBOL.replace("USDT", "");
             const msg = `${emoji} ${symbolShort} Trend: ${currentTrend} ${emoji}`;
 
-            sendTelegramAlert(msg);
+            if (sessionStarted) {
+                sendTelegramAlert(msg);
+                if (beepMode === 'trend') beep();
+            }
         }
 
         localStorage.setItem('lastAlertTrend', currentTrend);
         localStorage.setItem('lastAlertCandle', currentCandleTs.toString());
+        sessionStarted = true; // First trend established, mark session as started for future alerts
     }
 }
 
@@ -181,7 +163,7 @@ function tick() {
     // Triple-check for beep
     // 1. Should be exactly at the 5-minute mark (r === 0)
     // 2. Or if we just passed it (r === 299) and haven't beeped in the last 10 seconds
-    if ((r === 0 || r === 299) && (nowTime - lastBeepTime > 10000)) {
+    if (beepMode === 'interval' && (r === 0 || r === 299) && (nowTime - lastBeepTime > 10000)) {
         console.log("Beeping at", now.toLocaleTimeString());
         beep();
         lastBeepTime = nowTime;
@@ -199,7 +181,14 @@ function start() {
     tick();
     updateTrend();
 
-    // Initial beep to verify audio works
+    // Initial check does not beep or alert, just verifies audio
     beep();
     lastBeepTime = new Date().getTime();
+}
+
+function setBeepMode(mode) {
+    beepMode = mode;
+    document.getElementById('beepInterval').classList.toggle('active', mode === 'interval');
+    document.getElementById('beepTrend').classList.toggle('active', mode === 'trend');
+    console.log("Beep mode set to:", mode);
 }
