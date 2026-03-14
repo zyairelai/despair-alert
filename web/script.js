@@ -44,7 +44,7 @@ async function updateTrend() {
         const e15mPrev = getEMAs(p15mPrev);
         const prevClose15m = p15m[p15m.length - 2].close;
 
-        const htfUp = prevClose15m > e15mPrev.ema20 && prevClose15m > e15mPrev.ema50;
+        const htfUp = e15mPrev.ema20 > e15mPrev.ema50 && prevClose15m > e15mPrev.ema50;
         const htfDown = prevClose15m < e15mPrev.ema20;
 
         // 5m (LTF): Remain 10/20 crossing for down, 10/20/50 for up
