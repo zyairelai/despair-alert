@@ -70,18 +70,31 @@ async function updateTrend() {
         if (currentTrend === "UPTREND") {
             trendDisplay.innerText = "CURRENTLY UPTREND";
             trendDisplay.className = "overall-trend trend-up";
+            updateFavicon("web/favicon.png");
         } else if (currentTrend === "DOWNTREND") {
             trendDisplay.innerText = "CURRENTLY DOWNTREND";
             trendDisplay.className = "overall-trend trend-down";
+            updateFavicon("web/favicon_red.png");
         } else {
             trendDisplay.innerText = "NO TRADE ZONE";
             trendDisplay.className = "overall-trend trend-neutral";
+            updateFavicon("web/favicon_yellow.png");
         }
 
         checkAndSendAlert(currentTrend);
     } catch (e) {
         console.error("Trend update failed", e);
     }
+}
+
+function updateFavicon(path) {
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.getElementsByTagName('head')[0].appendChild(link);
+    }
+    link.href = path;
 }
 
 async function sendTelegramAlert(message, customChatId = null) {
