@@ -38,8 +38,10 @@ async function updateTitleAndFavicon() {
         titleEl.classList.remove('title-green', 'title-red', 'title-doji');
         titleEl.classList.add(colorClass);
 
-        // Update Favicon
-        updateFavicon(faviconPath);
+        // Update Favicon (only if NOT on index page)
+        if (!document.getElementById('startBtn')) {
+            updateFavicon(faviconPath);
+        }
 
     } catch (e) {
         console.error("HA coloring update failed", e);

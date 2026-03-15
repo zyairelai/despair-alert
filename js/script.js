@@ -94,9 +94,10 @@ async function updateTrend() {
 }
 
 function updateFavicon(path) {
-    let link = document.querySelector("link[rel~='icon']");
+    let link = document.getElementById('favicon') || document.querySelector("link[rel~='icon']");
     if (!link) {
         link = document.createElement('link');
+        link.id = 'favicon';
         link.rel = 'icon';
         document.getElementsByTagName('head')[0].appendChild(link);
     }
