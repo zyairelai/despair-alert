@@ -35,16 +35,33 @@ function speak(text, callback) {
     if (!text) return;
     const spokenText = formatForSpeech(text);
     const msg = new SpeechSynthesisUtterance(spokenText);
+
+    // Improved female voice selection
     const voices = window.speechSynthesis.getVoices();
-    const femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Google UK English Female'));
+    const femaleVoice = voices.find(v => {
+        const name = v.name.toLowerCase();
+        return name.includes('female') ||
+            name.includes('zira') ||
+            name.includes('samantha') ||
+            name.includes('victoria') ||
+            name.includes('moira') ||
+            name.includes('tessa') ||
+            (name.includes('google') && name.includes('uk english male') === false && (name.includes('en-us') || name.includes('en-gb')));
+    });
+
     if (femaleVoice) msg.voice = femaleVoice;
     msg.rate = 1.0;
-    msg.pitch = 1.0;
+    msg.pitch = 1.1; // Slightly higher pitch for a better female tone if needed
 
     if (callback) {
         msg.onend = callback;
     }
 
-    window.speechSynthesis.cancel(); // Cancel any existing speech before starting new one
+    window.speechSynthesis.cancel();
     window.speechSynthesis.speak(msg);
+}
+
+// Ensure voices are loaded
+if (window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
 }

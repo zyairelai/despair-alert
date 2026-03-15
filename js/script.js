@@ -1,6 +1,6 @@
 let SYMBOL = localStorage.getItem('globalSymbol') || "BTCUSDT";
 let started = false;
-let sessionStarted = false;
+let sessionStarted = true;
 let lastBeepTime = 0; // Prevent duplicate beeps in the same second
 let beepMode = 'interval';
 
@@ -133,8 +133,10 @@ function checkAndSendAlert(currentTrend, isEmergency = false) {
         return;
     }
 
-    // 2. Standard Case: Once per 15m candle on trend change
-    if (isNewCandle && currentTrend !== lastAlertTrend) {
+    // 2. Standard Case: Immediate on trend change, then cooldown until next 15m candle
+    const isTrendChanged = currentTrend !== lastAlertTrend;
+
+    if (isTrendChanged && isNewCandle) {
         if (lastAlertTrend !== null) {
             let emoji = "";
             if (currentTrend === "UPTREND") emoji = "🚀";
@@ -152,7 +154,6 @@ function checkAndSendAlert(currentTrend, isEmergency = false) {
 
         localStorage.setItem('lastAlertTrend', currentTrend);
         localStorage.setItem('lastAlertCandle', current15mTs.toString());
-        sessionStarted = true;
     }
 }
 
