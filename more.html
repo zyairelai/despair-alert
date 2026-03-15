@@ -28,6 +28,43 @@
         </header>
 
         <div class="alert-grid">
+            <!-- Liquidity -->
+            <div class="alert-card" id="liquidity-card">
+                <div class="card-header">
+                    <h2>LIQUIDITY</h2>
+                    <div class="status-indicator inactive">
+                        <div class="dot" id="liquidity-dot"></div>
+                        <span id="liquidity-status">INACTIVE</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="tf-selector" id="liquidity-tf-selector">
+                        <button type="button" class="tf-current-btn" id="liquidity-tf-trigger"
+                            onclick="toggleTFMenu('liquidity')">15m</button>
+                        <div class="tf-dropdown-menu" id="liquidity-tf-menu" data-value="15m">
+                            <div class="tf-grid">
+                                <button type="button" class="tf-btn" onclick="setTF('liquidity', '5m')">5m</button>
+                                <button type="button" class="tf-btn active"
+                                    onclick="setTF('liquidity', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('liquidity', '30m')">30m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('liquidity', '1h')">1H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('liquidity', '2h')">2H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('liquidity', '4h')">4H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('liquidity', '6h')">6H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('liquidity', '1d')">1D</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row spacer"></div>
+                    <div class="input-row spacer"></div>
+                    <div class="input-row spacer"></div>
+                </div>
+                <div class="action-group">
+                    <button class="toggle-btn" onclick="toggleAlert('liquidity')">START</button>
+                    <button class="toggle-btn secondary" onclick="testTTS('liquidity')">Test</button>
+                </div>
+            </div>
+
             <!-- Heikin Ashi -->
             <div class="alert-card" id="heikin-card">
                 <div class="card-header">
@@ -270,10 +307,17 @@
                     <button class="toggle-btn secondary" onclick="testTTS('price')">Test</button>
                 </div>
             </div>
+
+        </div>
+
+        <!-- MAIN link -->
+        <div class="main-link-container">
+            <a href="index.html" target="_blank" class="main-link">MAIN</a>
         </div>
     </div>
 
     <!-- Modular Dashboard Scripts -->
+    <script src="js/env.js"></script>
     <script src="js/dashboard/api.js"></script>
     <script src="js/dashboard/indicators.js"></script>
     <script src="js/dashboard/speech.js"></script>

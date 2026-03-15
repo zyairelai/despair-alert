@@ -120,7 +120,7 @@ function checkAndSendAlert(currentTrend, isEmergency = false) {
     // 1. Emergency Case: Bypass 15m rule, but respect hourly lock
     if (isEmergency && isNewEmergencyHour) {
         const symbolShort = SYMBOL.replace("USDT", "");
-        const msg = `🚨 ${symbolShort} 1H EMERGENCY DOWNTREND 🚨`;
+        const msg = `🩸 ${symbolShort} 1H EMERGENCY BREAKDOWN 🩸`;
 
         // Always send Telegram for emergencies
         sendTelegramAlert(msg);

@@ -3,7 +3,8 @@ const alerts = {
     'ema-cross': { active: false, interval: null },
     heikin: { active: false, interval: null },
     standing: { active: false, interval: null },
-    'line-touch': { active: false, interval: null }
+    'line-touch': { active: false, interval: null },
+    liquidity: { active: false, interval: null }
 };
 
 let lastAlertMessages = {};
@@ -63,13 +64,51 @@ function testTTS(id) {
     const menuEl = document.getElementById(`${id}-tf-menu`);
     const tf = menuEl ? menuEl.dataset.value : "5m";
     let text = "";
-    if (id === 'price') text = `${symbol} price alert test`;
-    else if (id === 'ema-cross') text = `${symbol} ${tf} ema cross test`;
-    else if (id === 'heikin') text = `${symbol} ${tf} heikin ashi change`;
-    else if (id === 'standing') text = `${symbol} EMA STAND alert test`;
-    else if (id === 'line-touch') text = `${symbol} EMA TOUCH alert test`;
+    let voiceText = "";
 
-    speak(text);
+    if (id === 'price') {
+        text = `🔔 ${symbol} Price Hits Test 🔔`;
+        voiceText = `${symbol} price hits test`;
+    }
+    else if (id === 'ema-cross') {
+        const cond = document.getElementById('ema-cross-condition').value;
+        const side = cond === 'up' ? 'UP' : 'DOWN';
+        const emoji = cond === 'up' ? '🚀' : '💥';
+        text = `${emoji} ${symbol} ${tf} EMA CROSS ${side} ${emoji}`;
+        voiceText = `${symbol} ${tf} EMA cross test`;
+    }
+    else if (id === 'heikin') {
+        const cond = document.getElementById('heikin-condition').value;
+        const color = cond === 'perfect-green' ? 'GREEN' : 'RED';
+        const emoji = cond === 'perfect-green' ? '🚀' : '💥';
+        text = `${emoji} ${symbol} ${tf} Heikin Ashi ${color} ${emoji}`;
+        voiceText = `${symbol} ${tf} heikin ashi turned into ${color.toLowerCase()} color`;
+    }
+    else if (id === 'standing') {
+        const cond = document.getElementById('standing-condition').value;
+        const level = document.getElementById('standing-level').value;
+        const side = cond === 'above' ? 'ABOVE' : 'BELOW';
+        const emoji = cond === 'above' ? '🚀' : '💥';
+        text = `${emoji} ${symbol} ${tf} STAND ${side} ${level}EMA ${emoji}`;
+        voiceText = `${symbol} EMA STAND alert test`;
+    }
+    else if (id === 'line-touch') {
+        const level = document.getElementById('line-touch-price').value;
+        text = `🔔 ${symbol} ${tf} TOUCH ${level}EMA 🔔`;
+        voiceText = `${symbol} EMA TOUCH alert test`;
+    }
+    else if (id === 'liquidity') {
+        text = `🩸 ${symbol} ${tf} Liquidity Hunt 🩸`;
+        voiceText = `${symbol} ${tf} liquidity hunt activated`;
+    }
+
+    if (!voiceText) voiceText = text;
+    speak(voiceText);
+
+    // Also send Telegram for every test as requested
+    const wolvesRiseIds = ['liquidity', 'ema-cross', 'standing', 'line-touch', 'heikin'];
+    const telegramChatId = wolvesRiseIds.includes(id) ? "@futures_wolves_rise" : null;
+    sendTelegramAlert(text, telegramChatId);
 }
 
 // Global click listener to close TF menus

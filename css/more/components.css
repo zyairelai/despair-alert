@@ -309,3 +309,126 @@ select option {
     color: #ffd700 !important;
     /* Yellow */
 }
+
+/* MAIN Link Style */
+.main-link-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.main-link {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--text-dim);
+    text-decoration: none;
+    letter-spacing: 0.2em;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.main-link:hover {
+    opacity: 1;
+    color: var(--accent-green);
+    text-shadow: 0 0 8px var(--glow-green);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    body {
+        overflow-y: auto;
+        height: auto;
+        padding: 1rem 0;
+    }
+
+    .container {
+        height: auto;
+        width: 95%;
+        padding-bottom: 2rem;
+    }
+
+    .alert-card {
+        flex-direction: column;
+        padding: 1.2rem;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+
+    .card-header {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--glass-border);
+        padding-bottom: 0.5rem;
+    }
+
+    .card-content {
+        width: 100%;
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+    }
+
+    .tf-selector {
+        width: 100%;
+    }
+
+    .tf-current-btn {
+        width: 100%;
+    }
+
+    .input-row {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .input-row label {
+        width: auto;
+        text-align: left;
+    }
+
+    input,
+    select {
+        width: 60%;
+    }
+
+    #price-target-1,
+    #price-target-2,
+    #price-target-3,
+    #standing-level,
+    #line-touch-price,
+    #ema-cross-short,
+    #ema-cross-long,
+    #ema-cross-condition,
+    #standing-condition,
+    #heikin-condition {
+        width: 60%;
+    }
+
+    .action-group {
+        width: 100%;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding-right: 0;
+    }
+
+    .toggle-btn {
+        width: 100%;
+        padding: 0.8rem;
+    }
+
+    .toggle-btn.secondary {
+        width: 100%;
+    }
+
+    .tf-dropdown-menu {
+        min-width: 280px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .tf-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

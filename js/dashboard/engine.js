@@ -29,31 +29,35 @@ async function checkAlert(id) {
 
             let triggered = false;
             let msg = "";
+            let voiceMsg = "";
 
             if (!isNaN(target1)) {
                 if (currentCandle.low <= target1 && currentCandle.high >= target1) {
                     triggered = true;
-                    msg = `${shortSymbol} price swallowed ${target1}`;
+                    msg = `🔔 ${shortSymbol} Price Hits ${target1} 🔔`;
+                    voiceMsg = `${shortSymbol} price hits ${target1}`;
                 }
             }
 
             if (!triggered && !isNaN(target2)) {
                 if (currentCandle.low <= target2 && currentCandle.high >= target2) {
                     triggered = true;
-                    msg = `${shortSymbol} price swallowed ${target2}`;
+                    msg = `🔔 ${shortSymbol} Price Hits ${target2} 🔔`;
+                    voiceMsg = `${shortSymbol} price hits ${target2}`;
                 }
             }
 
             if (!triggered && !isNaN(target3)) {
                 if (currentCandle.low <= target3 && currentCandle.high >= target3) {
                     triggered = true;
-                    msg = `${shortSymbol} price swallowed ${target3}`;
+                    msg = `🔔 ${shortSymbol} Price Hits ${target3} 🔔`;
+                    voiceMsg = `${shortSymbol} price hits ${target3}`;
                 }
             }
 
             if (triggered) {
                 alert.lastTriggerCandleTime = currentCandle.time;
-                triggerAlert(id, msg);
+                triggerAlert(id, msg, voiceMsg);
             }
         }
 
@@ -68,10 +72,10 @@ async function checkAlert(id) {
             const emaShortCurrent = calculateEMA(prices, shortPeriod);
             const emaLongCurrent = calculateEMA(prices, longPeriod);
 
-            if (condition === 'uptrend' && emaShortCurrent > emaLongCurrent) {
-                triggerAlert(id, `${shortSymbol} ${tf} EMA Cross to Uptrend`);
-            } else if (condition === 'downtrend' && emaShortCurrent < emaLongCurrent) {
-                triggerAlert(id, `${shortSymbol} ${tf} EMA Cross to Downtrend`);
+            if (condition === 'up' && emaShortCurrent > emaLongCurrent) {
+                triggerAlert(id, `🚀 ${shortSymbol} ${tf} EMA CROSS UP 🚀`, `${shortSymbol} ${tf} EMA cross to uptrend`);
+            } else if (condition === 'down' && emaShortCurrent < emaLongCurrent) {
+                triggerAlert(id, `💥 ${shortSymbol} ${tf} EMA CROSS DOWN 💥`, `${shortSymbol} ${tf} EMA cross to downtrend`);
             }
         }
 
@@ -100,12 +104,12 @@ async function checkAlert(id) {
                     if (condition === 'perfect-green') {
                         // Perfect Green: Close > Open AND No lower wick (Low == Open)
                         if (haClose > haOpen && Math.abs(currentHaLow - haOpen) < (haOpen * 0.00001)) {
-                            triggerAlert(id, `${shortSymbol} ${tf} heikin ashi turned into GREEN color`);
+                            triggerAlert(id, `🚀 ${shortSymbol} ${tf} Heikin Ashi GREEN 🚀`, `${shortSymbol} ${tf} heikin ashi turned into GREEN color`);
                         }
                     } else if (condition === 'perfect-red') {
                         // Perfect Red: Close < Open AND No upper wick (High == Open)
                         if (haClose < haOpen && Math.abs(currentHaHigh - haOpen) < (haOpen * 0.00001)) {
-                            triggerAlert(id, `${shortSymbol} ${tf} heikin ashi turned into RED color`);
+                            triggerAlert(id, `💥 ${shortSymbol} ${tf} Heikin Ashi RED 💥`, `${shortSymbol} ${tf} heikin ashi turned into RED color`);
                         }
                     }
                 }
@@ -124,9 +128,9 @@ async function checkAlert(id) {
             const prevClose = klines[klines.length - 2].close;
 
             if (condition === 'above' && prevClose > emaVal) {
-                triggerAlert(id, `${shortSymbol} ${tf} EMA STAND above ${period} EMA`);
+                triggerAlert(id, `🚀 ${shortSymbol} ${tf} STAND ABOVE ${period}EMA 🚀`, `${shortSymbol} ${tf} EMA STAND above ${period} EMA`);
             } else if (condition === 'below' && prevClose < emaVal) {
-                triggerAlert(id, `${shortSymbol} ${tf} EMA STAND below ${period} EMA`);
+                triggerAlert(id, `💥 ${shortSymbol} ${tf} STAND BELOW ${period}EMA 💥`, `${shortSymbol} ${tf} EMA STAND below ${period} EMA`);
             }
         }
 
@@ -140,8 +144,22 @@ async function checkAlert(id) {
             const emaVal = calculateEMA(prices, period);
             const currentCandle = klines[klines.length - 1];
 
+            // Condition: current candle touches the EMA line
             if (currentCandle.low <= emaVal && currentCandle.high >= emaVal) {
-                triggerAlert(id, `${shortSymbol} ${tf} EMA TOUCH the ${period} EMA`);
+                triggerAlert(id, `🔔 ${shortSymbol} ${tf} TOUCH ${period}EMA 🔔`, `${shortSymbol} ${tf} candle touched ${period} EMA`);
+            }
+        }
+
+        if (id === 'liquidity') {
+            const klines = await fetchKlines(symbol, tf);
+            if (klines.length < 2) return;
+
+            const currentCandle = klines[klines.length - 1];
+            const previousCandle = klines[klines.length - 2];
+
+            // Condition: current high > previous high AND current candle is RED (close < open)
+            if (currentCandle.high > previousCandle.high && currentCandle.close < currentCandle.open) {
+                triggerAlert(id, `🩸 ${shortSymbol} ${tf} Liquidity Hunt 🩸`, `${shortSymbol} ${tf} Liquidity Hunt activated`);
             }
         }
     } catch (e) {
@@ -149,7 +167,7 @@ async function checkAlert(id) {
     }
 }
 
-function triggerAlert(id, message) {
+function triggerAlert(id, message, voiceMessage = null) {
     const alert = alerts[id];
     const statusText = document.getElementById(`${id}-status`);
     const indicator = statusText.parentElement;
@@ -171,7 +189,8 @@ function triggerAlert(id, message) {
         btn.classList.add('active');
     }
 
-    speak(message, () => {
+    const textToSpeak = voiceMessage || message;
+    speak(textToSpeak, () => {
         // Revert to START only if we stopped because of trigger (not manual stop)
         if (!alert.active) {
             btn.innerText = "START";
@@ -185,8 +204,12 @@ function triggerAlert(id, message) {
         }
     });
 
+    // Special channel for Liquidity, EMA Cross, Stand, Touch, and Heikin
+    const wolvesRiseIds = ['liquidity', 'ema-cross', 'standing', 'line-touch', 'heikin'];
+    const telegramChatId = wolvesRiseIds.includes(id) ? "@futures_wolves_rise" : null;
+
     // Send Telegram Alert for every trigger
-    sendTelegramAlert(message);
+    sendTelegramAlert(message, telegramChatId);
 
     lastAlertMessages[id] = message;
     lastAlertTimes[id] = Date.now();
