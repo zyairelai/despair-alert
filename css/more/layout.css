@@ -11,6 +11,7 @@
 }
 
 header {
+    width: 100%;
     display: flex;
     justify-content: center;
     margin-bottom: 0.3rem;
@@ -19,27 +20,22 @@ header {
 #global-symbol {
     background: #0d0e11;
     border: 1px solid var(--glass-border);
+    border-radius: 8px;
     color: var(--accent-green);
-    font-size: 1.6rem;
-    font-weight: 800;
-    padding: 0.5rem 1.2rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    padding: 0.5rem 1rem;
     cursor: pointer;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     transition: all 0.3s ease;
-    border-radius: 12px;
-    min-width: 200px;
     text-align: center;
+    text-align-last: center;
     appearance: none;
     -webkit-appearance: none;
-}
-
-#global-symbol option {
-    background: #1a1b1f;
-    color: var(--accent-green);
+    outline: none;
     font-family: 'Outfit', sans-serif;
-    font-size: 1.6rem;
-    font-weight: 800;
+    width: 320px;
 }
 
 #global-symbol:hover {

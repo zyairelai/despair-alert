@@ -28,6 +28,10 @@ function toggleAlert(id) {
         btn.innerText = "START";
         btn.classList.remove('active');
 
+        // Revert title color
+        const title = card.querySelector('.card-header h2');
+        if (title) title.classList.remove('running-title');
+
         indicator.classList.remove('monitoring', 'triggered');
         indicator.classList.add('inactive');
         statusText.innerText = "INACTIVE";
@@ -40,6 +44,10 @@ function toggleAlert(id) {
         alert.active = true;
         btn.innerText = "STOP";
         btn.classList.add('active');
+
+        // Make title red
+        const title = card.querySelector('.card-header h2');
+        if (title) title.classList.add('running-title');
 
         indicator.classList.remove('inactive', 'triggered');
         indicator.classList.add('monitoring');

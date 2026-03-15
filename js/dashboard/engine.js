@@ -179,6 +179,9 @@ function triggerAlert(id, message) {
             indicator.classList.remove('triggered');
             indicator.classList.add('inactive');
             statusText.innerText = "INACTIVE";
+
+            const title = card.querySelector('.card-header h2');
+            if (title) title.classList.remove('running-title');
         }
     });
 

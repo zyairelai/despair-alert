@@ -141,7 +141,7 @@ function checkAndSendAlert(currentTrend, isEmergency = false) {
 
         if (sessionStarted) {
             sendTelegramAlert(msg);
-            beep(); // Always beep for emergency breakdown
+            speak("BTC 1 hour emergency breakdown. BTC 1 hour emergency breakdown.");
         }
 
         localStorage.setItem('lastEmergencyHour', currentHourTs.toString());
