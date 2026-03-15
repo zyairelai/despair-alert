@@ -117,11 +117,8 @@ function checkAndSendAlert(currentTrend, isEmergency = false) {
     const isNewCandle = !lastAlertCandle || current15mTs > parseInt(lastAlertCandle);
     const isNewEmergencyHour = !lastEmergencyHour || currentHourTs > parseInt(lastEmergencyHour);
 
-    // Global Lock: If an emergency alert was sent this hour, all Telegram alerts are muted until next hour resets it
-    if (!isNewEmergencyHour) return;
-
-    // 1. Emergency Case: Bypass 15m rule
-    if (isEmergency) {
+    // 1. Emergency Case: Bypass 15m rule, but respect hourly lock
+    if (isEmergency && isNewEmergencyHour) {
         const symbolShort = SYMBOL.replace("USDT", "");
         const msg = `🚨 ${symbolShort} 1H EMERGENCY DOWNTREND 🚨`;
 
@@ -149,6 +146,7 @@ function checkAndSendAlert(currentTrend, isEmergency = false) {
 
             if (sessionStarted) {
                 sendTelegramAlert(msg);
+                speak(`${symbolShort} trend: ${currentTrend}`);
             }
         }
 
