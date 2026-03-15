@@ -235,7 +235,7 @@ select option {
     background: #1e222d;
     border: 1px solid var(--glass-border);
     border-radius: 12px;
-    padding: 1.2rem;
+    padding: 0.8rem;
     z-index: 2000;
     min-width: 320px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
@@ -248,16 +248,16 @@ select option {
 .tf-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 0.8rem;
+    gap: 0.4rem;
 }
 
 .tf-btn {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid transparent;
-    border-radius: 8px;
+    border-radius: 4px;
     color: var(--text-main);
-    padding: 0.6rem 0.2rem;
-    font-size: 0.85rem;
+    padding: 0.3rem 0.2rem;
+    font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
