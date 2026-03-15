@@ -5,17 +5,10 @@ import os, sys, subprocess, shutil
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 SCRIPTS_LIST = [
-    ("ema_single.py",  "EMA 10/20 Cross Single Timeframe"),
-    ("ema_double.py",  "EMA 10/20/50 Alignment (15m + 5m)"),
-    ("heikin.py",      "Heikin Ashi Color Change"),
     ("hourbreak.py",   "1H Structure Break"),
-    ("linetouch.py",   "Check Specific Line Touch"),
     ("monitoring.py",  "Live Trend Dashboard"),
     ("oneminute.py",   "One Minute Entry Alert"),
-    ("pricealert.py",  "Custom Price Alert"),
     ("rawcandle.py",   "5m Long Upper Wick Monitoring"),
-    ("standing.py",    "Close Above/Below MA Check"),
-    ("stoploss.py",    "Stoploss Multi-Price Alert"),
     ("zones.py",       "Prev 1D/4H Levels")
 ]
 
@@ -23,10 +16,9 @@ SCRIPTS_LIST = [
 SCRIPTS_LIST.sort(key=lambda x: x[0])
 
 SHORTCUTS = {
-    "l": "linetouch.py",
+    "h": "hourbreak.py",
     "m": "monitoring.py",
     "o": "oneminute.py",
-    "p": "pricealert.py",
     "r": "rawcandle.py",
     "z": "zones.py"
 }

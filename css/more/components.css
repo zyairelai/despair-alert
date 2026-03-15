@@ -1,0 +1,254 @@
+.alert-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 0.8rem 2.5rem 0.8rem 1.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.alert-card.z-active {
+    z-index: 1100 !important;
+    background: rgba(30, 34, 45, 0.98);
+    border-color: var(--accent-green);
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.8);
+}
+
+.card-header {
+    width: 140px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.card-header h2 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--accent-green);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    font-family: monospace;
+    font-weight: 800;
+    color: var(--text-dim);
+}
+
+.status-indicator.monitoring {
+    color: var(--accent-green);
+}
+
+.status-indicator.triggered {
+    color: var(--accent-red);
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #475569;
+}
+
+.status-indicator.monitoring .dot {
+    background: var(--accent-green);
+    box-shadow: 0 0 8px var(--glow-green);
+    animation: pulse 1.5s infinite;
+}
+
+.status-indicator.triggered .dot {
+    background: var(--accent-red);
+    box-shadow: 0 0 8px rgba(255, 77, 77, 0.6);
+}
+
+.card-content {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: 80px 200px 200px 200px;
+    align-items: center;
+    gap: 1rem;
+}
+
+.tf-selector {
+    width: 90px;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.input-row {
+    width: 195px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.input-row label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    font-weight: 700;
+    width: 65px;
+    text-align: right;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+}
+
+input,
+select {
+    background: #0d0e11;
+    border: 1px solid var(--glass-border);
+    border-radius: 4px;
+    color: var(--text-main);
+    padding: 0.35rem 0.5rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    width: 95px;
+}
+
+input:focus,
+select:focus {
+    border-color: var(--accent-green);
+    outline: none;
+}
+
+#price-target-1,
+#price-target-2,
+#price-target-3,
+#standing-level,
+#line-touch-price {
+    width: 100px;
+}
+
+#ema-cross-short,
+#ema-cross-long {
+    width: 100px;
+}
+
+#ema-cross-condition,
+#standing-condition,
+#heikin-condition {
+    width: 125px;
+}
+
+.action-group {
+    display: flex;
+    gap: 0.8rem;
+    width: 230px;
+    justify-content: flex-end;
+    margin-left: auto;
+    padding-right: 0.5rem;
+}
+
+.toggle-btn {
+    background: var(--accent-green);
+    color: #00331a;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    flex: 1;
+}
+
+.toggle-btn.secondary {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-main);
+    border: 1px solid var(--glass-border);
+    flex: 0;
+    min-width: 75px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle-btn.active {
+    background: var(--accent-red);
+    color: #fff;
+}
+
+.toggle-btn:hover:not(.active) {
+    box-shadow: 0 4px 15px var(--glow-green);
+}
+
+.tf-current-btn {
+    background: #1e222d;
+    border: 1px solid var(--glass-border);
+    border-radius: 4px;
+    color: var(--accent-green);
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    width: 65px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+}
+
+.tf-current-btn::after {
+    display: none;
+}
+
+.tf-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    background: #1e222d;
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 0.5rem;
+    z-index: 2000;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.3rem;
+    min-width: 200px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
+}
+
+.tf-dropdown-menu.show {
+    display: grid;
+}
+
+.tf-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--text-main);
+    padding: 0.3rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.tf-btn.active,
+.tf-btn:hover {
+    background: var(--accent-green);
+    color: #00331a;
+}
+
+.green-mode {
+    color: var(--accent-green) !important;
+    border-color: var(--accent-green) !important;
+}
+
+.red-mode {
+    color: var(--accent-red) !important;
+    border-color: var(--accent-red) !important;
+}

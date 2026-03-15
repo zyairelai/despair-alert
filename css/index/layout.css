@@ -1,0 +1,6 @@
+.container {
+    width: 100%;
+    max-width: 520px;
+    padding: 2rem;
+    z-index: 1;
+}

@@ -1,0 +1,42 @@
+:root {
+    --bg-color: #050608;
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --accent-green: #00ff88;
+    --accent-red: #ff4d4d;
+    --accent-yellow: #ffcc00;
+    --text-main: #e0e6ed;
+    --text-dim: #94a3b8;
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glow-green: rgba(0, 255, 136, 0.2);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: 'Outfit', sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Hide Spin Buttons */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    appearance: none;
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}

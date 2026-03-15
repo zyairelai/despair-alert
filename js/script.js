@@ -76,15 +76,15 @@ async function updateTrend() {
         if (currentTrend === "UPTREND") {
             trendDisplay.innerText = "CURRENTLY UPTREND";
             trendDisplay.className = "overall-trend trend-up";
-            updateFavicon("web/favicon.png");
+            updateFavicon("images/favicon_green.png");
         } else if (currentTrend === "DOWNTREND") {
             trendDisplay.innerText = isEmergency ? "EMERGENCY DOWNTREND" : "CURRENTLY DOWNTREND";
             trendDisplay.className = "overall-trend trend-down";
-            updateFavicon("web/favicon_red.png");
+            updateFavicon("images/favicon_red.png");
         } else {
             trendDisplay.innerText = "NO TRADE ZONE";
             trendDisplay.className = "overall-trend trend-neutral";
-            updateFavicon("web/favicon_yellow.png");
+            updateFavicon("images/favicon_yellow.png");
         }
 
         checkAndSendAlert(currentTrend, isEmergency);
