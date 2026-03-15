@@ -53,7 +53,32 @@ function updateSelectColor(el) {
 }
 
 async function updateGlobalSymbol() {
-    const symbol = document.getElementById('global-symbol').value;
-    console.log("Global symbol updated to:", symbol);
-    await fetchDailyLevels(symbol);
+    const selector = document.getElementById('global-symbol');
+    if (!selector) return;
+    const symbol = selector.value;
+    console.log("Global symbol switch ->", symbol);
+
+    // Save for cross-page persistence
+    localStorage.setItem('globalSymbol', symbol);
+
+    // 1. AUTO-STOP all active monitoring to prevent "BTC targets on ETH"
+    if (typeof alerts !== 'undefined') {
+        Object.keys(alerts).forEach(id => {
+            if (alerts[id].active) {
+                console.log(`Auto-stopping ${id} due to symbol switch`);
+                toggleAlert(id); // Use existing toggle logic to clean up UI
+            }
+        });
+    }
+
+    // 2. CLEAR price target inputs
+    ['price-target-1', 'price-target-2', 'price-target-3'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+    });
+
+    // 3. REFRESH placeholders/levels
+    if (typeof fetchDailyLevels === 'function') {
+        await fetchDailyLevels(symbol);
+    }
 }

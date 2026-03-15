@@ -4,18 +4,34 @@
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
     border-radius: 28px;
-    padding: 2.5rem 2rem;
+    padding: 1.5rem 2rem;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     text-align: center;
 }
 
-header h1 {
-    font-weight: 700;
-    font-size: 1.5rem;
-    letter-spacing: 0.1em;
-    color: var(--accent-green);
-    text-transform: uppercase;
-    margin-bottom: 1.5rem;
+#global-symbol option {
+    background: #0d0e11 !important;
+    color: var(--accent-green) !important;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    font-family: 'Outfit', sans-serif !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+    padding: 10px 0 !important;
+}
+
+/* Title Dynamic Coloring */
+#global-symbol.title-green {
+    color: var(--accent-green) !important;
+}
+
+#global-symbol.title-red {
+    color: var(--accent-red) !important;
+}
+
+#global-symbol.title-doji {
+    color: #ffd700 !important;
 }
 
 .status-display {

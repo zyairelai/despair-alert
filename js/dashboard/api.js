@@ -51,3 +51,19 @@ async function fetchKlines(symbol, interval) {
         close: parseFloat(d[4])
     }));
 }
+
+async function sendTelegramAlert(message, customChatId = null) {
+    const botToken = customChatId === "@futures_wolves_rise" ? ENV.TELEGRAM_WOLVESRISE : ENV.TELEGRAM_LIVERMORE;
+    const chatId = customChatId || "@swinglivermore";
+
+    if (!botToken) return;
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    const params = new URLSearchParams({
+        chat_id: chatId,
+        parse_mode: 'html',
+        text: message
+    });
+    try {
+        await fetch(`${url}?${params}`);
+    } catch (e) { }
+}

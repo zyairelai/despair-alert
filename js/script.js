@@ -1,4 +1,4 @@
-const SYMBOL = "BTCUSDT";
+let SYMBOL = localStorage.getItem('globalSymbol') || "BTCUSDT";
 let started = false;
 let sessionStarted = false;
 let lastBeepTime = 0; // Prevent duplicate beeps in the same second
@@ -103,21 +103,6 @@ function updateFavicon(path) {
     link.href = path;
 }
 
-async function sendTelegramAlert(message, customChatId = null) {
-    const botToken = customChatId === "@futures_wolves_rise" ? ENV.TELEGRAM_WOLVESRISE : ENV.TELEGRAM_LIVERMORE;
-    const chatId = customChatId || "@swinglivermore";
-
-    if (!botToken) return;
-    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-    const params = new URLSearchParams({
-        chat_id: chatId,
-        parse_mode: 'html',
-        text: message
-    });
-    try {
-        await fetch(`${url}?${params}`);
-    } catch (e) { }
-}
 
 function checkAndSendAlert(currentTrend, isEmergency = false) {
     const lastAlertTrend = localStorage.getItem('lastAlertTrend');
@@ -139,10 +124,9 @@ function checkAndSendAlert(currentTrend, isEmergency = false) {
         const symbolShort = SYMBOL.replace("USDT", "");
         const msg = `🚨 ${symbolShort} 1H EMERGENCY DOWNTREND 🚨`;
 
-        if (sessionStarted) {
-            sendTelegramAlert(msg);
-            speak("BTC 1 hour emergency breakdown. BTC 1 hour emergency breakdown.");
-        }
+        // Always send Telegram for emergencies
+        sendTelegramAlert(msg);
+        speak(`${symbolShort} 1 hour emergency breakdown. ${symbolShort} 1 hour emergency breakdown.`);
 
         localStorage.setItem('lastEmergencyHour', currentHourTs.toString());
         localStorage.setItem('lastAlertTrend', "DOWNTREND");
@@ -225,7 +209,7 @@ function start() {
     started = true;
     document.getElementById("startBtn").disabled = true;
     document.getElementById("startBtn").innerText = "MONITORING ACTIVE";
-    setInterval(tick, 1000);
+    monitorInterval = setInterval(tick, 1000);
     tick();
     updateTrend();
 
@@ -240,3 +224,52 @@ function setBeepMode(mode) {
     document.getElementById('beepTrend').classList.toggle('active', mode === 'trend');
     console.log("Beep mode set to:", mode);
 }
+let monitorInterval = null;
+
+function updateGlobalSymbol() {
+    const selector = document.getElementById('global-symbol');
+    SYMBOL = selector.value;
+    localStorage.setItem('globalSymbol', SYMBOL);
+    console.log("Global symbol updated to:", SYMBOL);
+
+    // STOP EVERYTHING: Reset monitoring state
+    if (monitorInterval) {
+        clearInterval(monitorInterval);
+        monitorInterval = null;
+    }
+
+    started = false;
+    const startBtn = document.getElementById("startBtn");
+    if (startBtn) {
+        startBtn.disabled = false;
+        startBtn.innerText = "START MONITORING";
+    }
+
+    // FULL UI RESET: Revert elements to initial state
+    document.getElementById("htfStatus").innerText = "LOADING...";
+    document.getElementById("ltfStatus").innerText = "LOADING...";
+    document.getElementById("htfRow").className = "status-row status-neutral";
+    document.getElementById("ltfRow").className = "status-row status-neutral";
+
+    const trendDisplay = document.getElementById("trendDisplay");
+    trendDisplay.innerText = "INITIALIZING...";
+    trendDisplay.className = "overall-trend trend-neutral";
+
+    document.getElementById("countdown").innerText = "00:00";
+
+    // Reset session markers
+    localStorage.removeItem('lastAlertTrend');
+    localStorage.removeItem('lastAlertCandle');
+    localStorage.removeItem('lastEmergencyHour');
+
+    // Reset favicon to yellow/neutral
+    updateFavicon("images/favicon_yellow.png");
+}
+
+// Ensure the dropdown matches the stored symbol on load
+document.addEventListener('DOMContentLoaded', () => {
+    const selector = document.getElementById('global-symbol');
+    if (selector) {
+        selector.value = SYMBOL;
+    }
+});

@@ -66,8 +66,8 @@ function testTTS(id) {
     if (id === 'price') text = `${symbol} price alert test`;
     else if (id === 'ema-cross') text = `${symbol} ${tf} ema cross test`;
     else if (id === 'heikin') text = `${symbol} ${tf} heikin ashi change`;
-    else if (id === 'standing') text = `${symbol} standing alert test`;
-    else if (id === 'line-touch') text = `${symbol} touching line test`;
+    else if (id === 'standing') text = `${symbol} EMA STAND alert test`;
+    else if (id === 'line-touch') text = `${symbol} EMA TOUCH alert test`;
 
     speak(text);
 }

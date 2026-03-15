@@ -12,35 +12,40 @@
 
 header {
     width: 100%;
-    display: flex;
-    justify-content: center;
+    display: block;
+    text-align: center;
     margin-bottom: 0.3rem;
 }
 
 #global-symbol {
-    background: #0d0e11;
-    border: 1px solid var(--glass-border);
+    background: transparent;
+    border: 1px solid transparent;
     border-radius: 8px;
     color: var(--accent-green);
     font-size: 1.5rem;
     font-weight: 700;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0;
     cursor: pointer;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     transition: all 0.3s ease;
     text-align: center;
     text-align-last: center;
+    -moz-text-align-last: center;
     appearance: none;
     -webkit-appearance: none;
+    -moz-appearance: none;
     outline: none;
     font-family: 'Outfit', sans-serif;
-    width: 320px;
+    width: 280px;
+    display: inline-block;
+    margin: 0 auto;
 }
 
 #global-symbol:hover {
-    border-color: var(--accent-green);
-    box-shadow: 0 0 10px var(--glow-green);
+    background: #0d0e11;
+    border-color: var(--glass-border);
+    box-shadow: 0 0 15px var(--glow-green);
 }
 
 .alert-grid {

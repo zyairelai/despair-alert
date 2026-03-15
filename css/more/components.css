@@ -293,21 +293,19 @@ select option {
     font-family: 'Outfit', sans-serif !important;
     letter-spacing: 0.1em !important;
     text-transform: uppercase !important;
+    padding: 10px 0 !important;
 }
 
 /* Title Dynamic Coloring */
 #global-symbol.title-green {
     color: var(--accent-green) !important;
-    border-color: var(--accent-green) !important;
 }
 
 #global-symbol.title-red {
     color: var(--accent-red) !important;
-    border-color: var(--accent-red) !important;
 }
 
 #global-symbol.title-doji {
     color: #ffd700 !important;
     /* Yellow */
-    border-color: #ffd700 !important;
 }

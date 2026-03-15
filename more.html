@@ -28,51 +28,50 @@
         </header>
 
         <div class="alert-grid">
-            <!-- Price Alert -->
-            <div class="alert-card" id="price-card">
+            <!-- Heikin Ashi -->
+            <div class="alert-card" id="heikin-card">
                 <div class="card-header">
-                    <h2>PRICE ALERT</h2>
+                    <h2>HEIKIN ASHI</h2>
                     <div class="status-indicator inactive">
-                        <div class="dot" id="price-dot"></div>
-                        <span id="price-status">INACTIVE</span>
+                        <div class="dot" id="heikin-dot"></div>
+                        <span id="heikin-status">INACTIVE</span>
                     </div>
                 </div>
                 <div class="card-content">
-                    <div class="tf-selector" id="price-tf-selector">
-                        <button type="button" class="tf-current-btn" id="price-tf-trigger"
-                            onclick="toggleTFMenu('price')">5m</button>
-                        <div class="tf-dropdown-menu" id="price-tf-menu" data-value="5m">
+                    <div class="tf-selector" id="heikin-tf-selector">
+                        <button type="button" class="tf-current-btn" id="heikin-tf-trigger"
+                            onclick="toggleTFMenu('heikin')">5m</button>
+                        <div class="tf-dropdown-menu" id="heikin-tf-menu" data-value="5m">
                             <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('price', '1m')">1m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '3m')">3m</button>
-                                <button type="button" class="tf-btn active" onclick="setTF('price', '5m')">5m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '30m')">30m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '1h')">1H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '2h')">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '4h')">4H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '6h')">6H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '12h')">12H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '1d')">1D</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '1m')">1m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '3m')">3m</button>
+                                <button type="button" class="tf-btn active" onclick="setTF('heikin', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '30m')">30m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '1h')">1H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '2h')">2H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '4h')">4H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '6h')">6H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '12h')">12H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '1d')">1D</button>
                             </div>
                         </div>
                     </div>
+                    <div class="input-row spacer"></div>
+                    <div class="input-row spacer"></div>
                     <div class="input-row">
-                        <label>Target 1</label>
-                        <input type="text" id="price-target-1" placeholder="High">
-                    </div>
-                    <div class="input-row">
-                        <label>Target 2</label>
-                        <input type="text" id="price-target-2" placeholder="Mid">
-                    </div>
-                    <div class="input-row">
-                        <label>Target 3</label>
-                        <input type="text" id="price-target-3" placeholder="Low">
+                        <label>Color</label>
+                        <select id="heikin-condition" onchange="updateSelectColor(this)" class="green-mode">
+                            <option value="perfect-green"
+                                style="color: #00ff88; font-weight: bold; background: #1a1a1a;">GREEN</option>
+                            <option value="perfect-red" style="color: #ff4d4d; font-weight: bold; background: #1a1a1a;">
+                                RED</option>
+                        </select>
                     </div>
                 </div>
                 <div class="action-group">
-                    <button class="toggle-btn" onclick="toggleAlert('price')">START</button>
-                    <button class="toggle-btn secondary" onclick="testTTS('price')">Test</button>
+                    <button class="toggle-btn" onclick="toggleAlert('heikin')">START</button>
+                    <button class="toggle-btn secondary" onclick="testTTS('heikin')">Test</button>
                 </div>
             </div>
 
@@ -130,10 +129,10 @@
                 </div>
             </div>
 
-            <!-- Standing -->
+            <!-- EMA STAND -->
             <div class="alert-card" id="standing-card">
                 <div class="card-header">
-                    <h2>STANDING</h2>
+                    <h2>EMA STAND</h2>
                     <div class="status-indicator inactive">
                         <div class="dot" id="standing-dot"></div>
                         <span id="standing-status">INACTIVE</span>
@@ -181,10 +180,10 @@
                 </div>
             </div>
 
-            <!-- Line Touch -->
+            <!-- EMA TOUCH -->
             <div class="alert-card" id="line-touch-card">
                 <div class="card-header">
-                    <h2>LINE TOUCH</h2>
+                    <h2>EMA TOUCH</h2>
                     <div class="status-indicator inactive">
                         <div class="dot" id="line-touch-dot"></div>
                         <span id="line-touch-status">INACTIVE</span>
@@ -224,50 +223,51 @@
                 </div>
             </div>
 
-            <!-- Heikin Ashi -->
-            <div class="alert-card" id="heikin-card">
+            <!-- Price Alert -->
+            <div class="alert-card" id="price-card">
                 <div class="card-header">
-                    <h2>HEIKIN ASHI</h2>
+                    <h2>PRICE ALERT</h2>
                     <div class="status-indicator inactive">
-                        <div class="dot" id="heikin-dot"></div>
-                        <span id="heikin-status">INACTIVE</span>
+                        <div class="dot" id="price-dot"></div>
+                        <span id="price-status">INACTIVE</span>
                     </div>
                 </div>
                 <div class="card-content">
-                    <div class="tf-selector" id="heikin-tf-selector">
-                        <button type="button" class="tf-current-btn" id="heikin-tf-trigger"
-                            onclick="toggleTFMenu('heikin')">5m</button>
-                        <div class="tf-dropdown-menu" id="heikin-tf-menu" data-value="5m">
+                    <div class="tf-selector" id="price-tf-selector">
+                        <button type="button" class="tf-current-btn" id="price-tf-trigger"
+                            onclick="toggleTFMenu('price')">5m</button>
+                        <div class="tf-dropdown-menu" id="price-tf-menu" data-value="5m">
                             <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '1m')">1m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '3m')">3m</button>
-                                <button type="button" class="tf-btn active" onclick="setTF('heikin', '5m')">5m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '30m')">30m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '1h')">1H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '2h')">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '4h')">4H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '6h')">6H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '12h')">12H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '1d')">1D</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '1m')">1m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '3m')">3m</button>
+                                <button type="button" class="tf-btn active" onclick="setTF('price', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '30m')">30m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '1h')">1H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '2h')">2H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '4h')">4H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '6h')">6H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '12h')">12H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '1d')">1D</button>
                             </div>
                         </div>
                     </div>
-                    <div class="input-row spacer"></div>
-                    <div class="input-row spacer"></div>
                     <div class="input-row">
-                        <label>Color</label>
-                        <select id="heikin-condition" onchange="updateSelectColor(this)" class="green-mode">
-                            <option value="perfect-green"
-                                style="color: #00ff88; font-weight: bold; background: #1a1a1a;">GREEN</option>
-                            <option value="perfect-red" style="color: #ff4d4d; font-weight: bold; background: #1a1a1a;">
-                                RED</option>
-                        </select>
+                        <label>Target 1</label>
+                        <input type="text" id="price-target-1" placeholder="High">
+                    </div>
+                    <div class="input-row">
+                        <label>Target 2</label>
+                        <input type="text" id="price-target-2" placeholder="Mid">
+                    </div>
+                    <div class="input-row">
+                        <label>Target 3</label>
+                        <input type="text" id="price-target-3" placeholder="Low">
                     </div>
                 </div>
                 <div class="action-group">
-                    <button class="toggle-btn" onclick="toggleAlert('heikin')">START</button>
-                    <button class="toggle-btn secondary" onclick="testTTS('heikin')">Test</button>
+                    <button class="toggle-btn" onclick="toggleAlert('price')">START</button>
+                    <button class="toggle-btn secondary" onclick="testTTS('price')">Test</button>
                 </div>
             </div>
         </div>

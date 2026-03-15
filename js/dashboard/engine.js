@@ -124,9 +124,9 @@ async function checkAlert(id) {
             const prevClose = klines[klines.length - 2].close;
 
             if (condition === 'above' && prevClose > emaVal) {
-                triggerAlert(id, `${shortSymbol} ${tf} standing above ${period} EMA`);
+                triggerAlert(id, `${shortSymbol} ${tf} EMA STAND above ${period} EMA`);
             } else if (condition === 'below' && prevClose < emaVal) {
-                triggerAlert(id, `${shortSymbol} ${tf} standing below ${period} EMA`);
+                triggerAlert(id, `${shortSymbol} ${tf} EMA STAND below ${period} EMA`);
             }
         }
 
@@ -141,7 +141,7 @@ async function checkAlert(id) {
             const currentCandle = klines[klines.length - 1];
 
             if (currentCandle.low <= emaVal && currentCandle.high >= emaVal) {
-                triggerAlert(id, `${shortSymbol} ${tf} touch the ${period} EMA`);
+                triggerAlert(id, `${shortSymbol} ${tf} EMA TOUCH the ${period} EMA`);
             }
         }
     } catch (e) {
@@ -184,6 +184,9 @@ function triggerAlert(id, message) {
             if (title) title.classList.remove('running-title');
         }
     });
+
+    // Send Telegram Alert for every trigger
+    sendTelegramAlert(message);
 
     lastAlertMessages[id] = message;
     lastAlertTimes[id] = Date.now();

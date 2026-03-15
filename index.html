@@ -21,7 +21,11 @@
     <div class="container">
         <div class="terminal-card">
             <header>
-                <h1 id="symbolLabel">BTCUSDT</h1>
+                <select id="global-symbol" onchange="updateGlobalSymbol()">
+                    <option value="BTCUSDT">BTCUSDT</option>
+                    <option value="ETHUSDT">ETHUSDT</option>
+                    <option value="SOLUSDT">SOLUSDT</option>
+                </select>
             </header>
 
             <div class="status-display">
@@ -60,6 +64,7 @@
 
     <script src="js/env.js"></script>
     <script src="js/dashboard/speech.js"></script>
+    <script src="js/dashboard/ha_coloring.js"></script>
     <script src="js/script.js"></script>
 </body>
 
