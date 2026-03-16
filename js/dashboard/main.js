@@ -11,9 +11,12 @@ let lastAlertMessages = {};
 let lastAlertTimes = {};
 
 // Global Beep State
+// Global Beep State
 let beepActive = false;
 let beepInterval = null;
 let lastBeepTime = 0;
+// Audio Singleton
+let audioCtx = null;
 
 function toggleGlobalBeep() {
     const btn = document.getElementById('beep-start-btn');
@@ -42,10 +45,19 @@ function toggleGlobalBeep() {
         }
         if (statusText) statusText.innerText = "MONITORING";
 
+        // Initialize/Resume Audio Context on user gesture
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
         // Start the timer
         beepInterval = setInterval(updateBeepTimer, 1000);
         updateBeepTimer();
-        beep(); // Immediate feedback on start
+
+        // Manual beep and sync timestamp
+        beep();
+        lastBeepTime = Date.now();
     }
 }
 
@@ -65,9 +77,9 @@ function updateBeepTimer() {
     const display = document.getElementById("beep-countdown");
     if (display) display.innerText = `${mStr}:${sStr}`;
 
-    // Beep logic
+    // Beep logic: Beep at 00:00 (r=0) or 04:59 (r=299)
     if ((r === 0 || r === 299) && (nowTime - lastBeepTime > 10000)) {
-        console.log("Beeping at", now.toLocaleTimeString());
+        console.log("Global Beep triggered at", now.toLocaleTimeString());
         beep();
         lastBeepTime = nowTime;
     }
@@ -75,14 +87,17 @@ function updateBeepTimer() {
 
 function beep() {
     try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        if (ctx.state === 'suspended') ctx.resume();
-        const osc = ctx.createOscillator();
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
         osc.type = "sine";
-        osc.frequency.setValueAtTime(1000, ctx.currentTime);
-        osc.connect(ctx.destination);
+        osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+        osc.connect(audioCtx.destination);
         osc.start();
-        osc.stop(ctx.currentTime + 0.3);
+        osc.stop(audioCtx.currentTime + 0.3);
     } catch (e) {
         console.error("Beep failed:", e);
     }

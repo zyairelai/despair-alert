@@ -165,6 +165,15 @@ async function checkAlert(id) {
                 const currentCandle = klines[klines.length - 1];
                 const previousCandle = klines[klines.length - 2];
 
+                // Guard: For 1h or higher, skip if the candle is less than 3 minutes old
+                const isHtf = currentTf.includes('h') || currentTf.includes('d');
+                if (isHtf) {
+                    const candleAgeSeconds = (Date.now() - currentCandle.time) / 1000;
+                    if (candleAgeSeconds < 180) {
+                        continue; // Skip this TF for now
+                    }
+                }
+
                 // Condition: current high > previous high AND current candle is RED (close < open)
                 if (currentCandle.high > previousCandle.high && currentCandle.close < currentCandle.open) {
                     triggerAlert(id, `🩸 ${shortSymbol} ${currentTf} LIQUIDITY HUNT 🩸`, `${shortSymbol} ${currentTf} LIQUIDITY HUNT ACTIVATED`);
