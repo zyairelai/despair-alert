@@ -105,8 +105,8 @@ function testTTS(id) {
     if (!voiceText) voiceText = text;
 
     // Prefix for both Telegram and Speech
-    const finalTlg = `TEST TTL\n${text}`;
-    const finalVoice = `TEST VOICE. ${voiceText}`;
+    const finalTlg = `TEST MESSAGE\n${text}`;
+    const finalVoice = `TEST MESSAGE. ${voiceText}`;
 
     speak(finalVoice);
 

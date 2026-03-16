@@ -116,9 +116,10 @@ function checkAndSendAlert(currentTrend, isEmergency = false) {
 
     const isNewCandle = !lastAlertCandle || current15mTs > parseInt(lastAlertCandle);
     const isNewEmergencyHour = !lastEmergencyHour || currentHourTs > parseInt(lastEmergencyHour);
+    const m = now.getMinutes();
 
-    // 1. Emergency Case: Bypass 15m rule, but respect hourly lock
-    if (isEmergency && isNewEmergencyHour) {
+    // 1. Emergency Case: Bypass 15m rule, respect hourly lock, AND skip first 3m of new hour
+    if (isEmergency && isNewEmergencyHour && m >= 3) {
         const symbolShort = SYMBOL.replace("USDT", "");
         const msg = `🩸 ${symbolShort} 1H EMERGENCY BREAKDOWN 🩸`;
 
