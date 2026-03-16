@@ -135,7 +135,6 @@ function checkAndSendAlert(currentTrend, isEmergency = false) {
 
     // 2. Standard Case: Immediate on trend change, then cooldown until next 15m candle
     const isTrendChanged = currentTrend !== lastAlertTrend;
-    const isNewCandle = !lastAlertCandle || current15mTs > parseInt(lastAlertCandle);
 
     // Initialization: If we just started, capture trend but don't lock the candle slot
     if (lastAlertTrend === null) {
