@@ -238,9 +238,20 @@ function setBeepMode(mode) {
 }
 let monitorInterval = null;
 
+function toggleGlobalSymbol() {
+    const btn = document.getElementById('global-symbol');
+    if (!btn) return;
+
+    const currentSymbol = btn.innerText;
+    const nextSymbol = currentSymbol === 'BTCUSDT' ? 'ETHUSDT' : 'BTCUSDT';
+
+    btn.innerText = nextSymbol;
+    updateGlobalSymbol();
+}
+
 function updateGlobalSymbol() {
-    const selector = document.getElementById('global-symbol');
-    SYMBOL = selector.value;
+    const btn = document.getElementById('global-symbol');
+    SYMBOL = btn.innerText;
     localStorage.setItem('globalSymbol', SYMBOL);
     console.log("Global symbol updated to:", SYMBOL);
 
@@ -280,8 +291,8 @@ function updateGlobalSymbol() {
 
 // Ensure the dropdown matches the stored symbol on load
 document.addEventListener('DOMContentLoaded', () => {
-    const selector = document.getElementById('global-symbol');
-    if (selector) {
-        selector.value = SYMBOL;
+    const btn = document.getElementById('global-symbol');
+    if (btn) {
+        btn.innerText = SYMBOL;
     }
 });

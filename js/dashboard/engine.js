@@ -64,7 +64,8 @@ async function checkAlert(id) {
         if (id === 'ema-cross') {
             const shortPeriod = parseInt(document.getElementById('ema-cross-short').value);
             const longPeriod = parseInt(document.getElementById('ema-cross-long').value);
-            const condition = document.getElementById('ema-cross-condition').value;
+            const el = document.getElementById('ema-cross-condition');
+            const condition = el.dataset.state || el.value;
 
             const klines = await fetchKlines(symbol, tf);
             const prices = klines.map(k => k.close);
@@ -80,7 +81,8 @@ async function checkAlert(id) {
         }
 
         if (id === 'heikin') {
-            const condition = document.getElementById('heikin-condition').value;
+            const el = document.getElementById('heikin-condition');
+            const condition = el.dataset.state || el.value;
             const klines = await fetchKlines(symbol, tf);
 
             if (klines.length < 50) return; // Need history for stable HA
@@ -118,7 +120,8 @@ async function checkAlert(id) {
 
         if (id === 'standing') {
             const period = parseInt(document.getElementById('standing-level').value) || 20;
-            const condition = document.getElementById('standing-condition').value;
+            const el = document.getElementById('standing-condition');
+            const condition = el.dataset.state || el.value;
 
             const klines = await fetchKlines(symbol, tf);
             if (klines.length < period + 1) return;
@@ -151,11 +154,15 @@ async function checkAlert(id) {
         }
 
         if (id === 'liquidity') {
-            const tfs = [
-                document.getElementById('liquidity-1-tf-menu').dataset.value,
-                document.getElementById('liquidity-2-tf-menu').dataset.value,
-                document.getElementById('liquidity-3-tf-menu').dataset.value
+            const tfSelectors = [
+                document.getElementById('liquidity-1-tf-menu'),
+                document.getElementById('liquidity-2-tf-menu'),
+                document.getElementById('liquidity-3-tf-menu')
             ];
+            const tfs = tfSelectors
+                .filter(el => el !== null)
+                .map(el => el.dataset.value);
+
             const uniqueTfs = [...new Set(tfs)];
 
             for (const currentTf of uniqueTfs) {
@@ -174,9 +181,10 @@ async function checkAlert(id) {
                     }
                 }
 
-                // Condition: current high > previous high AND current candle is RED (close < open)
-                if (currentCandle.high > previousCandle.high && currentCandle.close < currentCandle.open) {
-                    triggerAlert(id, `🩸 ${shortSymbol} ${currentTf} LIQUIDITY HUNT 🩸`, `${shortSymbol} ${currentTf} LIQUIDITY HUNT ACTIVATED`);
+                // Condition: current high >= 99.95% of previous high AND current candle is RED (close < open)
+                if (currentCandle.high >= (previousCandle.high * 0.9995) && currentCandle.close < currentCandle.open) {
+                    const voiceMsg = `${shortSymbol} ${currentTf} LIQUIDITY HUNT ACTIVATED. ${shortSymbol} ${currentTf} LIQUIDITY HUNT ACTIVATED.`;
+                    triggerAlert(id, `🩸 ${shortSymbol} ${currentTf} LIQUIDITY HUNT 🩸`, voiceMsg);
                     break; // stop checking other TFs once one is triggered
                 }
             }
@@ -209,8 +217,10 @@ function triggerAlert(id, message, voiceMessage = null) {
     }
 
     const textToSpeak = voiceMessage || message;
-    speak(textToSpeak, () => {
-        // Revert to START only if we stopped because of trigger (not manual stop)
+
+    // Helper to reset UI state
+    const cleanUI = () => {
+        if (alert.uiBackupTimeout) clearTimeout(alert.uiBackupTimeout);
         if (!alert.active) {
             btn.innerText = "START";
             btn.classList.remove('active');
@@ -221,7 +231,12 @@ function triggerAlert(id, message, voiceMessage = null) {
             const title = card.querySelector('.card-header h2');
             if (title) title.classList.remove('running-title');
         }
-    });
+    };
+
+    // Safety fallback: Reset UI after 10s even if speech callback fails
+    alert.uiBackupTimeout = setTimeout(cleanUI, 10000);
+
+    speak(textToSpeak, cleanUI);
 
     // Special channel for EMA Cross, Stand, Touch, and Heikin
     const wolvesRiseIds = ['ema-cross', 'standing', 'line-touch', 'heikin'];

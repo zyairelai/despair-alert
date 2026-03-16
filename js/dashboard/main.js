@@ -27,6 +27,7 @@ function toggleGlobalBeep() {
         beepActive = false;
         if (beepInterval) clearInterval(beepInterval);
         beepInterval = null;
+        clearSpeechQueue(); // Cancel any pending alert speech
         btn.innerText = "BEEP";
         btn.classList.remove('active');
         if (indicator) {
@@ -87,17 +88,15 @@ function updateBeepTimer() {
 
 function beep() {
     try {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-
-        const osc = audioCtx.createOscillator();
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        const osc = ctx.createOscillator();
         osc.type = "sine";
-        osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
-        osc.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(1000, ctx.currentTime);
+        osc.connect(ctx.destination);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.3);
+        osc.stop(ctx.currentTime + 0.3);
+        console.log("Perfect Beep (Trend matched + Longer) played.");
     } catch (e) {
         console.error("Beep failed:", e);
     }
@@ -122,7 +121,8 @@ function toggleAlert(id) {
         if (alert.interval) clearInterval(alert.interval);
         alert.interval = null;
 
-        window.speechSynthesis.cancel(); // Immediately silence when stopping
+        clearSpeechQueue(); // Immediately silence when stopping
+        if (alert.uiBackupTimeout) clearTimeout(alert.uiBackupTimeout);
 
         btn.innerText = "START";
         btn.classList.remove('active');
@@ -157,64 +157,6 @@ function toggleAlert(id) {
     }
 }
 
-function testTTS(id) {
-    const symbol = document.getElementById('global-symbol').value.replace("USDT", "");
-    const isLiquidity = id.startsWith('liquidity');
-    const menuId = isLiquidity ? 'liquidity-1-tf-menu' : `${id}-tf-menu`;
-    const menuEl = document.getElementById(menuId);
-    const tf = menuEl ? menuEl.dataset.value : "5m";
-    let text = "";
-    let voiceText = "";
-
-    if (id === 'price') {
-        text = `🔔 ${symbol} Price Hits Test 🔔`;
-        voiceText = `${symbol} price hits test`;
-    }
-    else if (id === 'ema-cross') {
-        const cond = document.getElementById('ema-cross-condition').value;
-        const side = cond === 'up' ? 'UP' : 'DOWN';
-        const emoji = cond === 'up' ? '🚀' : '💥';
-        text = `${emoji} ${symbol} ${tf} EMA CROSS ${side} ${emoji}`;
-        voiceText = `${symbol} ${tf} EMA cross test`;
-    }
-    else if (id === 'heikin') {
-        const cond = document.getElementById('heikin-condition').value;
-        const color = cond === 'perfect-green' ? 'GREEN' : 'RED';
-        const emoji = cond === 'perfect-green' ? '🚀' : '💥';
-        text = `${emoji} ${symbol} ${tf} HEIKIN ASHI ${color} ${emoji}`;
-        voiceText = `${symbol} ${tf} HEIKIN ASHI turned into ${color.toLowerCase()} color`;
-    }
-    else if (id === 'standing') {
-        const cond = document.getElementById('standing-condition').value;
-        const level = document.getElementById('standing-level').value;
-        const side = cond === 'above' ? 'ABOVE' : 'BELOW';
-        const emoji = cond === 'above' ? '🚀' : '💥';
-        text = `${emoji} ${symbol} ${tf} STAND ${side} ${level}EMA ${emoji}`;
-        voiceText = `${symbol} EMA STAND alert test`;
-    }
-    else if (id === 'line-touch') {
-        const level = document.getElementById('line-touch-price').value;
-        text = `🔔 ${symbol} ${tf} TOUCH ${level}EMA 🔔`;
-        voiceText = `${symbol} EMA TOUCH alert test`;
-    }
-    else if (id === 'liquidity') {
-        text = `🩸 ${symbol} ${tf} LIQUIDITY HUNT 🩸`;
-        voiceText = `${symbol} ${tf} LIQUIDITY HUNT ACTIVATED`;
-    }
-
-    if (!voiceText) voiceText = text;
-
-    // Prefix for both Telegram and Speech
-    const finalTlg = `TEST MESSAGE\n${text}`;
-    const finalVoice = `TEST MESSAGE. ${voiceText}`;
-
-    speak(finalVoice);
-
-    // Also send Telegram for every test as requested
-    const wolvesRiseIds = ['ema-cross', 'standing', 'line-touch', 'heikin'];
-    const telegramChatId = wolvesRiseIds.includes(id) ? "@futures_wolves_rise" : null;
-    sendTelegramAlert(finalTlg, telegramChatId);
-}
 
 // Global click listener to close TF menus
 document.addEventListener('click', (e) => {
@@ -234,11 +176,16 @@ window.speechSynthesis.onvoiceschanged = () => {
 };
 
 // Start logic
+document.addEventListener('DOMContentLoaded', () => {
+    const symbolBtn = document.getElementById('global-symbol');
+    const storedSymbol = localStorage.getItem('globalSymbol') || 'BTCUSDT';
+    if (symbolBtn) symbolBtn.innerText = storedSymbol;
+});
 updateGlobalSymbol();
 
-// Init all selects for color-coded mode
-document.querySelectorAll('select').forEach(sel => {
-    if (sel.id !== 'global-symbol') {
-        updateSelectColor(sel);
+// Init all condition elements for color-coded mode
+document.querySelectorAll('select, .condition-toggle').forEach(el => {
+    if (el.id !== 'global-symbol') {
+        updateConditionUI(el);
     }
 });

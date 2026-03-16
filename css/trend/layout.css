@@ -18,7 +18,7 @@ header {
     border: 1px solid transparent;
     border-radius: 8px;
     color: var(--accent-green);
-    font-size: 1.5rem;
+    font-size: 2.2rem;
     font-weight: 700;
     padding: 0.5rem 0;
     cursor: pointer;
@@ -26,18 +26,11 @@ header {
     letter-spacing: 0.1em;
     transition: all 0.3s ease;
     text-align: center;
-    text-align-last: center;
-    -moz-text-align-last: center;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
     outline: none;
     font-family: 'Outfit', sans-serif;
     width: 280px;
     display: block;
     margin: 0 auto;
-    padding-left: 0;
-    padding-right: 0;
 }
 
 #global-symbol:hover {

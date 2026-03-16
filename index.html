@@ -20,11 +20,7 @@
 
     <div class="container">
         <header style="margin-bottom: 0.5rem;">
-            <select id="global-symbol" onchange="updateGlobalSymbol()">
-                <option value="BTCUSDT">BTCUSDT</option>
-                <option value="ETHUSDT">ETHUSDT</option>
-                <option value="SOLUSDT">SOLUSDT</option>
-            </select>
+            <button id="global-symbol" onclick="toggleGlobalSymbol()">BTCUSDT</button>
             <div id="beep-countdown"
                 style="font-size: 1.8rem; font-weight: 800; font-family: 'Outfit', sans-serif; color: var(--accent-green); line-height: 1; letter-spacing: 0.05em; text-shadow: 0 0 15px var(--glow-green); margin-top: 0.5rem;">
                 00:00</div>
@@ -40,7 +36,7 @@
                         <span id="liquidity-status">INACTIVE</span>
                     </div>
                 </div>
-                <div class="card-content" style="grid-template-columns: repeat(3, 90px); gap: 15px;">
+                <div class="card-content">
                     <!-- TF 1 -->
                     <div class="tf-selector" id="liquidity-1-tf-selector">
                         <button type="button" class="tf-current-btn" id="liquidity-1-tf-trigger"
@@ -59,25 +55,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- TF 2 -->
-                    <div class="tf-selector" id="liquidity-2-tf-selector">
-                        <button type="button" class="tf-current-btn" id="liquidity-2-tf-trigger"
-                            onclick="toggleTFMenu('liquidity-2')">1h</button>
-                        <div class="tf-dropdown-menu" id="liquidity-2-tf-menu" data-value="1h">
-                            <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-2', '5m')">5m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-2', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-2', '30m')">30m</button>
-                                <button type="button" class="tf-btn active"
-                                    onclick="setTF('liquidity-2', '1h')">1H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-2', '2h')">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-2', '4h')">4H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-2', '6h')">6H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-2', '1d')">1D</button>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- TF 3 -->
+                    <!-- TF 2 (Was TF 3) -->
                     <div class="tf-selector" id="liquidity-3-tf-selector">
                         <button type="button" class="tf-current-btn" id="liquidity-3-tf-trigger"
                             onclick="toggleTFMenu('liquidity-3')">1h</button>
@@ -95,10 +73,11 @@
                             </div>
                         </div>
                     </div>
+                    <div class="input-row spacer"></div>
+                    <div class="input-row spacer"></div>
                 </div>
                 <div class="action-group">
                     <button class="toggle-btn" onclick="toggleAlert('liquidity')">START</button>
-                    <button class="toggle-btn secondary" onclick="testTTS('liquidity')">Test</button>
                 </div>
             </div>
 
@@ -135,17 +114,12 @@
                     <div class="input-row spacer"></div>
                     <div class="input-row">
                         <label>Color</label>
-                        <select id="heikin-condition" onchange="updateSelectColor(this)" class="green-mode">
-                            <option value="perfect-green"
-                                style="color: #00ff88; font-weight: bold; background: #1a1a1a;">GREEN</option>
-                            <option value="perfect-red" style="color: #ff4d4d; font-weight: bold; background: #1a1a1a;">
-                                RED</option>
-                        </select>
+                        <button type="button" id="heikin-condition" class="condition-toggle green-mode"
+                            data-state="perfect-green" onclick="toggleConditionState('heikin-condition')">GREEN</button>
                     </div>
                 </div>
                 <div class="action-group">
                     <button class="toggle-btn" onclick="toggleAlert('heikin')">START</button>
-                    <button class="toggle-btn secondary" onclick="testTTS('heikin')">Test</button>
                 </div>
             </div>
 
@@ -189,17 +163,12 @@
                     </div>
                     <div class="input-row">
                         <label>Side</label>
-                        <select id="ema-cross-condition" onchange="updateSelectColor(this)" class="green-mode">
-                            <option value="up" style="color: #00ff88; font-weight: bold; background: #1a1a1a;">UP
-                            </option>
-                            <option value="down" style="color: #ff4d4d; font-weight: bold; background: #1a1a1a;">DOWN
-                            </option>
-                        </select>
+                        <button type="button" id="ema-cross-condition" class="condition-toggle green-mode"
+                            data-state="up" onclick="toggleConditionState('ema-cross-condition')">UP</button>
                     </div>
                 </div>
                 <div class="action-group">
                     <button class="toggle-btn" onclick="toggleAlert('ema-cross')">START</button>
-                    <button class="toggle-btn secondary" onclick="testTTS('ema-cross')">Test</button>
                 </div>
             </div>
 
@@ -240,17 +209,12 @@
                     <div class="input-row spacer"></div>
                     <div class="input-row">
                         <label>Side</label>
-                        <select id="standing-condition" onchange="updateSelectColor(this)" class="green-mode">
-                            <option value="above" style="color: #00ff88; font-weight: bold; background: #1a1a1a;">ABOVE
-                            </option>
-                            <option value="below" style="color: #ff4d4d; font-weight: bold; background: #1a1a1a;">BELOW
-                            </option>
-                        </select>
+                        <button type="button" id="standing-condition" class="condition-toggle green-mode"
+                            data-state="above" onclick="toggleConditionState('standing-condition')">ABOVE</button>
                     </div>
                 </div>
                 <div class="action-group">
                     <button class="toggle-btn" onclick="toggleAlert('standing')">START</button>
-                    <button class="toggle-btn secondary" onclick="testTTS('standing')">Test</button>
                 </div>
             </div>
 
@@ -293,7 +257,6 @@
                 </div>
                 <div class="action-group">
                     <button class="toggle-btn" onclick="toggleAlert('line-touch')">START</button>
-                    <button class="toggle-btn secondary" onclick="testTTS('line-touch')">Test</button>
                 </div>
             </div>
 
@@ -341,7 +304,6 @@
                 </div>
                 <div class="action-group">
                     <button class="toggle-btn" onclick="toggleAlert('price')">START</button>
-                    <button class="toggle-btn secondary" onclick="testTTS('price')">Test</button>
                 </div>
             </div>
 

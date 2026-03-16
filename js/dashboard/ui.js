@@ -41,8 +41,9 @@ function setTF(id, val) {
     console.log(`${id} timeframe set to: ${val}`);
 }
 
-function updateSelectColor(el) {
-    const val = el.value.toUpperCase();
+function updateConditionUI(el) {
+    const text = el.innerText.toUpperCase();
+    const val = (el.value || text).toUpperCase();
     if (val.includes('GREEN') || val.includes('UP') || val.includes('ABOVE')) {
         el.classList.remove('red-mode');
         el.classList.add('green-mode');
@@ -52,10 +53,46 @@ function updateSelectColor(el) {
     }
 }
 
+function toggleConditionState(id) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+
+    let currentState = btn.dataset.state;
+    let nextState, nextText;
+
+    if (id === 'heikin-condition') {
+        nextState = currentState === 'perfect-green' ? 'perfect-red' : 'perfect-green';
+        nextText = nextState === 'perfect-green' ? 'GREEN' : 'RED';
+    } else if (id === 'ema-cross-condition') {
+        nextState = currentState === 'up' ? 'down' : 'up';
+        nextText = nextState === 'up' ? 'UP' : 'DOWN';
+    } else if (id === 'standing-condition') {
+        nextState = currentState === 'above' ? 'below' : 'above';
+        nextText = nextState === 'above' ? 'ABOVE' : 'BELOW';
+    }
+
+    btn.dataset.state = nextState;
+    btn.innerText = nextText;
+    updateConditionUI(btn);
+
+    console.log(`${id} toggled to: ${nextState}`);
+}
+
+function toggleGlobalSymbol() {
+    const btn = document.getElementById('global-symbol');
+    if (!btn) return;
+
+    const currentSymbol = btn.innerText;
+    const nextSymbol = currentSymbol === 'BTCUSDT' ? 'ETHUSDT' : 'BTCUSDT';
+
+    btn.innerText = nextSymbol;
+    updateGlobalSymbol();
+}
+
 async function updateGlobalSymbol() {
-    const selector = document.getElementById('global-symbol');
-    if (!selector) return;
-    const symbol = selector.value;
+    const btn = document.getElementById('global-symbol');
+    if (!btn) return;
+    const symbol = btn.innerText;
     console.log("Global symbol switch ->", symbol);
 
     // Save for cross-page persistence

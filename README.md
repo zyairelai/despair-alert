@@ -35,3 +35,21 @@ compdef _python_argcomplete zones
 - Kucoin
 - MEXC
 - OKX
+
+### Perfect BEEP
+```
+function beep() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        const osc = ctx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1000, ctx.currentTime);
+        osc.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+    } catch (e) {
+        console.error("Beep failed:", e);
+    }
+}
+```

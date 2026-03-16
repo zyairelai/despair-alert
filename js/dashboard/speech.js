@@ -1,3 +1,6 @@
+let speechQueue = [];
+let isSpeaking = false;
+
 function formatForSpeech(text) {
     if (!text) return text;
     let formatted = text;
@@ -7,6 +10,9 @@ function formatForSpeech(text) {
     formatted = formatted.replace(/\bETH\b/g, "Ethereum");
     formatted = formatted.replace(/\bSOL\b/g, "Solana");
     formatted = formatted.replace(/\bEMA\b/g, "E M A");
+    formatted = formatted.replace(/\bHEIKIN\b/gi, "Heikin");
+    formatted = formatted.replace(/\bASH\b/gi, "Assh");
+    formatted = formatted.replace(/\bASHI\b/gi, "Asshee");
 
     // Timeframes
     const tfMap = {
@@ -31,8 +37,12 @@ function formatForSpeech(text) {
     return formatted;
 }
 
-function speak(text, callback) {
-    if (!text) return;
+function processSpeechQueue() {
+    if (isSpeaking || speechQueue.length === 0) return;
+
+    isSpeaking = true;
+    const { text, callback } = speechQueue.shift();
+
     const spokenText = formatForSpeech(text);
     const msg = new SpeechSynthesisUtterance(spokenText);
 
@@ -51,14 +61,33 @@ function speak(text, callback) {
 
     if (femaleVoice) msg.voice = femaleVoice;
     msg.rate = 1.0;
-    msg.pitch = 1.1; // Slightly higher pitch for a better female tone if needed
+    msg.pitch = 1.1;
 
-    if (callback) {
-        msg.onend = callback;
-    }
+    const wrapCallback = () => {
+        isSpeaking = false;
+        if (callback) callback();
+        processSpeechQueue();
+    };
 
-    window.speechSynthesis.cancel();
+    msg.onend = wrapCallback;
+    msg.onerror = (e) => {
+        console.error("Speech error:", e);
+        wrapCallback();
+    };
+
     window.speechSynthesis.speak(msg);
+}
+
+function speak(text, callback) {
+    if (!text) return;
+    speechQueue.push({ text, callback });
+    processSpeechQueue();
+}
+
+function clearSpeechQueue() {
+    speechQueue = [];
+    window.speechSynthesis.cancel();
+    isSpeaking = false;
 }
 
 // Ensure voices are loaded
