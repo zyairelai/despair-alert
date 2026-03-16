@@ -3,6 +3,7 @@ let started = false;
 let sessionStarted = true;
 let lastBeepTime = 0; // Prevent duplicate beeps in the same second
 let beepMode = 'interval';
+let monitoringStartTime = 0;
 
 async function fetchKlines(interval) {
     const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${SYMBOL}&interval=${interval}&limit=200`;
@@ -118,6 +119,11 @@ function checkAndSendAlert(currentTrend, isEmergency = false) {
     const isNewEmergencyHour = !lastEmergencyHour || currentHourTs > parseInt(lastEmergencyHour);
     const m = now.getMinutes();
 
+    // 0. Skip if monitoring started less than 1 minute ago
+    if (Date.now() - monitoringStartTime < 60000) {
+        return;
+    }
+
     // 1. Emergency Case: Bypass 15m rule, respect hourly lock, AND skip first 3m of new hour
     if (isEmergency && isNewEmergencyHour && m >= 3) {
         const symbolShort = SYMBOL.replace("USDT", "");
@@ -214,6 +220,7 @@ function start() {
     started = true;
     document.getElementById("startBtn").disabled = true;
     document.getElementById("startBtn").innerText = "MONITORING ACTIVE";
+    monitoringStartTime = Date.now();
     monitorInterval = setInterval(tick, 1000);
     tick();
     updateTrend();

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TREND DASHBOARD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/trend/layout.css">
+    <link rel="stylesheet" href="css/trend/components.css">
+    <link rel="icon" type="image/png" id="favicon" href="images/favicon_yellow.png">
+</head>
+
+<body>
+    <div class="scanlines"></div>
+
+    <div class="container">
+        <div class="terminal-card">
+            <header>
+                <select id="global-symbol" onchange="updateGlobalSymbol()">
+                    <option value="BTCUSDT">BTCUSDT</option>
+                    <option value="ETHUSDT">ETHUSDT</option>
+                    <option value="SOLUSDT">SOLUSDT</option>
+                </select>
+            </header>
+
+            <div class="status-display">
+                <div id="htfRow" class="status-row">
+                    <span class="label">15m :</span> <span id="htfStatus">LOADING...</span>
+                </div>
+                <div id="ltfRow" class="status-row">
+                    <span class="label">5m :</span> <span id="ltfStatus">LOADING...</span>
+                </div>
+                <div id="trendDisplay" class="overall-trend trend-neutral">INITIALIZING...</div>
+            </div>
+
+            <div class="timer-display">
+                <div id="countdown">00:00</div>
+                <div class="controls">
+                    <button id="startBtn" onclick="start()">START MONITORING</button>
+                </div>
+
+                <div class="settings-panel">
+                    <div class="setting-group">
+                        <label>BEEP MODE</label>
+                        <div class="segmented-control">
+                            <button id="beepInterval" class="active" onclick="setBeepMode('interval')">5 MINS</button>
+                            <button id="beepTrend" onclick="setBeepMode('trend')">TREND</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- end terminal-card -->
+
+
+    </div> <!-- end container -->
+
+    <script src="js/env.js"></script>
+    <script src="js/dashboard/speech.js"></script>
+    <script src="js/dashboard/api.js"></script>
+    <script src="js/dashboard/ha_coloring.js"></script>
+    <script src="js/script.js"></script>
+</body>
+
+</html>

@@ -104,12 +104,12 @@ async function checkAlert(id) {
                     if (condition === 'perfect-green') {
                         // Perfect Green: Close > Open AND No lower wick (Low == Open)
                         if (haClose > haOpen && Math.abs(currentHaLow - haOpen) < (haOpen * 0.00001)) {
-                            triggerAlert(id, `🚀 ${shortSymbol} ${tf} Heikin Ashi GREEN 🚀`, `${shortSymbol} ${tf} heikin ashi turned into GREEN color`);
+                            triggerAlert(id, `🚀 ${shortSymbol} ${tf} HEIKIN ASHI GREEN 🚀`, `${shortSymbol} ${tf} HEIKIN ASHI turned into GREEN color`);
                         }
                     } else if (condition === 'perfect-red') {
                         // Perfect Red: Close < Open AND No upper wick (High == Open)
                         if (haClose < haOpen && Math.abs(currentHaHigh - haOpen) < (haOpen * 0.00001)) {
-                            triggerAlert(id, `💥 ${shortSymbol} ${tf} Heikin Ashi RED 💥`, `${shortSymbol} ${tf} heikin ashi turned into RED color`);
+                            triggerAlert(id, `💥 ${shortSymbol} ${tf} HEIKIN ASHI RED 💥`, `${shortSymbol} ${tf} HEIKIN ASHI turned into RED color`);
                         }
                     }
                 }
@@ -151,15 +151,25 @@ async function checkAlert(id) {
         }
 
         if (id === 'liquidity') {
-            const klines = await fetchKlines(symbol, tf);
-            if (klines.length < 2) return;
+            const tfs = [
+                document.getElementById('liquidity-1-tf-menu').dataset.value,
+                document.getElementById('liquidity-2-tf-menu').dataset.value,
+                document.getElementById('liquidity-3-tf-menu').dataset.value
+            ];
+            const uniqueTfs = [...new Set(tfs)];
 
-            const currentCandle = klines[klines.length - 1];
-            const previousCandle = klines[klines.length - 2];
+            for (const currentTf of uniqueTfs) {
+                const klines = await fetchKlines(symbol, currentTf);
+                if (klines.length < 2) continue;
 
-            // Condition: current high > previous high AND current candle is RED (close < open)
-            if (currentCandle.high > previousCandle.high && currentCandle.close < currentCandle.open) {
-                triggerAlert(id, `🩸 ${shortSymbol} ${tf} Liquidity Hunt 🩸`, `${shortSymbol} ${tf} Liquidity Hunt activated`);
+                const currentCandle = klines[klines.length - 1];
+                const previousCandle = klines[klines.length - 2];
+
+                // Condition: current high > previous high AND current candle is RED (close < open)
+                if (currentCandle.high > previousCandle.high && currentCandle.close < currentCandle.open) {
+                    triggerAlert(id, `🩸 ${shortSymbol} ${currentTf} LIQUIDITY HUNT 🩸`, `${shortSymbol} ${currentTf} LIQUIDITY HUNT ACTIVATED`);
+                    break; // stop checking other TFs once one is triggered
+                }
             }
         }
     } catch (e) {
@@ -204,8 +214,8 @@ function triggerAlert(id, message, voiceMessage = null) {
         }
     });
 
-    // Special channel for Liquidity, EMA Cross, Stand, Touch, and Heikin
-    const wolvesRiseIds = ['liquidity', 'ema-cross', 'standing', 'line-touch', 'heikin'];
+    // Special channel for EMA Cross, Stand, Touch, and Heikin
+    const wolvesRiseIds = ['ema-cross', 'standing', 'line-touch', 'heikin'];
     const telegramChatId = wolvesRiseIds.includes(id) ? "@futures_wolves_rise" : null;
 
     // Send Telegram Alert for every trigger

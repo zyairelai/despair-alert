@@ -13,8 +13,9 @@
     position: relative;
 }
 
-.alert-card.z-active {
-    z-index: 1100 !important;
+.alert-card.z-active,
+.alert-card:focus-within {
+    z-index: 100 !important;
     background: rgba(30, 34, 45, 0.98);
     border-color: var(--accent-green);
     box-shadow: 0 10px 50px rgba(0, 0, 0, 0.8);
@@ -310,14 +311,14 @@ select option {
     /* Yellow */
 }
 
-/* MAIN Link Style */
-.main-link-container {
+/* DESPAIR Link Style */
+.despair-link-container {
     display: flex;
     justify-content: center;
-    margin-top: 1.5rem;
+    margin-top: 0.5rem;
 }
 
-.main-link {
+.despair-link {
     font-size: 0.65rem;
     font-weight: 800;
     color: var(--text-dim);
@@ -328,7 +329,7 @@ select option {
     cursor: pointer;
 }
 
-.main-link:hover {
+.despair-link:hover {
     opacity: 1;
     color: var(--accent-green);
     text-shadow: 0 0 8px var(--glow-green);
