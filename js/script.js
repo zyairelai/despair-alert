@@ -135,21 +135,26 @@ function checkAndSendAlert(currentTrend, isEmergency = false) {
 
     // 2. Standard Case: Immediate on trend change, then cooldown until next 15m candle
     const isTrendChanged = currentTrend !== lastAlertTrend;
+    const isNewCandle = !lastAlertCandle || current15mTs > parseInt(lastAlertCandle);
+
+    // Initialization: If we just started, capture trend but don't lock the candle slot
+    if (lastAlertTrend === null) {
+        localStorage.setItem('lastAlertTrend', currentTrend);
+        return;
+    }
 
     if (isTrendChanged && isNewCandle) {
-        if (lastAlertTrend !== null) {
-            let emoji = "";
-            if (currentTrend === "UPTREND") emoji = "🚀";
-            else if (currentTrend === "DOWNTREND") emoji = "💥";
-            else if (currentTrend === "NO TRADE ZONE") emoji = "⏳";
+        let emoji = "";
+        if (currentTrend === "UPTREND") emoji = "🚀";
+        else if (currentTrend === "DOWNTREND") emoji = "💥";
+        else if (currentTrend === "NO TRADE ZONE") emoji = "⏳";
 
-            const symbolShort = SYMBOL.replace("USDT", "");
-            const msg = `${emoji} ${symbolShort} Trend: ${currentTrend} ${emoji}`;
+        const symbolShort = SYMBOL.replace("USDT", "");
+        const msg = `${emoji} ${symbolShort} Trend: ${currentTrend} ${emoji}`;
 
-            if (sessionStarted) {
-                sendTelegramAlert(msg);
-                speak(`${symbolShort} trend: ${currentTrend}`);
-            }
+        if (sessionStarted) {
+            sendTelegramAlert(msg);
+            speak(`${symbolShort} trend: ${currentTrend}`);
         }
 
         localStorage.setItem('lastAlertTrend', currentTrend);

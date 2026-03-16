@@ -103,12 +103,17 @@ function testTTS(id) {
     }
 
     if (!voiceText) voiceText = text;
-    speak(voiceText);
+
+    // Prefix for both Telegram and Speech
+    const finalTlg = `TEST TTL\n${text}`;
+    const finalVoice = `TEST VOICE. ${voiceText}`;
+
+    speak(finalVoice);
 
     // Also send Telegram for every test as requested
     const wolvesRiseIds = ['liquidity', 'ema-cross', 'standing', 'line-touch', 'heikin'];
     const telegramChatId = wolvesRiseIds.includes(id) ? "@futures_wolves_rise" : null;
-    sendTelegramAlert(text, telegramChatId);
+    sendTelegramAlert(finalTlg, telegramChatId);
 }
 
 // Global click listener to close TF menus
