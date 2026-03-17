@@ -1,13 +1,13 @@
 function toggleTFMenu(id) {
     const menu = document.getElementById(`${id}-tf-menu`);
-    const card = document.getElementById(`${id}-card`);
-    const isShowing = menu.classList.contains('show');
+    const card = menu ? menu.closest('.alert-card') : null;
+    const isShowing = menu && menu.classList.contains('show');
 
     // Close all others and remove z-active
     document.querySelectorAll('.tf-dropdown-menu').forEach(m => m.classList.remove('show'));
     document.querySelectorAll('.alert-card').forEach(c => c.classList.remove('z-active'));
 
-    if (!isShowing) {
+    if (menu && !isShowing) {
         menu.classList.add('show');
         if (card) card.classList.add('z-active');
     }
@@ -16,7 +16,6 @@ function toggleTFMenu(id) {
 function setTF(id, val) {
     const menu = document.getElementById(`${id}-tf-menu`);
     const trigger = document.getElementById(`${id}-tf-trigger`);
-    const card = document.getElementById(`${id}-card`);
     if (!menu || !trigger) return;
 
     // Update data attribute
@@ -37,6 +36,7 @@ function setTF(id, val) {
 
     // Close menu and remove z-active
     menu.classList.remove('show');
+    const card = menu.closest('.alert-card');
     if (card) card.classList.remove('z-active');
     console.log(`${id} timeframe set to: ${val}`);
 }

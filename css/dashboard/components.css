@@ -17,8 +17,6 @@
 .alert-card.z-active {
     z-index: 100 !important;
     background: rgba(30, 34, 45, 0.98);
-    border-color: var(--accent-green);
-    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.8);
 }
 
 .card-header {
