@@ -111,16 +111,28 @@ window.speechSynthesis.onvoiceschanged = () => {
 window.telegramEnabled = false;
 let teleBuffer = "";
 document.addEventListener('keydown', (e) => {
-    // Basic buffer logic to detect "te"
+    // Basic buffer logic to detect "te", "tt", "on", "off"
     teleBuffer += e.key.toLowerCase();
-    if (teleBuffer.length > 2) teleBuffer = teleBuffer.slice(-2);
+    if (teleBuffer.length > 5) teleBuffer = teleBuffer.slice(-5);
 
-    if ((teleBuffer === "te" || teleBuffer === "tt") && !window.telegramEnabled) {
+    const lastTwo = teleBuffer.slice(-2);
+    const lastThree = teleBuffer.slice(-3);
+
+    if (!window.telegramEnabled && (lastTwo === "te" || lastTwo === "tt" || lastTwo === "on")) {
         window.telegramEnabled = true;
-        console.log("SECRET: Telegram Alerts Enabled for this session.");
+        console.log("SECRET: Telegram Alerts Enabled.");
 
-        // Play notification sound
-        const audio = new Audio('images/obtained.mp3');
+        // Play pickup sound
+        const audio = new Audio('images/pickup.mp3');
+        audio.play().catch(err => console.error("Sound play failed:", err));
+
+        teleBuffer = ""; // Reset buffer
+    } else if (window.telegramEnabled && (lastThree === "off" || lastTwo === "zz" || lastTwo === "oo")) {
+        window.telegramEnabled = false;
+        console.log("SECRET: Telegram Alerts Disabled.");
+
+        // Play gameover sound
+        const audio = new Audio('images/gameover.mp3');
         audio.play().catch(err => console.error("Sound play failed:", err));
 
         teleBuffer = ""; // Reset buffer
