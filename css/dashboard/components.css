@@ -16,7 +16,6 @@
 
 .alert-card.z-active {
     z-index: 100 !important;
-    background: rgba(30, 34, 45, 0.98);
 }
 
 .card-header {
@@ -245,6 +244,12 @@ select option {
     align-items: center;
     justify-content: center;
     gap: 0.3rem;
+    transition: all 0.2s ease;
+}
+
+.tf-selector.active .tf-current-btn {
+    border-color: var(--accent-green);
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
 }
 
 .tf-current-btn::after {

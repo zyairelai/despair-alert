@@ -1,14 +1,18 @@
 function toggleTFMenu(id) {
     const menu = document.getElementById(`${id}-tf-menu`);
+    const trigger = document.getElementById(`${id}-tf-trigger`);
+    const selector = trigger ? trigger.closest('.tf-selector') : null;
     const card = menu ? menu.closest('.alert-card') : null;
     const isShowing = menu && menu.classList.contains('show');
 
-    // Close all others and remove z-active
+    // Close all others and remove active states
     document.querySelectorAll('.tf-dropdown-menu').forEach(m => m.classList.remove('show'));
+    document.querySelectorAll('.tf-selector').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.alert-card').forEach(c => c.classList.remove('z-active'));
 
     if (menu && !isShowing) {
         menu.classList.add('show');
+        if (selector) selector.classList.add('active');
         if (card) card.classList.add('z-active');
     }
 }
@@ -34,8 +38,10 @@ function setTF(id, val) {
         }
     });
 
-    // Close menu and remove z-active
+    // Close menu and remove active states
     menu.classList.remove('show');
+    const selector = menu.closest('.tf-selector');
+    if (selector) selector.classList.remove('active');
     const card = menu.closest('.alert-card');
     if (card) card.classList.remove('z-active');
     console.log(`${id} timeframe set to: ${val}`);

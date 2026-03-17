@@ -27,6 +27,232 @@
         </header>
 
         <div class="alert-grid">
+            <!-- Price Alert -->
+            <div class="alert-card" id="price-card">
+                <div class="card-header">
+                    <h2>PRICE ALERT</h2>
+                    <div class="status-indicator inactive">
+                        <div class="dot" id="price-dot"></div>
+                        <span id="price-status">INACTIVE</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="tf-selector" id="price-tf-selector">
+                        <button type="button" class="tf-current-btn" id="price-tf-trigger"
+                            onclick="toggleTFMenu('price')">5m</button>
+                        <div class="tf-dropdown-menu" id="price-tf-menu" data-value="5m">
+                            <div class="tf-grid">
+                                <button type="button" class="tf-btn" onclick="setTF('price', '1m')">1m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '3m')">3m</button>
+                                <button type="button" class="tf-btn active" onclick="setTF('price', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '30m')">30m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '1h')">1H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '2h')">2H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '4h')">4H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '6h')">6H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '12h')">12H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '1d')">1D</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>Target 1</label>
+                        <input type="text" id="price-target-1" placeholder="High">
+                    </div>
+                    <div class="input-row">
+                        <label>Target 2</label>
+                        <input type="text" id="price-target-2" placeholder="Mid">
+                    </div>
+                    <div class="input-row">
+                        <label>Target 3</label>
+                        <input type="text" id="price-target-3" placeholder="Low">
+                    </div>
+                </div>
+                <div class="action-group">
+                    <button class="toggle-btn" onclick="toggleAlert('price')">START</button>
+                </div>
+            </div>
+
+            <!-- EMA TOUCH -->
+            <div class="alert-card" id="line-touch-card">
+                <div class="card-header">
+                    <h2>EMA TOUCH</h2>
+                    <div class="status-indicator inactive">
+                        <div class="dot" id="line-touch-dot"></div>
+                        <span id="line-touch-status">INACTIVE</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="tf-selector" id="line-touch-tf-selector">
+                        <button type="button" class="tf-current-btn" id="line-touch-tf-trigger"
+                            onclick="toggleTFMenu('line-touch')">5m</button>
+                        <div class="tf-dropdown-menu" id="line-touch-tf-menu" data-value="5m">
+                            <div class="tf-grid">
+                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '1m')">1m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '3m')">3m</button>
+                                <button type="button" class="tf-btn active"
+                                    onclick="setTF('line-touch', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '30m')">30m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '1h')">1H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '2h')">2H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '4h')">4H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '6h')">6H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '12h')">12H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '1d')">1D</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>EMA</label>
+                        <input type="number" id="line-touch-price" value="20">
+                    </div>
+                    <div class="input-row spacer"></div>
+                    <div class="input-row spacer"></div>
+                </div>
+                <div class="action-group">
+                    <button class="toggle-btn" onclick="toggleAlert('line-touch')">START</button>
+                </div>
+            </div>
+
+            <!-- EMA STAND -->
+            <div class="alert-card" id="standing-card">
+                <div class="card-header">
+                    <h2>EMA STAND</h2>
+                    <div class="status-indicator inactive">
+                        <div class="dot" id="standing-dot"></div>
+                        <span id="standing-status">INACTIVE</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="tf-selector" id="standing-tf-selector">
+                        <button type="button" class="tf-current-btn" id="standing-tf-trigger"
+                            onclick="toggleTFMenu('standing')">5m</button>
+                        <div class="tf-dropdown-menu" id="standing-tf-menu" data-value="5m">
+                            <div class="tf-grid">
+                                <button type="button" class="tf-btn" onclick="setTF('standing', '1m')">1m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('standing', '3m')">3m</button>
+                                <button type="button" class="tf-btn active"
+                                    onclick="setTF('standing', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('standing', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('standing', '30m')">30m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('standing', '1h')">1H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('standing', '2h')">2H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('standing', '4h')">4H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('standing', '6h')">6H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('standing', '12h')">12H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('standing', '1d')">1D</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>EMA</label>
+                        <input type="number" id="standing-level" value="20">
+                    </div>
+                    <div class="input-row spacer"></div>
+                    <div class="input-row">
+                        <label>Side</label>
+                        <button type="button" id="standing-condition" class="condition-toggle green-mode"
+                            data-state="above" onclick="toggleConditionState('standing-condition')">ABOVE</button>
+                    </div>
+                </div>
+                <div class="action-group">
+                    <button class="toggle-btn" onclick="toggleAlert('standing')">START</button>
+                </div>
+            </div>
+
+            <!-- EMA Cross -->
+            <div class="alert-card" id="ema-cross-card">
+                <div class="card-header">
+                    <h2>EMA CROSS</h2>
+                    <div class="status-indicator inactive">
+                        <div class="dot" id="ema-cross-dot"></div>
+                        <span id="ema-cross-status">INACTIVE</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="tf-selector" id="ema-cross-tf-selector">
+                        <button type="button" class="tf-current-btn" id="ema-cross-tf-trigger"
+                            onclick="toggleTFMenu('ema-cross')">5m</button>
+                        <div class="tf-dropdown-menu" id="ema-cross-tf-menu" data-value="5m">
+                            <div class="tf-grid">
+                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '1m')">1m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '3m')">3m</button>
+                                <button type="button" class="tf-btn active"
+                                    onclick="setTF('ema-cross', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '30m')">30m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '1h')">1H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '2h')">2H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '4h')">4H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '6h')">6H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '12h')">12H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '1d')">1D</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>Short</label>
+                        <input type="number" id="ema-cross-short" value="10">
+                    </div>
+                    <div class="input-row">
+                        <label>Long</label>
+                        <input type="number" id="ema-cross-long" value="20">
+                    </div>
+                    <div class="input-row">
+                        <label>Side</label>
+                        <button type="button" id="ema-cross-condition" class="condition-toggle green-mode"
+                            data-state="up" onclick="toggleConditionState('ema-cross-condition')">UP</button>
+                    </div>
+                </div>
+                <div class="action-group">
+                    <button class="toggle-btn" onclick="toggleAlert('ema-cross')">START</button>
+                </div>
+            </div>
+
+            <!-- Heikin Ashi -->
+            <div class="alert-card" id="heikin-card">
+                <div class="card-header">
+                    <h2>HEIKIN ASHI</h2>
+                    <div class="status-indicator inactive">
+                        <div class="dot" id="heikin-dot"></div>
+                        <span id="heikin-status">INACTIVE</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="tf-selector" id="heikin-tf-selector">
+                        <button type="button" class="tf-current-btn" id="heikin-tf-trigger"
+                            onclick="toggleTFMenu('heikin')">5m</button>
+                        <div class="tf-dropdown-menu" id="heikin-tf-menu" data-value="5m">
+                            <div class="tf-grid">
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '1m')">1m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '3m')">3m</button>
+                                <button type="button" class="tf-btn active" onclick="setTF('heikin', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '30m')">30m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '1h')">1H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '2h')">2H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '4h')">4H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '6h')">6H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '12h')">12H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '1d')">1D</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row spacer"></div>
+                    <div class="input-row spacer"></div>
+                    <div class="input-row">
+                        <label>Color</label>
+                        <button type="button" id="heikin-condition" class="condition-toggle green-mode"
+                            data-state="perfect-green" onclick="toggleConditionState('heikin-condition')">GREEN</button>
+                    </div>
+                </div>
+                <div class="action-group">
+                    <button class="toggle-btn" onclick="toggleAlert('heikin')">START</button>
+                </div>
+            </div>
+
             <!-- Liquidity -->
             <div class="alert-card" id="liquidity-card">
                 <div class="card-header">
@@ -80,233 +306,6 @@
                     <button class="toggle-btn" onclick="toggleAlert('liquidity')">START</button>
                 </div>
             </div>
-
-            <!-- Heikin Ashi -->
-            <div class="alert-card" id="heikin-card">
-                <div class="card-header">
-                    <h2>HEIKIN ASHI</h2>
-                    <div class="status-indicator inactive">
-                        <div class="dot" id="heikin-dot"></div>
-                        <span id="heikin-status">INACTIVE</span>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <div class="tf-selector" id="heikin-tf-selector">
-                        <button type="button" class="tf-current-btn" id="heikin-tf-trigger"
-                            onclick="toggleTFMenu('heikin')">5m</button>
-                        <div class="tf-dropdown-menu" id="heikin-tf-menu" data-value="5m">
-                            <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '1m')">1m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '3m')">3m</button>
-                                <button type="button" class="tf-btn active" onclick="setTF('heikin', '5m')">5m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '30m')">30m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '1h')">1H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '2h')">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '4h')">4H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '6h')">6H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '12h')">12H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '1d')">1D</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="input-row spacer"></div>
-                    <div class="input-row spacer"></div>
-                    <div class="input-row">
-                        <label>Color</label>
-                        <button type="button" id="heikin-condition" class="condition-toggle green-mode"
-                            data-state="perfect-green" onclick="toggleConditionState('heikin-condition')">GREEN</button>
-                    </div>
-                </div>
-                <div class="action-group">
-                    <button class="toggle-btn" onclick="toggleAlert('heikin')">START</button>
-                </div>
-            </div>
-
-            <!-- EMA Cross -->
-            <div class="alert-card" id="ema-cross-card">
-                <div class="card-header">
-                    <h2>EMA CROSS</h2>
-                    <div class="status-indicator inactive">
-                        <div class="dot" id="ema-cross-dot"></div>
-                        <span id="ema-cross-status">INACTIVE</span>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <div class="tf-selector" id="ema-cross-tf-selector">
-                        <button type="button" class="tf-current-btn" id="ema-cross-tf-trigger"
-                            onclick="toggleTFMenu('ema-cross')">5m</button>
-                        <div class="tf-dropdown-menu" id="ema-cross-tf-menu" data-value="5m">
-                            <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '1m')">1m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '3m')">3m</button>
-                                <button type="button" class="tf-btn active"
-                                    onclick="setTF('ema-cross', '5m')">5m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '30m')">30m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '1h')">1H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '2h')">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '4h')">4H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '6h')">6H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '12h')">12H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '1d')">1D</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="input-row">
-                        <label>Short</label>
-                        <input type="number" id="ema-cross-short" value="10">
-                    </div>
-                    <div class="input-row">
-                        <label>Long</label>
-                        <input type="number" id="ema-cross-long" value="20">
-                    </div>
-                    <div class="input-row">
-                        <label>Side</label>
-                        <button type="button" id="ema-cross-condition" class="condition-toggle green-mode"
-                            data-state="up" onclick="toggleConditionState('ema-cross-condition')">UP</button>
-                    </div>
-                </div>
-                <div class="action-group">
-                    <button class="toggle-btn" onclick="toggleAlert('ema-cross')">START</button>
-                </div>
-            </div>
-
-            <!-- EMA STAND -->
-            <div class="alert-card" id="standing-card">
-                <div class="card-header">
-                    <h2>EMA STAND</h2>
-                    <div class="status-indicator inactive">
-                        <div class="dot" id="standing-dot"></div>
-                        <span id="standing-status">INACTIVE</span>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <div class="tf-selector" id="standing-tf-selector">
-                        <button type="button" class="tf-current-btn" id="standing-tf-trigger"
-                            onclick="toggleTFMenu('standing')">5m</button>
-                        <div class="tf-dropdown-menu" id="standing-tf-menu" data-value="5m">
-                            <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('standing', '1m')">1m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('standing', '3m')">3m</button>
-                                <button type="button" class="tf-btn active"
-                                    onclick="setTF('standing', '5m')">5m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('standing', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('standing', '30m')">30m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('standing', '1h')">1H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('standing', '2h')">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('standing', '4h')">4H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('standing', '6h')">6H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('standing', '12h')">12H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('standing', '1d')">1D</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="input-row">
-                        <label>EMA</label>
-                        <input type="number" id="standing-level" value="20">
-                    </div>
-                    <div class="input-row spacer"></div>
-                    <div class="input-row">
-                        <label>Side</label>
-                        <button type="button" id="standing-condition" class="condition-toggle green-mode"
-                            data-state="above" onclick="toggleConditionState('standing-condition')">ABOVE</button>
-                    </div>
-                </div>
-                <div class="action-group">
-                    <button class="toggle-btn" onclick="toggleAlert('standing')">START</button>
-                </div>
-            </div>
-
-            <!-- EMA TOUCH -->
-            <div class="alert-card" id="line-touch-card">
-                <div class="card-header">
-                    <h2>EMA TOUCH</h2>
-                    <div class="status-indicator inactive">
-                        <div class="dot" id="line-touch-dot"></div>
-                        <span id="line-touch-status">INACTIVE</span>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <div class="tf-selector" id="line-touch-tf-selector">
-                        <button type="button" class="tf-current-btn" id="line-touch-tf-trigger"
-                            onclick="toggleTFMenu('line-touch')">5m</button>
-                        <div class="tf-dropdown-menu" id="line-touch-tf-menu" data-value="5m">
-                            <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '1m')">1m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '3m')">3m</button>
-                                <button type="button" class="tf-btn active"
-                                    onclick="setTF('line-touch', '5m')">5m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '30m')">30m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '1h')">1H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '2h')">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '4h')">4H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '6h')">6H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '12h')">12H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '1d')">1D</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="input-row">
-                        <label>EMA</label>
-                        <input type="number" id="line-touch-price" value="20">
-                    </div>
-                    <div class="input-row spacer"></div>
-                    <div class="input-row spacer"></div>
-                </div>
-                <div class="action-group">
-                    <button class="toggle-btn" onclick="toggleAlert('line-touch')">START</button>
-                </div>
-            </div>
-
-            <!-- Price Alert -->
-            <div class="alert-card" id="price-card">
-                <div class="card-header">
-                    <h2>PRICE ALERT</h2>
-                    <div class="status-indicator inactive">
-                        <div class="dot" id="price-dot"></div>
-                        <span id="price-status">INACTIVE</span>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <div class="tf-selector" id="price-tf-selector">
-                        <button type="button" class="tf-current-btn" id="price-tf-trigger"
-                            onclick="toggleTFMenu('price')">5m</button>
-                        <div class="tf-dropdown-menu" id="price-tf-menu" data-value="5m">
-                            <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('price', '1m')">1m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '3m')">3m</button>
-                                <button type="button" class="tf-btn active" onclick="setTF('price', '5m')">5m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '30m')">30m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '1h')">1H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '2h')">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '4h')">4H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '6h')">6H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '12h')">12H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('price', '1d')">1D</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="input-row">
-                        <label>Target 1</label>
-                        <input type="text" id="price-target-1" placeholder="High">
-                    </div>
-                    <div class="input-row">
-                        <label>Target 2</label>
-                        <input type="text" id="price-target-2" placeholder="Mid">
-                    </div>
-                    <div class="input-row">
-                        <label>Target 3</label>
-                        <input type="text" id="price-target-3" placeholder="Low">
-                    </div>
-                </div>
-                <div class="action-group">
-                    <button class="toggle-btn" onclick="toggleAlert('price')">START</button>
-                </div>
-            </div>
-
         </div>
 
 
