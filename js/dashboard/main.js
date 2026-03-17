@@ -107,6 +107,26 @@ window.speechSynthesis.onvoiceschanged = () => {
 };
 
 // Start logic
+// Secret Telegram Toggle (Main Dashboard Only)
+window.telegramEnabled = false;
+let teleBuffer = "";
+document.addEventListener('keydown', (e) => {
+    // Basic buffer logic to detect "te"
+    teleBuffer += e.key.toLowerCase();
+    if (teleBuffer.length > 2) teleBuffer = teleBuffer.slice(-2);
+
+    if ((teleBuffer === "te" || teleBuffer === "tt") && !window.telegramEnabled) {
+        window.telegramEnabled = true;
+        console.log("SECRET: Telegram Alerts Enabled for this session.");
+
+        // Play notification sound
+        const audio = new Audio('images/obtained.mp3');
+        audio.play().catch(err => console.error("Sound play failed:", err));
+
+        teleBuffer = ""; // Reset buffer
+    }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     const symbolBtn = document.getElementById('global-symbol');
     const storedSymbol = localStorage.getItem('globalSymbol') || 'BTCUSDT';

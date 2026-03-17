@@ -2,7 +2,7 @@ async function checkAlert(id) {
     const alert = alerts[id];
     if (!alert.active) return;
 
-    const symbol = document.getElementById('global-symbol').value;
+    const symbol = document.getElementById('global-symbol').innerText;
     const shortSymbol = symbol.replace("USDT", "");
 
     // Read TF from Menu data-value
@@ -242,8 +242,10 @@ function triggerAlert(id, message, voiceMessage = null) {
     const wolvesRiseIds = ['ema-cross', 'standing', 'line-touch', 'heikin'];
     const telegramChatId = wolvesRiseIds.includes(id) ? "@futures_wolves_rise" : null;
 
-    // Send Telegram Alert for every trigger
-    sendTelegramAlert(message, telegramChatId);
+    // Send Telegram Alert ONLY if enabled (Secret Toggle)
+    if (window.telegramEnabled) {
+        sendTelegramAlert(message, telegramChatId);
+    }
 
     lastAlertMessages[id] = message;
     lastAlertTimes[id] = Date.now();

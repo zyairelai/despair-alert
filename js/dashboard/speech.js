@@ -11,8 +11,7 @@ function formatForSpeech(text) {
     formatted = formatted.replace(/\bSOL\b/g, "Solana");
     formatted = formatted.replace(/\bEMA\b/g, "E M A");
     formatted = formatted.replace(/\bHEIKIN\b/gi, "Heikin");
-    formatted = formatted.replace(/\bASH\b/gi, "Assh");
-    formatted = formatted.replace(/\bASHI\b/gi, "Asshee");
+    formatted = formatted.replace(/\bASHI\b/gi, "a she");
 
     // Timeframes
     const tfMap = {
@@ -80,7 +79,8 @@ function processSpeechQueue() {
 
 function speak(text, callback) {
     if (!text) return;
-    speechQueue.push({ text, callback });
+    const repeatedText = `${text}. ${text}`;
+    speechQueue.push({ text: repeatedText, callback });
     processSpeechQueue();
 }
 
@@ -89,6 +89,11 @@ function clearSpeechQueue() {
     window.speechSynthesis.cancel();
     isSpeaking = false;
 }
+
+// Stop speech immediately on page refresh/unload
+window.addEventListener('beforeunload', () => {
+    window.speechSynthesis.cancel();
+});
 
 // Ensure voices are loaded
 if (window.speechSynthesis.onvoiceschanged !== undefined) {

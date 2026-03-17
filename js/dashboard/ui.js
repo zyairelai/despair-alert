@@ -125,3 +125,45 @@ async function updateGlobalSymbol() {
         await fetchDailyLevels(symbol);
     }
 }
+// Input Validation for Numeric Fields
+function setupNumericInputs() {
+    const numericSelectors = [
+        '#price-target-1', '#price-target-2', '#price-target-3',
+        '#ema-cross-short', '#ema-cross-long',
+        '#line-touch-price', '#standing-level'
+    ];
+
+    numericSelectors.forEach(selector => {
+        const el = document.querySelector(selector);
+        if (!el) return;
+
+        // Block non-numeric characters on type
+        el.addEventListener('keypress', (e) => {
+            const charCode = e.which ? e.which : e.keyCode;
+            const charStr = String.fromCharCode(charCode);
+
+            // Allow numbers (0-9) and dot (.)
+            if (!/[\d\.]/.test(charStr)) {
+                e.preventDefault();
+            }
+
+            // Prevent multiple dots
+            if (charStr === '.' && el.value.includes('.')) {
+                e.preventDefault();
+            }
+        });
+
+        // Block non-numeric content on paste or change (Sanitization)
+        el.addEventListener('input', () => {
+            el.value = el.value.replace(/[^\d\.]/g, '');
+            // Ensure only one dot remains
+            const parts = el.value.split('.');
+            if (parts.length > 2) {
+                el.value = parts[0] + '.' + parts.slice(1).join('');
+            }
+        });
+    });
+}
+
+// Initialize validation on load
+document.addEventListener('DOMContentLoaded', setupNumericInputs);
