@@ -21,9 +21,6 @@
     <div class="container">
         <header style="margin-bottom: 1.2rem;">
             <button id="global-symbol" onclick="toggleGlobalSymbol()">BTCUSDT</button>
-            <div id="beep-countdown"
-                style="font-size: 1.8rem; font-weight: 800; font-family: 'Outfit', sans-serif; color: var(--accent-green); line-height: 1; letter-spacing: 0.05em; text-shadow: 0 0 15px var(--glow-green); margin-top: 0.5rem;">
-                00:00</div>
         </header>
 
         <div class="alert-grid">
@@ -266,17 +263,18 @@
                     <!-- TF 1 -->
                     <div class="tf-selector" id="liquidity-1-tf-selector">
                         <button type="button" class="tf-current-btn" id="liquidity-1-tf-trigger"
-                            onclick="toggleTFMenu('liquidity-1')">1h</button>
-                        <div class="tf-dropdown-menu" id="liquidity-1-tf-menu" data-value="1h">
+                            onclick="toggleTFMenu('liquidity-1')">15m</button>
+                        <div class="tf-dropdown-menu" id="liquidity-1-tf-menu" data-value="15m">
                             <div class="tf-grid">
                                 <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '5m')">5m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '30m')">30m</button>
                                 <button type="button" class="tf-btn active"
-                                    onclick="setTF('liquidity-1', '1h')">1H</button>
+                                    onclick="setTF('liquidity-1', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '30m')">30m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '1h')">1H</button>
                                 <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '2h')">2H</button>
                                 <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '4h')">4H</button>
                                 <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '6h')">6H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '1h')">12H</button>
                                 <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '1d')">1D</button>
                             </div>
                         </div>
@@ -284,15 +282,15 @@
                     <!-- TF 2 (Was TF 3) -->
                     <div class="tf-selector" id="liquidity-3-tf-selector">
                         <button type="button" class="tf-current-btn" id="liquidity-3-tf-trigger"
-                            onclick="toggleTFMenu('liquidity-3')">1h</button>
-                        <div class="tf-dropdown-menu" id="liquidity-3-tf-menu" data-value="1h">
+                            onclick="toggleTFMenu('liquidity-3')">2h</button>
+                        <div class="tf-dropdown-menu" id="liquidity-3-tf-menu" data-value="2h">
                             <div class="tf-grid">
                                 <button type="button" class="tf-btn" onclick="setTF('liquidity-3', '5m')">5m</button>
                                 <button type="button" class="tf-btn" onclick="setTF('liquidity-3', '15m')">15m</button>
                                 <button type="button" class="tf-btn" onclick="setTF('liquidity-3', '30m')">30m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('liquidity-3', '1h')">1H</button>
                                 <button type="button" class="tf-btn active"
-                                    onclick="setTF('liquidity-3', '1h')">1H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-3', '2h')">2H</button>
+                                    onclick="setTF('liquidity-3', '2h')">2H</button>
                                 <button type="button" class="tf-btn" onclick="setTF('liquidity-3', '4h')">4H</button>
                                 <button type="button" class="tf-btn" onclick="setTF('liquidity-3', '6h')">6H</button>
                                 <button type="button" class="tf-btn" onclick="setTF('liquidity-3', '1d')">1D</button>
@@ -312,9 +310,7 @@
 
         <div id="footer-controls"
             style="display: flex; align-items: center; justify-content: center; gap: 2.5rem; margin-top: 1.5rem; margin-bottom: 1.5rem;">
-            <a href="monitor.html" target="_blank" class="despair-link" style="margin: 0;">TREND</a>
-            <button class="toggle-btn" id="beep-start-btn" onclick="toggleGlobalBeep()"
-                style="padding: 4px 15px; font-size: 0.65rem; min-width: auto; width: auto; flex: none; height: 26px; line-height: 1;">BEEP</button>
+            <a href="trend.html" target="_blank" class="despair-link" style="margin: 0;">TREND BEEP</a>
         </div>
     </div>
 

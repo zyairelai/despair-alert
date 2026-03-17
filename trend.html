@@ -25,11 +25,8 @@
             </header>
 
             <div class="status-display">
-                <div id="htfRow" class="status-row">
-                    <span class="label">15m :</span> <span id="htfStatus">LOADING...</span>
-                </div>
                 <div id="ltfRow" class="status-row">
-                    <span class="label">5m :</span> <span id="ltfStatus">LOADING...</span>
+                    <span class="label">5m EMA CROSSING :</span> <span id="ltfStatus">LOADING...</span>
                 </div>
                 <div id="trendDisplay" class="overall-trend trend-neutral">INITIALIZING...</div>
             </div>
@@ -40,14 +37,8 @@
                     <button id="startBtn" onclick="start()">START MONITORING</button>
                 </div>
 
-                <div class="settings-panel">
-                    <div class="setting-group">
-                        <label>BEEP MODE</label>
-                        <div class="segmented-control">
-                            <button id="beepInterval" class="active" onclick="setBeepMode('interval')">5 MINS</button>
-                            <button id="beepTrend" onclick="setBeepMode('trend')">TREND</button>
-                        </div>
-                    </div>
+                <div class="despair-link-container" style="margin-top: 2rem;">
+                    <a href="index.html" target="_blank" class="despair-link">MAIN DASHBOARD</a>
                 </div>
             </div>
         </div> <!-- end terminal-card -->

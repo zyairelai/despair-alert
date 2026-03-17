@@ -31,64 +31,64 @@ function calculateEMA(candles, period) {
 function getEMAs(candles) {
     return {
         ema10: calculateEMA(candles, 10),
-        ema20: calculateEMA(candles, 20),
-        ema50: calculateEMA(candles, 50)
+        ema20: calculateEMA(candles, 20)
     };
 }
 
 async function updateTrend() {
     try {
-        const [p1h, p15m, p5m] = await Promise.all([fetchKlines("1h"), fetchKlines("15m"), fetchKlines("5m")]);
+        const [p1h, p5m] = await Promise.all([fetchKlines("1h"), fetchKlines("5m")]);
 
         // Emergency 1h Logic: Current high > previous high AND current 1h candle is RED
         const cur1h = p1h[p1h.length - 1];
         const prev1h = p1h[p1h.length - 2];
         const isEmergency = cur1h.high > prev1h.high && cur1h.close < cur1h.open;
 
-        // 15m (HTF): Previous close (-2) vs 20 EMA
-        const p15mPrev = p15m.slice(0, -1);
-        const e15mPrev = getEMAs(p15mPrev);
-        const prevClose15m = p15m[p15m.length - 2].close;
-
-        const htfUp = e15mPrev.ema20 > e15mPrev.ema50 && prevClose15m > e15mPrev.ema20;
-        const htfDown = prevClose15m < e15mPrev.ema20;
-
-        // 5m (LTF): Remain 10/20 crossing for down, 10/20/50 for up
+        // 5m (LTF): 10/20 EMA crossing
         const e5m = getEMAs(p5m);
-        const ltfUp = e5m.ema10 > e5m.ema20 && e5m.ema20 > e5m.ema50;
+        const ltfUp = e5m.ema10 > e5m.ema20;
         const ltfDown = e5m.ema10 < e5m.ema20;
 
         let currentTrend = "NO TRADE ZONE";
         if (isEmergency) currentTrend = "DOWNTREND";
-        else if (htfUp && ltfUp) currentTrend = "UPTREND";
-        else if (htfDown && ltfDown) currentTrend = "DOWNTREND";
+        else if (ltfUp) currentTrend = "UPTREND";
+        else if (ltfDown) currentTrend = "DOWNTREND";
 
 
-        const htfStatus = document.getElementById("htfStatus");
         const ltfStatus = document.getElementById("ltfStatus");
         const trendDisplay = document.getElementById("trendDisplay");
-
-        htfStatus.innerText = htfUp ? 'UP' : (htfDown ? 'DOWN' : 'NEUTRAL');
-        document.getElementById("htfRow").className = `status-row ${htfUp ? 'status-up' : (htfDown ? 'status-down' : 'status-neutral')}`;
 
         ltfStatus.innerText = ltfUp ? 'UP' : (ltfDown ? 'DOWN' : 'NEUTRAL');
         document.getElementById("ltfRow").className = `status-row ${ltfUp ? 'status-up' : (ltfDown ? 'status-down' : 'status-neutral')}`;
 
+        const symbolBtn = document.getElementById("global-symbol");
+
         if (currentTrend === "UPTREND") {
             trendDisplay.innerText = "CURRENTLY UPTREND";
             trendDisplay.className = "overall-trend trend-up";
+            if (symbolBtn) {
+                symbolBtn.classList.add("title-green");
+                symbolBtn.classList.remove("title-red", "title-doji");
+            }
             updateFavicon("images/favicon_green.png");
         } else if (currentTrend === "DOWNTREND") {
             trendDisplay.innerText = isEmergency ? "EMERGENCY DOWNTREND" : "CURRENTLY DOWNTREND";
             trendDisplay.className = "overall-trend trend-down";
+            if (symbolBtn) {
+                symbolBtn.classList.add("title-red");
+                symbolBtn.classList.remove("title-green", "title-doji");
+            }
             updateFavicon("images/favicon_red.png");
         } else {
-            trendDisplay.innerText = "NO TRADE ZONE";
+            trendDisplay.innerText = "WAITING FOR CROSS";
             trendDisplay.className = "overall-trend trend-neutral";
+            if (symbolBtn) {
+                symbolBtn.classList.remove("title-green", "title-red", "title-doji");
+            }
             updateFavicon("images/favicon_yellow.png");
         }
 
-        checkAndSendAlert(currentTrend, isEmergency);
+        checkAndSendAlert(p5m, isEmergency);
     } catch (e) {
         console.error("Trend update failed", e);
     }
@@ -106,65 +106,82 @@ function updateFavicon(path) {
 }
 
 
-function checkAndSendAlert(currentTrend, isEmergency = false) {
+function checkAndSendAlert(p5m, isEmergency = false) {
     const lastAlertTrend = localStorage.getItem('lastAlertTrend');
-    const lastAlertCandle = localStorage.getItem('lastAlertCandle');
+    const lastAlertCandle = localStorage.getItem('lastAlertCandle'); // This will store 5m TS now
     const lastEmergencyHour = localStorage.getItem('lastEmergencyHour');
 
     const now = new Date();
-    const current15mTs = Math.floor(now.getTime() / (15 * 60 * 1000)) * (15 * 60 * 1000);
-    const currentHourTs = Math.floor(now.getTime() / (60 * 60 * 1000)) * (60 * 60 * 1000);
+    const current5mTs = p5m[p5m.length - 1].timestamp;
+    const currentHourTs = Math.floor(now.getTime() / (3600 * 1000)) * (3600 * 1000);
 
-    const isNewCandle = !lastAlertCandle || current15mTs > parseInt(lastAlertCandle);
+    const isNewCandle = !lastAlertCandle || current5mTs > parseInt(lastAlertCandle);
     const isNewEmergencyHour = !lastEmergencyHour || currentHourTs > parseInt(lastEmergencyHour);
     const m = now.getMinutes();
+
+    // Trend of the CLOSED candle (iloc -2)
+    const closedCandles = p5m.slice(0, -1);
+    const e5mClosed = getEMAs(closedCandles);
+    const ltfUpClosed = e5mClosed.ema10 > e5mClosed.ema20;
+    const ltfDownClosed = e5mClosed.ema10 < e5mClosed.ema20;
+
+    let closedTrend = "NEUTRAL";
+    if (ltfUpClosed) closedTrend = "UPTREND";
+    else if (ltfDownClosed) closedTrend = "DOWNTREND";
+
+    if (isEmergency) closedTrend = "DOWNTREND"; // Emergency overrides
 
     // 0. Skip if monitoring started less than 1 minute ago
     if (Date.now() - monitoringStartTime < 60000) {
         return;
     }
 
-    // 1. Emergency Case: Bypass 15m rule, respect hourly lock, AND skip first 3m of new hour
+    // 1. Emergency Case: Bypass 5m rule, respect hourly lock, AND skip first 3m of new hour
     if (isEmergency && isNewEmergencyHour && m >= 3) {
         const symbolShort = SYMBOL.replace("USDT", "");
         const msg = `🩸 ${symbolShort} 1H EMERGENCY BREAKDOWN 🩸`;
 
-        // Always send Telegram for emergencies
         sendTelegramAlert(msg);
         speak(`${symbolShort} 1 hour emergency breakdown. ${symbolShort} 1 hour emergency breakdown.`);
 
         localStorage.setItem('lastEmergencyHour', currentHourTs.toString());
         localStorage.setItem('lastAlertTrend', "DOWNTREND");
-        localStorage.setItem('lastAlertCandle', current15mTs.toString());
+        localStorage.setItem('lastAlertCandle', current5mTs.toString());
         sessionStarted = true;
         return;
     }
 
-    // 2. Standard Case: Immediate on trend change, then cooldown until next 15m candle
-    const isTrendChanged = currentTrend !== lastAlertTrend;
+    // Global Lock: If an emergency alert was sent this hour, standard alerts are muted
+    if (!isNewEmergencyHour) {
+        return;
+    }
+
+    // 2. Standard Case: Alert on NEW 5m candle if closed trend changed
+    const isTrendChanged = closedTrend !== lastAlertTrend;
 
     // Initialization: If we just started, capture trend but don't lock the candle slot
     if (lastAlertTrend === null) {
-        localStorage.setItem('lastAlertTrend', currentTrend);
+        localStorage.setItem('lastAlertTrend', closedTrend);
         return;
     }
 
     if (isTrendChanged && isNewCandle) {
         let emoji = "";
-        if (currentTrend === "UPTREND") emoji = "🚀";
-        else if (currentTrend === "DOWNTREND") emoji = "💥";
-        else if (currentTrend === "NO TRADE ZONE") emoji = "⏳";
+        if (closedTrend === "UPTREND") emoji = "🚀";
+        else if (closedTrend === "DOWNTREND") emoji = "💥";
 
-        const symbolShort = SYMBOL.replace("USDT", "");
-        const msg = `${emoji} ${symbolShort} Trend: ${currentTrend} ${emoji}`;
+        if (emoji) {
+            const symbolShort = SYMBOL.replace("USDT", "");
+            const msg = `${emoji} ${symbolShort} Trend: ${closedTrend} ${emoji}`;
 
-        if (sessionStarted) {
-            sendTelegramAlert(msg);
-            speak(`${symbolShort} trend: ${currentTrend}`);
+            if (sessionStarted) {
+                sendTelegramAlert(msg);
+                speak(`${symbolShort} trend: ${closedTrend}`);
+            }
         }
 
-        localStorage.setItem('lastAlertTrend', currentTrend);
-        localStorage.setItem('lastAlertCandle', current15mTs.toString());
+        localStorage.setItem('lastAlertTrend', closedTrend);
+        localStorage.setItem('lastAlertCandle', current5mTs.toString());
     }
 }
 
@@ -269,9 +286,7 @@ function updateGlobalSymbol() {
     }
 
     // FULL UI RESET: Revert elements to initial state
-    document.getElementById("htfStatus").innerText = "LOADING...";
     document.getElementById("ltfStatus").innerText = "LOADING...";
-    document.getElementById("htfRow").className = "status-row status-neutral";
     document.getElementById("ltfRow").className = "status-row status-neutral";
 
     const trendDisplay = document.getElementById("trendDisplay");
