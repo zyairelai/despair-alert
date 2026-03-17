@@ -1,7 +1,10 @@
 async function updateTitleAndFavicon() {
-    const symbol = document.getElementById('global-symbol').value;
+    // Only run on Main Dashboard. Trend page (trend.html) has its own logic in script.js
+    if (document.getElementById('startBtn')) return;
+
+    const symbol = document.getElementById('global-symbol').innerText;
     try {
-        const klines = await fetchKlines(symbol, "2h");
+        const klines = await fetchKlines(symbol, "1h");
         if (klines.length < 50) return;
 
         // Stable HA Calculation
