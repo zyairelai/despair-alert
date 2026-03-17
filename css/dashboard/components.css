@@ -280,6 +280,10 @@ select option {
     gap: 0.4rem;
 }
 
+#heikin-tf-menu .tf-grid {
+    grid-template-columns: repeat(4, 1fr);
+}
+
 .tf-btn {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid transparent;

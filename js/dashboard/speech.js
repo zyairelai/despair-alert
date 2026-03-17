@@ -24,7 +24,6 @@ function formatForSpeech(text) {
         '2h': 'two hour',
         '4h': 'four hour',
         '6h': 'six hour',
-        '12h': 'twelve hour',
         '1d': 'one day'
     };
 
