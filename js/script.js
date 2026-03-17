@@ -194,7 +194,7 @@ function beep() {
         osc.frequency.setValueAtTime(1000, ctx.currentTime);
         osc.connect(ctx.destination);
         osc.start();
-        osc.stop(ctx.currentTime + 0.3);
+        osc.stop(ctx.currentTime + 0.4);
     } catch (e) {
         console.error("Beep failed:", e);
     }
