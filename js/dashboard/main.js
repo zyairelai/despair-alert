@@ -17,6 +17,12 @@ let beepInterval = null;
 let lastBeepTime = 0;
 // Audio Singleton
 let audioCtx = null;
+function getAudioContext() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioCtx;
+}
 
 function toggleGlobalBeep() {
     const btn = document.getElementById('beep-start-btn');
@@ -47,10 +53,8 @@ function toggleGlobalBeep() {
         if (statusText) statusText.innerText = "MONITORING";
 
         // Initialize/Resume Audio Context on user gesture
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const ctx = getAudioContext();
+        if (ctx.state === 'suspended') ctx.resume();
 
         // Start the timer
         beepInterval = setInterval(updateBeepTimer, 1000);
@@ -88,15 +92,25 @@ function updateBeepTimer() {
 
 function beep() {
     try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        if (ctx.state === 'suspended') ctx.resume();
+        const ctx = getAudioContext();
+        if (ctx.state === 'suspended') ctx.resume().catch(e => console.warn("Context resume failed:", e));
+
         const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
         osc.type = "sine";
         osc.frequency.setValueAtTime(1000, ctx.currentTime);
-        osc.connect(ctx.destination);
+
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
         osc.start();
         osc.stop(ctx.currentTime + 0.3);
-        console.log("Perfect Beep (Trend matched + Longer) played.");
+        console.log("Global beep triggered.");
     } catch (e) {
         console.error("Beep failed:", e);
     }
