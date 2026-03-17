@@ -40,8 +40,18 @@ function processSpeechQueue() {
     if (isSpeaking || speechQueue.length === 0) return;
 
     isSpeaking = true;
-    const { text, callback } = speechQueue.shift();
+    const item = speechQueue.shift();
 
+    // Handle Pause/Delay
+    if (item.type === 'pause') {
+        setTimeout(() => {
+            isSpeaking = false;
+            processSpeechQueue();
+        }, item.duration || 300);
+        return;
+    }
+
+    const { text, callback } = item;
     const spokenText = formatForSpeech(text);
     const msg = new SpeechSynthesisUtterance(spokenText);
 
@@ -79,8 +89,16 @@ function processSpeechQueue() {
 
 function speak(text, callback) {
     if (!text) return;
-    const repeatedText = `${text}. ${text}`;
-    speechQueue.push({ text: repeatedText, callback });
+
+    // 1. Queue first read
+    speechQueue.push({ text: text });
+
+    // 2. Queue 0.5 second pause
+    speechQueue.push({ type: 'pause', duration: 300 });
+
+    // 3. Queue second read with final callback
+    speechQueue.push({ text: text, callback: callback });
+
     processSpeechQueue();
 }
 

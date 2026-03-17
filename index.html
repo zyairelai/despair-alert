@@ -103,7 +103,7 @@
                     </div>
                     <div class="input-row">
                         <label>EMA</label>
-                        <input type="number" id="line-touch-price" value="20">
+                        <input type="number" id="line-touch-price" placeholder="20">
                     </div>
                     <div class="input-row spacer"></div>
                     <div class="input-row spacer"></div>
@@ -145,13 +145,13 @@
                     </div>
                     <div class="input-row">
                         <label>EMA</label>
-                        <input type="number" id="standing-level" value="20">
+                        <input type="number" id="standing-level" placeholder="20">
                     </div>
                     <div class="input-row spacer"></div>
                     <div class="input-row">
                         <label>Side</label>
-                        <button type="button" id="standing-condition" class="condition-toggle green-mode"
-                            data-state="above" onclick="toggleConditionState('standing-condition')">ABOVE</button>
+                        <button type="button" id="standing-condition" class="condition-toggle red-mode"
+                            data-state="below" onclick="toggleConditionState('standing-condition')">BELOW</button>
                     </div>
                 </div>
                 <div class="action-group">
@@ -191,16 +191,16 @@
                     </div>
                     <div class="input-row">
                         <label>Short</label>
-                        <input type="number" id="ema-cross-short" value="10">
+                        <input type="number" id="ema-cross-short" placeholder="10">
                     </div>
                     <div class="input-row">
                         <label>Long</label>
-                        <input type="number" id="ema-cross-long" value="20">
+                        <input type="number" id="ema-cross-long" placeholder="20">
                     </div>
                     <div class="input-row">
                         <label>Side</label>
-                        <button type="button" id="ema-cross-condition" class="condition-toggle green-mode"
-                            data-state="up" onclick="toggleConditionState('ema-cross-condition')">UP</button>
+                        <button type="button" id="ema-cross-condition" class="condition-toggle red-mode"
+                            data-state="down" onclick="toggleConditionState('ema-cross-condition')">DOWN</button>
                     </div>
                 </div>
                 <div class="action-group">
@@ -241,8 +241,8 @@
                     <div class="input-row spacer"></div>
                     <div class="input-row">
                         <label>Color</label>
-                        <button type="button" id="heikin-condition" class="condition-toggle green-mode"
-                            data-state="perfect-green" onclick="toggleConditionState('heikin-condition')">GREEN</button>
+                        <button type="button" id="heikin-condition" class="condition-toggle red-mode"
+                            data-state="perfect-red" onclick="toggleConditionState('heikin-condition')">RED</button>
                     </div>
                 </div>
                 <div class="action-group">

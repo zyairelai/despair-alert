@@ -62,8 +62,10 @@ async function checkAlert(id) {
         }
 
         if (id === 'ema-cross') {
-            const shortPeriod = parseInt(document.getElementById('ema-cross-short').value);
-            const longPeriod = parseInt(document.getElementById('ema-cross-long').value);
+            const shortEl = document.getElementById('ema-cross-short');
+            const longEl = document.getElementById('ema-cross-long');
+            const shortPeriod = parseInt(shortEl.value) || parseInt(shortEl.placeholder) || 10;
+            const longPeriod = parseInt(longEl.value) || parseInt(longEl.placeholder) || 20;
             const el = document.getElementById('ema-cross-condition');
             const condition = el.dataset.state || el.value;
 
@@ -119,7 +121,8 @@ async function checkAlert(id) {
         }
 
         if (id === 'standing') {
-            const period = parseInt(document.getElementById('standing-level').value) || 20;
+            const elVal = document.getElementById('standing-level');
+            const period = parseInt(elVal.value) || parseInt(elVal.placeholder) || 20;
             const el = document.getElementById('standing-condition');
             const condition = el.dataset.state || el.value;
 
@@ -138,7 +141,8 @@ async function checkAlert(id) {
         }
 
         if (id === 'line-touch') {
-            const period = parseInt(document.getElementById('line-touch-price').value) || 20;
+            const elVal = document.getElementById('line-touch-price');
+            const period = parseInt(elVal.value) || parseInt(elVal.placeholder) || 20;
 
             const klines = await fetchKlines(symbol, tf);
             if (klines.length < period) return;
