@@ -142,7 +142,7 @@ function checkAndSendAlert(p5m, isEmergency = false) {
         const msg = `🩸 ${symbolShort} 1H EMERGENCY BREAKDOWN 🩸`;
 
         sendTelegramAlert(msg);
-        speak(`${symbolShort} 1 hour emergency breakdown. ${symbolShort} 1 hour emergency breakdown.`);
+        speak(`${symbolShort} 1 hour emergency breakdown.`);
 
         localStorage.setItem('lastEmergencyHour', currentHourTs.toString());
         localStorage.setItem('lastAlertTrend', "DOWNTREND");
@@ -256,14 +256,15 @@ function setBeepMode(mode) {
 let monitorInterval = null;
 
 function toggleGlobalSymbol() {
-    const btn = document.getElementById('global-symbol');
-    if (!btn) return;
+    // const btn = document.getElementById('global-symbol');
+    // if (!btn) return;
 
-    const currentSymbol = btn.innerText;
-    const nextSymbol = currentSymbol === 'BTCUSDT' ? 'ETHUSDT' : 'BTCUSDT';
+    // const currentSymbol = btn.innerText;
+    // const nextSymbol = currentSymbol === 'BTCUSDT' ? 'ETHUSDT' : 'BTCUSDT';
 
-    btn.innerText = nextSymbol;
-    updateGlobalSymbol();
+    // btn.innerText = nextSymbol;
+    // updateGlobalSymbol();
+    console.log("Symbol toggle disabled (static BTC)");
 }
 
 function updateGlobalSymbol() {

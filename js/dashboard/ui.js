@@ -85,14 +85,15 @@ function toggleConditionState(id) {
 }
 
 function toggleGlobalSymbol() {
-    const btn = document.getElementById('global-symbol');
-    if (!btn) return;
+    // const btn = document.getElementById('global-symbol');
+    // if (!btn) return;
 
-    const currentSymbol = btn.innerText;
-    const nextSymbol = currentSymbol === 'BTCUSDT' ? 'ETHUSDT' : 'BTCUSDT';
+    // const currentSymbol = btn.innerText;
+    // const nextSymbol = currentSymbol === 'BTCUSDT' ? 'ETHUSDT' : 'BTCUSDT';
 
-    btn.innerText = nextSymbol;
-    updateGlobalSymbol();
+    // btn.innerText = nextSymbol;
+    // updateGlobalSymbol();
+    console.log("Symbol toggle disabled (static BTC)");
 }
 
 async function updateGlobalSymbol() {
