@@ -10,34 +10,6 @@ const alerts = {
 let lastAlertMessages = {};
 let lastAlertTimes = {};
 
-// Global Beep State
-let lastBeepTime = 0;
-// Audio Singleton
-let audioCtx = null;
-function getAudioContext() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    return audioCtx;
-}
-
-function beep() {
-    try {
-        const ctx = getAudioContext();
-        if (ctx.state === 'suspended') ctx.resume().catch(e => console.warn("Context resume failed:", e));
-
-        const osc = ctx.createOscillator();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(1000, ctx.currentTime);
-        osc.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.4);
-        console.log("Beep triggered.");
-    } catch (e) {
-        console.error("Beep failed:", e);
-    }
-}
-
 function toggleAlert(id) {
     const alert = alerts[id];
     const card = document.getElementById(`${id}-card`);

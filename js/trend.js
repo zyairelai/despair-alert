@@ -1,9 +1,17 @@
 let SYMBOL = localStorage.getItem('globalSymbol') || "BTCUSDT";
 let started = false;
 let sessionStarted = true;
-let lastBeepTime = 0; // Prevent duplicate beeps in the same second
+let lastBeepInterval = 0;
 let beepMode = 'interval';
 let monitoringStartTime = 0;
+let audioCtx = null;
+
+function getAudioContext() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioCtx;
+}
 
 async function fetchKlines(interval) {
     const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${SYMBOL}&interval=${interval}&limit=200`;
@@ -187,7 +195,7 @@ function checkAndSendAlert(p5m, isEmergency = false) {
 
 function beep() {
     try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = getAudioContext();
         if (ctx.state === 'suspended') ctx.resume();
         const osc = ctx.createOscillator();
         osc.type = "sine";
@@ -206,7 +214,7 @@ function tick() {
     const m = now.getMinutes();
     const s = now.getSeconds();
 
-    // Calculate seconds until next 5m mark
+    // Calculate seconds until next 5m mark for display
     const next = 5 - (m % 5);
     let r = next * 60 - s;
     if (r === 300) r = 0;
@@ -215,18 +223,19 @@ function tick() {
     const sStr = String(r % 60).padStart(2, '0');
     document.getElementById("countdown").innerText = `${mStr}:${sStr}`;
 
-    // Triple-check for beep
-    // 1. Should be exactly at the 5-minute mark (r === 0)
-    // 2. Or if we just passed it (r === 299) and haven't beeped in the last 10 seconds
-    if ((r === 0 || r === 299) && (nowTime - lastBeepTime > 10000)) {
+    // Robust Beep Logic: Check if we've entered a new 5-minute interval
+    // This is more reliable than checking exact seconds (r === 0) 
+    // which can be missed if the browser throttles background tabs.
+    const currentInterval = Math.floor(nowTime / (5 * 60 * 1000));
+    if (currentInterval > lastBeepInterval) {
         const trendText = document.getElementById("trendDisplay").innerText;
         const isNoTrade = trendText === "NO TRADE ZONE";
 
         if (beepMode === 'interval' || (beepMode === 'trend' && !isNoTrade)) {
-            console.log("Beeping at", now.toLocaleTimeString());
+            console.log("Beeping for interval", currentInterval, "at", now.toLocaleTimeString());
             beep();
-            lastBeepTime = nowTime;
         }
+        lastBeepInterval = currentInterval;
     }
 
     if (s % 3 === 0) updateTrend(); // Update trend every 3s
@@ -238,13 +247,16 @@ function start() {
     document.getElementById("startBtn").disabled = true;
     document.getElementById("startBtn").innerText = "MONITORING ACTIVE";
     monitoringStartTime = Date.now();
+
+    // Initialize to current interval to avoid double-beep on start
+    lastBeepInterval = Math.floor(Date.now() / (5 * 60 * 1000));
+
     monitorInterval = setInterval(tick, 1000);
     tick();
     updateTrend();
 
     // Initial check does not beep or alert, just verifies audio
     beep();
-    lastBeepTime = new Date().getTime();
 }
 
 function setBeepMode(mode) {
