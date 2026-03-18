@@ -187,7 +187,7 @@ async function checkAlert(id) {
 
                 // Condition: current high >= 99.95% of previous high AND current candle is RED (close < open)
                 if (currentCandle.high >= (previousCandle.high * 0.9995) && currentCandle.close < currentCandle.open) {
-                    const voiceMsg = `${shortSymbol} ${currentTf} LIQUIDITY HUNT ACTIVATED. ${shortSymbol} ${currentTf} LIQUIDITY HUNT ACTIVATED.`;
+                    const voiceMsg = `${shortSymbol} ${currentTf} LIQUIDITY HUNT ACTIVATED.`;
                     triggerAlert(id, `🩸 ${shortSymbol} ${currentTf} LIQUIDITY HUNT 🩸`, voiceMsg);
                     break; // stop checking other TFs once one is triggered
                 }
