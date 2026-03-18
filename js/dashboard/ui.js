@@ -69,6 +69,9 @@ function toggleConditionState(id) {
     if (id === 'heikin-condition') {
         nextState = currentState === 'perfect-green' ? 'perfect-red' : 'perfect-green';
         nextText = nextState === 'perfect-green' ? 'GREEN' : 'RED';
+    } else if (id === 'rawcandle-condition') {
+        nextState = currentState === 'green' ? 'red' : 'green';
+        nextText = nextState === 'green' ? 'GREEN' : 'RED';
     } else if (id === 'ema-cross-condition') {
         nextState = currentState === 'up' ? 'down' : 'up';
         nextText = nextState === 'up' ? 'UP' : 'DOWN';

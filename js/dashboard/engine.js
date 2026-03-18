@@ -120,6 +120,38 @@ async function checkAlert(id) {
             }
         }
 
+        if (id === 'rawcandle') {
+            // Auto-Stop logic: Stop 5 seconds before the candle closes
+            const tfMs = tfToMs(tf);
+            if (tfMs > 0) {
+                const now = Date.now();
+                const nextCandleTime = Math.ceil(now / tfMs) * tfMs;
+                const msRemaining = nextCandleTime - now;
+
+                if (msRemaining <= 5000) {
+                    console.log(`Auto-stopping ${id} (5s before next candle)`);
+                    toggleAlert(id);
+                    return;
+                }
+            }
+
+            const el = document.getElementById('rawcandle-condition');
+            const condition = el.dataset.state || el.value;
+            const klines = await fetchKlines(symbol, tf);
+            if (klines.length < 1) return;
+
+            const k = klines[klines.length - 1];
+            if (condition === 'green') {
+                if (k.close > k.open) {
+                    triggerAlert(id, `🚀 ${shortSymbol} ${tf} RAW GREEN 🚀`, `${shortSymbol} ${tf} RAW candle turned into GREEN color`);
+                }
+            } else if (condition === 'red') {
+                if (k.close < k.open) {
+                    triggerAlert(id, `💥 ${shortSymbol} ${tf} RAW RED 💥`, `${shortSymbol} ${tf} RAW candle turned into RED color`);
+                }
+            }
+        }
+
         if (id === 'standing') {
             const elVal = document.getElementById('standing-level');
             const period = parseInt(elVal.value) || parseInt(elVal.placeholder) || 20;
@@ -253,4 +285,19 @@ function triggerAlert(id, message, voiceMessage = null) {
 
     lastAlertMessages[id] = message;
     lastAlertTimes[id] = Date.now();
+}
+
+/**
+ * Converts a timeframe string (e.g., "1m", "15m", "1h", "1d") into milliseconds.
+ */
+function tfToMs(tf) {
+    if (!tf) return 0;
+    const unit = tf.slice(-1);
+    const val = parseInt(tf.slice(0, -1));
+    if (isNaN(val)) return 0;
+
+    if (unit === 'm') return val * 60 * 1000;
+    if (unit === 'h') return val * 60 * 60 * 1000;
+    if (unit === 'd') return val * 24 * 60 * 60 * 1000;
+    return 0;
 }

@@ -231,6 +231,42 @@
                 </div>
             </div>
 
+            <!-- RAW CANDLE -->
+            <div class="alert-card" id="rawcandle-card">
+                <div class="card-header">
+                    <h2>RAW CANDLE</h2>
+                    <div class="status-indicator inactive">
+                        <div class="dot" id="rawcandle-dot"></div>
+                        <span id="rawcandle-status">INACTIVE</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="tf-selector" id="rawcandle-tf-selector">
+                        <button type="button" class="tf-current-btn" id="rawcandle-tf-trigger"
+                            onclick="toggleTFMenu('rawcandle')">15m</button>
+                        <div class="tf-dropdown-menu" id="rawcandle-tf-menu" data-value="15m">
+                            <div class="tf-grid">
+                                <button type="button" class="tf-btn" onclick="setTF('rawcandle', '5m')">5m</button>
+                                <button type="button" class="tf-btn active"
+                                    onclick="setTF('rawcandle', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('rawcandle', '1h')">1H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('rawcandle', '2h')">2H</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row spacer"></div>
+                    <div class="input-row spacer"></div>
+                    <div class="input-row">
+                        <label>Color</label>
+                        <button type="button" id="rawcandle-condition" class="condition-toggle red-mode"
+                            data-state="red" onclick="toggleConditionState('rawcandle-condition')">RED</button>
+                    </div>
+                </div>
+                <div class="action-group">
+                    <button class="toggle-btn" onclick="toggleAlert('rawcandle')">START</button>
+                </div>
+            </div>
+
             <!-- Liquidity -->
             <div class="alert-card" id="liquidity-card">
                 <div class="card-header">
