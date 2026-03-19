@@ -144,8 +144,8 @@ function checkAndSendAlert(p5m, isEmergency = false) {
         return;
     }
 
-    // 1. Emergency Case: Bypass 5m rule, respect hourly lock, AND skip first 3m of new hour
-    if (isEmergency && isNewEmergencyHour && m >= 3) {
+    // 1. Emergency Case: Bypass 5m rule and respect hourly lock
+    if (isEmergency && isNewEmergencyHour) {
         const symbolShort = SYMBOL.replace("USDT", "");
         const msg = `🩸 ${symbolShort} 1H EMERGENCY BREAKDOWN 🩸`;
 
