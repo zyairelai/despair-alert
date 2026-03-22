@@ -20,25 +20,11 @@ async function updateTitleAndFavicon() {
         }
 
         const titleEl = document.getElementById('global-symbol');
-        const diffPercent = Math.abs(haClose - haOpen) / haOpen;
-        const dojiThreshold = 0.0003; // 0.03% difference for Doji
-
-        let colorClass = "";
-        let faviconPath = "";
-
-        if (diffPercent < dojiThreshold) {
-            colorClass = "title-doji";
-            faviconPath = "images/favicon_yellow.png";
-        } else if (haClose > haOpen) {
-            colorClass = "title-green";
-            faviconPath = "images/favicon_green.png";
-        } else {
-            colorClass = "title-red";
-            faviconPath = "images/favicon_red.png";
-        }
+        let colorClass = (haClose > haOpen) ? "title-green" : "title-red";
+        let faviconPath = (haClose > haOpen) ? "images/favicon_green.png" : "images/favicon_red.png";
 
         // Apply classes
-        titleEl.classList.remove('title-green', 'title-red', 'title-doji');
+        titleEl.classList.remove('title-green', 'title-red');
         titleEl.classList.add(colorClass);
 
         // Update Favicon (on all pages)

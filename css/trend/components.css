@@ -30,9 +30,6 @@
     color: var(--accent-red) !important;
 }
 
-#global-symbol.title-doji {
-    color: #ffd700 !important;
-}
 
 .status-display {
     display: flex;
