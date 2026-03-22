@@ -166,6 +166,20 @@ function setupNumericInputs() {
                 el.value = parts[0] + '.' + parts.slice(1).join('');
             }
         });
+
+        // Tab Key behavior
+        if (selector.startsWith('#price-target-')) {
+            el.addEventListener('keydown', (e) => {
+                if (e.key === 'Tab' && !e.shiftKey) {
+                    // If input is empty and has a placeholder
+                    if (el.value === "" && el.placeholder && el.placeholder !== "") {
+                        e.preventDefault();
+                        el.value = el.placeholder;
+                        console.log(`Tab: Autofilled ${selector} with placeholder value: ${el.placeholder}`);
+                    }
+                }
+            });
+        }
     });
 }
 
