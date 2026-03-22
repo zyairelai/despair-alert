@@ -104,13 +104,15 @@ def monitor():
         is_new_candle = LAST_ALERT_CANDLE is None or current_candle_ts > LAST_ALERT_CANDLE
         is_new_emergency_hour = LAST_EMERGENCY_HOUR is None or current_hour_ts > LAST_EMERGENCY_HOUR
 
-        # Cooldown: Delay the reset by 30 seconds at the start of the hour
-        seconds_past_hour = time.time() % 3600
-        if is_new_emergency_hour and seconds_past_hour < 30:
-            is_new_emergency_hour = False
+        # Cooldown: Mute until the NEXT hour + 30 seconds after an emergency alert
+        is_after_cooldown = True
+        if LAST_EMERGENCY_HOUR is not None:
+            cooldown_end_ms = LAST_EMERGENCY_HOUR + (3600 * 1000) + 30000
+            if (time.time() * 1000) < cooldown_end_ms:
+                is_after_cooldown = False
 
-        # Global Lock: If an emergency alert was sent this hour, all Telegram alerts are muted
-        if not is_new_emergency_hour:
+        # Global Lock: If we are within the cooldown period of an emergency alert, all alerts are muted
+        if not is_after_cooldown:
             LAST_TREND = current_trend
             return
 

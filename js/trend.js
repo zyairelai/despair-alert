@@ -57,8 +57,9 @@ function isShootingStar(klines) {
 
 async function updateTrend() {
     try {
-        const [p1h, p15m, p5m] = await Promise.all([
+        const [p1h, p30m, p15m, p5m] = await Promise.all([
             fetchKlines("1h"),
+            fetchKlines("30m"),
             fetchKlines("15m"),
             fetchKlines("5m")
         ]);
@@ -78,7 +79,7 @@ async function updateTrend() {
             trendDisplay.className = "overall-trend trend-neutral";
         }
 
-        checkAndSendAlert(p1h, p15m, p5m, isEmergency);
+        checkAndSendAlert(p1h, p30m, p15m, p5m, isEmergency);
     } catch (e) {
         console.error("Trend update failed", e);
     }
@@ -96,17 +97,13 @@ function updateFavicon(path) {
 }
 
 
-function checkAndSendAlert(p1h, p15m, p5m, isEmergency = false) {
+function checkAndSendAlert(p1h, p30m, p15m, p5m, isEmergency = false) {
     const lastEmergencyHour = localStorage.getItem('lastEmergencyHour');
-    const lastShootingStarHour = localStorage.getItem('lastShootingStarHour');
 
     const now = new Date();
-    const currentHourTs = Math.floor(now.getTime() / (3600 * 1000)) * (3600 * 1000);
+    const nowTs = now.getTime();
+    const currentHourTs = Math.floor(nowTs / (3600 * 1000)) * (3600 * 1000);
     const isNewEmergencyHour = !lastEmergencyHour || currentHourTs > parseInt(lastEmergencyHour);
-
-    // Cooldown reset check: New hour AND at least 30 seconds in
-    const isAfter30s = now.getMinutes() > 0 || now.getSeconds() >= 30;
-    const isNewShootingStarHour = (!lastShootingStarHour || currentHourTs > parseInt(lastShootingStarHour)) && isAfter30s;
 
     // 0. Skip if monitoring started less than 1 minute ago
     if (Date.now() - monitoringStartTime < 60000) {
@@ -126,23 +123,33 @@ function checkAndSendAlert(p1h, p15m, p5m, isEmergency = false) {
         return;
     }
 
-    // 2. Shooting Star Case: 1H or 15m
-    if (isNewShootingStarHour) {
-        const ss1h = isShootingStar(p1h);
-        const ss15m = isShootingStar(p15m);
+    // 2. Shooting Star Case: 1H, 30m, 15m
+    const checkSS = (tf, klines, intervalMs, storageKey) => {
+        const lastAlert = localStorage.getItem(storageKey);
+        const intervalStart = Math.floor(nowTs / intervalMs) * intervalMs;
 
-        if (ss1h || ss15m) {
-            const ssTf = ss1h ? "1H" : "15m";
+        // Cooldown: Mute until the NEXT interval + 30 seconds
+        const cooldownEnd = lastAlert ? (parseInt(lastAlert) + intervalMs + 30000) : 0;
+        const isCooledDown = nowTs >= cooldownEnd;
+
+        if (isCooledDown && isShootingStar(klines)) {
             const symbolShort = SYMBOL.replace("USDT", "");
             const emoji = "🌠";
-            const msg = `${emoji} ${symbolShort} ${ssTf} SHOOTING STAR ${emoji}`;
+            const msg = `${emoji} ${symbolShort} ${tf} SHOOTING STAR ${emoji}`;
 
             sendTelegramAlert(msg);
-            speak(`${symbolShort} ${ssTf} shooting star detected.`);
+            speak(`${symbolShort} ${tf} shooting star detected.`);
 
-            localStorage.setItem('lastShootingStarHour', currentHourTs.toString());
+            localStorage.setItem(storageKey, intervalStart.toString());
+            return true;
         }
-    }
+        return false;
+    };
+
+    // Check each timeframe independently
+    checkSS("1H", p1h, 3600000, 'lastSS1h');
+    checkSS("30m", p30m, 1800000, 'lastSS30m');
+    checkSS("15m", p15m, 900000, 'lastSS15m');
 }
 
 function beep() {
@@ -251,6 +258,10 @@ function updateGlobalSymbol() {
     localStorage.removeItem('lastAlertTrend');
     localStorage.removeItem('lastAlertCandle');
     localStorage.removeItem('lastEmergencyHour');
+    localStorage.removeItem('lastSS1h');
+    localStorage.removeItem('lastSS30m');
+    localStorage.removeItem('lastSS15m');
+    localStorage.removeItem('lastShootingStarHour');
 }
 
 // Ensure the dropdown matches the stored symbol on load

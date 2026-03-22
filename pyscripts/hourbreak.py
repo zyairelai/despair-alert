@@ -72,10 +72,6 @@ def heikin_ashi(klines):
     return heikin_ashi_df[result_cols]
 
 def short_despair():
-    # Cooldown: Delay processing by 30 seconds at the start of the hour
-    if (time.time() % 3600) < 30:
-        return
-
     klines_raw = get_klines(SYMBOL, "1h")
     
     # Emergency 1h Logic: Current high > previous high AND current 1h candle is RED
