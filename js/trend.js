@@ -103,7 +103,8 @@ function checkAndSendAlert(p1h, p30m, p15m, p5m, isEmergency = false) {
     const now = new Date();
     const nowTs = now.getTime();
     const currentHourTs = Math.floor(nowTs / (3600 * 1000)) * (3600 * 1000);
-    const isNewEmergencyHour = !lastEmergencyHour || currentHourTs > parseInt(lastEmergencyHour);
+    const cooldownEnd = lastEmergencyHour ? (parseInt(lastEmergencyHour) + 3600000 + 30000) : 0;
+    const isNewEmergencyHour = nowTs >= cooldownEnd;
 
     // 0. Skip if monitoring started less than 1 minute ago
     if (Date.now() - monitoringStartTime < 60000) {
