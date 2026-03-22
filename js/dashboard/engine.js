@@ -220,33 +220,7 @@ async function checkAlert(id) {
             }
         }
 
-        if (id === 'shooting-star') {
-            const klines = await fetchKlines(symbol, tf);
-            if (klines.length < 3) return;
 
-            const c1 = klines[klines.length - 2]; // Previous candle
-            const c2 = klines[klines.length - 3]; // Candle before previous
-
-            // Calculations for c1
-            const body1 = Math.abs(c1.open - c1.close);
-            const upperWick1 = c1.high - Math.max(c1.open, c1.close);
-            const lowerWick1 = Math.min(c1.open, c1.close) - c1.low;
-
-            // Calculations for c2
-            const body2 = Math.abs(c2.open - c2.close);
-            const upperWick2 = c2.high - Math.max(c2.open, c2.close);
-            const lowerWick2 = Math.min(c2.open, c2.close) - c2.low;
-
-            // Condition 1: Upper wick > (Lower wick + Body)
-            const cond1 = upperWick1 > (lowerWick1 + body1);
-
-            // Condition 2: Upper wick > (prev upper wick, prev body, prev lower wick)
-            const cond2 = upperWick1 > upperWick2 && upperWick1 > body2 && upperWick1 > lowerWick2;
-
-            if (cond1 && cond2) {
-                triggerAlert(id, `🌠 ${shortSymbol} ${tf} SHOOTING STAR 🌠`, `${shortSymbol} ${tf} SHOOTING STAR detected`);
-            }
-        }
     } catch (e) {
         console.error(`Check failed for ${id}`, e);
     }
@@ -297,7 +271,7 @@ function triggerAlert(id, message, voiceMessage = null) {
     speak(textToSpeak, cleanUI);
 
     // Special channel for EMA Alert, EMA Cross, Heikin, and Shooting Star
-    const wolvesRiseIds = ['ema-alert', 'ema-cross', 'heikin', 'shooting-star'];
+    const wolvesRiseIds = ['ema-alert', 'ema-cross', 'heikin'];
     const telegramChatId = wolvesRiseIds.includes(id) ? "@futures_wolves_rise" : null;
 
     // Send Telegram Alert ONLY if enabled (Secret Toggle)

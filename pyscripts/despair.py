@@ -5,23 +5,18 @@ import os, sys, subprocess, shutil
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 SCRIPTS_LIST = [
-    ("hourbreak.py",   "1H Structure Break"),
-    ("monitoring.py",  "Live Trend Dashboard"),
-    ("oneminute.py",   "One Minute Entry Alert"),
-    ("rawcandle.py",   "5m Long Upper Wick Monitoring"),
-    ("zones.py",       "Prev 1D/4H Levels")
+    ("complicated.py",  "Double TF Structure Break"),
+    ("flask.py",        "Telegram Webhook Bot"),
+    ("hourbreak.py",    "1H Structure Break & Pin Bar"),
+    ("monitoring.py",   "Live Trend & 1H Emergency"),
+    ("okx.py",          "OKX Exchange Monitoring"),
+    ("oneminute.py",    "1m/5m Scalping Alerts"),
+    ("pricealert.py",   "Multi-Target Price Alerts"),
+    ("zones.py",        "Prev 1D/4H Levels")
 ]
 
-# Sort alphabetically by filename (the first element of each tuple)
+# Sort alphabetically by filename
 SCRIPTS_LIST.sort(key=lambda x: x[0])
-
-SHORTCUTS = {
-    "h": "hourbreak.py",
-    "m": "monitoring.py",
-    "o": "oneminute.py",
-    "r": "rawcandle.py",
-    "z": "zones.py"
-}
 
 def clear_pycache():
     """Delete all __pycache__ folders in the project directory and subdirectories."""
@@ -37,17 +32,14 @@ def clear_pycache():
 
 def display_menu(sorted_scripts):
     print("\n========================= SCRIPTS =========================")
-    shortcut_rev = {v: k for k, v in SHORTCUTS.items()}
     for idx, (script, desc) in enumerate(sorted_scripts, start=1):
-        sc = shortcut_rev.get(script, "")
-        sc_label = f"({sc})" if sc else "   "
-        print(f"{idx:>2}. {script:<13} {sc_label}  -  {desc}")
+        print(f"{idx:>2}. {script:<15}  -  {desc}")
     print("==========================================================")
 
 def main():
     try:
         display_menu(SCRIPTS_LIST)
-        user_input = input("\nEnter Script: ").strip()
+        user_input = input("\nEnter Script Number or Name: ").strip()
         
         if not user_input:
             script_name = "monitoring.py"
@@ -59,27 +51,30 @@ def main():
             
             script_name = None
             
-            if choice in SHORTCUTS:
-                script_name = SHORTCUTS[choice]
-            elif choice in ['0', '00']:
-                script_name = "monitoring.py"
-            else:
-                try:
-                    choice_idx = int(choice) - 1
-                    if 0 <= choice_idx < len(SCRIPTS_LIST):
-                        script_name, _ = SCRIPTS_LIST[choice_idx]
-                    else:
-                        script_name = "monitoring.py"
-                except ValueError:
-                    script_name = "monitoring.py"
+            # Simple numeric or exact name matching
+            try:
+                choice_idx = int(choice) - 1
+                if 0 <= choice_idx < len(SCRIPTS_LIST):
+                    script_name, _ = SCRIPTS_LIST[choice_idx]
+            except ValueError:
+                # Check if exact filename was typed
+                if choice.endswith(".py"):
+                    script_name = choice
+                elif os.path.exists(os.path.join(SCRIPT_DIR, choice + ".py")):
+                    script_name = choice + ".py"
 
         if script_name:
             script_path = os.path.join(SCRIPT_DIR, script_name)
+            if not os.path.exists(script_path):
+                print(f"[!] Error: {script_name} not found.")
+                return
+
             cmd = [sys.executable, script_path] + args
-            
             print(f"\n[+] Running: {' '.join(cmd)}")
             try: subprocess.run(cmd)
             except KeyboardInterrupt: print("\n[!] Script execution interrupted.")
+        else:
+            print("[!] Invalid selection.")
 
     except KeyboardInterrupt: print("\n\nAborted.")
     except Exception as e: print(f"[!] Unexpected error: {e}")

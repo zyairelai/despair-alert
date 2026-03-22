@@ -26,26 +26,33 @@ async function fetchKlines(interval) {
 }
 
 function isShootingStar(klines) {
-    if (klines.length < 3) return false;
-    const c1 = klines[klines.length - 2]; // Previous candle
-    const c2 = klines[klines.length - 3]; // Candle before previous
+    if (klines.length < 7) return false;
 
-    // Red Candle Condition
-    if (c1.close >= c1.open) return false;
+    const ss = klines[klines.length - 2]; // Target candle (last closed)
+    const prior3 = klines.slice(klines.length - 5, klines.length - 2); // -3, -4, -5
+    const prior5 = klines.slice(klines.length - 7, klines.length - 2); // -3, -4, -5, -6, -7
 
-    const body1 = Math.abs(c1.open - c1.close);
-    const upperWick1 = c1.high - Math.max(c1.open, c1.close);
-    const lowerWick1 = Math.min(c1.open, c1.close) - c1.low;
+    const ssBody = Math.abs(ss.open - ss.close);
+    const ssUpperWick = ss.high - Math.max(ss.open, ss.close);
+    const ssLowerWick = Math.min(ss.open, ss.close) - ss.low;
+    const ssRangeHC = ss.high - ss.close;
 
-    const body2 = Math.abs(c2.open - c2.close);
-    const upperWick2 = c2.high - Math.max(c2.open, c2.close);
-    const lowerWick2 = Math.min(c2.open, c2.close) - c2.low;
+    // 1. Upper wick > (body + lower wick)
+    const cond1 = ssUpperWick > (ssBody + ssLowerWick);
 
-    const cond1 = upperWick1 > (lowerWick1 + body1);
-    // Condition 2: Upper wick of current candle must be larger than each component of the previous candle INDIVIDUALLY
-    const cond2 = upperWick1 > upperWick2 && upperWick1 > body2 && upperWick1 > lowerWick2;
+    // 2. Upper wick > max upper wick of last 3 candles before SS
+    const maxUpperWick3 = Math.max(...prior3.map(k => k.high - Math.max(k.open, k.close)));
+    const cond2 = ssUpperWick > maxUpperWick3;
 
-    return cond1 && cond2;
+    // 3. Range (high-close) > average range (high-close) of last 5 candles before SS
+    const avgRangeHC5 = prior5.reduce((sum, k) => sum + (k.high - k.close), 0) / 5;
+    const cond3 = ssRangeHC > avgRangeHC5;
+
+    // 4. High > highest high of last 5 candles before SS
+    const maxHigh5 = Math.max(...prior5.map(k => k.high));
+    const cond4 = ss.high > maxHigh5;
+
+    return cond1 && cond2 && cond3 && cond4;
 }
 
 async function updateTrend() {
