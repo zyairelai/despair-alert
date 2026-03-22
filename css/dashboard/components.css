@@ -116,6 +116,7 @@ select {
     font-size: 0.85rem;
     font-weight: 600;
     width: 95px;
+    text-align: center;
 }
 
 input:focus,
@@ -163,6 +164,10 @@ select:focus {
 
 .condition-toggle:hover {
     border-color: var(--text-dim);
+}
+
+#ema-alert-mode {
+    color: #ffffff;
 }
 
 /* Ensure option visibility and colors */

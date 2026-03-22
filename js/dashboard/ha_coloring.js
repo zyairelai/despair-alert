@@ -1,10 +1,10 @@
 async function updateTitleAndFavicon() {
-    // Only run on Main Dashboard. Trend page (trend.html) has its own logic in script.js
-    if (document.getElementById('startBtn')) return;
+    // Both Main Dashboard and Trend page now use this logic
+
 
     const symbol = document.getElementById('global-symbol').innerText;
     try {
-        const klines = await fetchKlines(symbol, "1h");
+        const klines = await fetchKlines(symbol, "2h");
         if (klines.length < 50) return;
 
         // Stable HA Calculation
@@ -41,10 +41,8 @@ async function updateTitleAndFavicon() {
         titleEl.classList.remove('title-green', 'title-red', 'title-doji');
         titleEl.classList.add(colorClass);
 
-        // Update Favicon (only if NOT on index page)
-        if (!document.getElementById('startBtn')) {
-            updateFavicon(faviconPath);
-        }
+        // Update Favicon (on all pages)
+        updateFavicon(faviconPath);
 
     } catch (e) {
         console.error("HA coloring update failed", e);

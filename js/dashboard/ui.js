@@ -75,7 +75,7 @@ function toggleConditionState(id) {
     } else if (id === 'ema-cross-condition') {
         nextState = currentState === 'up' ? 'down' : 'up';
         nextText = nextState === 'up' ? 'UP' : 'DOWN';
-    } else if (id === 'standing-condition') {
+    } else if (id === 'ema-alert-condition' || id === 'standing-condition') {
         nextState = currentState === 'above' ? 'below' : 'above';
         nextText = nextState === 'above' ? 'ABOVE' : 'BELOW';
     }
@@ -85,6 +85,27 @@ function toggleConditionState(id) {
     updateConditionUI(btn);
 
     console.log(`${id} toggled to: ${nextState}`);
+}
+
+function toggleEMAAlertMode() {
+    const btn = document.getElementById('ema-alert-mode');
+    const sideRow = document.getElementById('ema-alert-side-row');
+    if (!btn || !sideRow) return;
+
+    const currentState = btn.dataset.state;
+    const nextState = currentState === 'touch' ? 'stand' : 'touch';
+    const nextText = nextState.toUpperCase();
+
+    btn.dataset.state = nextState;
+    btn.innerText = nextText;
+
+    if (nextState === 'stand') {
+        sideRow.style.display = 'flex';
+    } else {
+        sideRow.style.display = 'none';
+    }
+
+    console.log(`EMA Alert mode toggled to: ${nextState}`);
 }
 
 function toggleGlobalSymbol() {
@@ -134,7 +155,7 @@ function setupNumericInputs() {
     const numericSelectors = [
         '#price-target-1', '#price-target-2', '#price-target-3',
         '#ema-cross-short', '#ema-cross-long',
-        '#line-touch-price', '#standing-level'
+        '#line-touch-price', '#standing-level', '#ema-alert-level'
     ];
 
     numericSelectors.forEach(selector => {

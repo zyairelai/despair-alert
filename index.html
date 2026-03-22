@@ -27,7 +27,7 @@
             <!-- Price Alert -->
             <div class="alert-card" id="price-card">
                 <div class="card-header">
-                    <h2>PRICE ALERT</h2>
+                    <h2>PRICE</h2>
                     <div class="status-indicator inactive">
                         <div class="dot" id="price-dot"></div>
                         <span id="price-status">INACTIVE</span>
@@ -64,89 +64,50 @@
                 </div>
             </div>
 
-            <!-- EMA TOUCH -->
-            <div class="alert-card" id="line-touch-card">
+            <!-- EMA Alert (Combined Touch & Stand) -->
+            <div class="alert-card" id="ema-alert-card">
                 <div class="card-header">
-                    <h2>EMA TOUCH</h2>
+                    <h2>EMA</h2>
                     <div class="status-indicator inactive">
-                        <div class="dot" id="line-touch-dot"></div>
-                        <span id="line-touch-status">INACTIVE</span>
+                        <div class="dot" id="ema-alert-dot"></div>
+                        <span id="ema-alert-status">INACTIVE</span>
                     </div>
                 </div>
                 <div class="card-content">
-                    <div class="tf-selector" id="line-touch-tf-selector">
-                        <button type="button" class="tf-current-btn" id="line-touch-tf-trigger"
-                            onclick="toggleTFMenu('line-touch')">5m</button>
-                        <div class="tf-dropdown-menu" id="line-touch-tf-menu" data-value="5m">
+                    <div class="tf-selector" id="ema-alert-tf-selector">
+                        <button type="button" class="tf-current-btn" id="ema-alert-tf-trigger"
+                            onclick="toggleTFMenu('ema-alert')">5m</button>
+                        <div class="tf-dropdown-menu" id="ema-alert-tf-menu" data-value="5m">
                             <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '1m')">1m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('ema-alert', '1m')">1m</button>
                                 <button type="button" class="tf-btn active"
-                                    onclick="setTF('line-touch', '5m')">5m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '1h')">1H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '2h')"
-                                    style="display:none">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('line-touch', '4h')"
-                                    style="display:none">4H</button>
+                                    onclick="setTF('ema-alert', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('ema-alert', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('ema-alert', '1h')">1H</button>
                             </div>
                         </div>
                     </div>
                     <div class="input-row">
                         <label>EMA</label>
-                        <input type="number" id="line-touch-price" placeholder="20">
-                    </div>
-                    <div class="input-row spacer"></div>
-                    <div class="input-row spacer"></div>
-                </div>
-                <div class="action-group">
-                    <button class="toggle-btn" onclick="toggleAlert('line-touch')">START</button>
-                </div>
-            </div>
-
-            <!-- EMA STAND -->
-            <div class="alert-card" id="standing-card">
-                <div class="card-header">
-                    <h2>EMA STAND</h2>
-                    <div class="status-indicator inactive">
-                        <div class="dot" id="standing-dot"></div>
-                        <span id="standing-status">INACTIVE</span>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <div class="tf-selector" id="standing-tf-selector">
-                        <button type="button" class="tf-current-btn" id="standing-tf-trigger"
-                            onclick="toggleTFMenu('standing')">5m</button>
-                        <div class="tf-dropdown-menu" id="standing-tf-menu" data-value="5m">
-                            <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('standing', '1m')">1m</button>
-                                <button type="button" class="tf-btn active"
-                                    onclick="setTF('standing', '5m')">5m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('standing', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('standing', '1h')">1H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('standing', '2h')"
-                                    style="display:none">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('standing', '4h')"
-                                    style="display:none">4H</button>
-                            </div>
-                        </div>
+                        <input type="number" id="ema-alert-level" placeholder="20">
                     </div>
                     <div class="input-row">
-                        <label>EMA</label>
-                        <input type="number" id="standing-level" placeholder="20">
+                        <label>Mode</label>
+                        <button type="button" id="ema-alert-mode" class="condition-toggle" data-state="touch"
+                            onclick="toggleEMAAlertMode()">TOUCH</button>
                     </div>
-                    <div class="input-row spacer"></div>
-                    <div class="input-row">
+                    <div class="input-row" id="ema-alert-side-row" style="display:none">
                         <label>Side</label>
-                        <button type="button" id="standing-condition" class="condition-toggle red-mode"
-                            data-state="below" onclick="toggleConditionState('standing-condition')">BELOW</button>
+                        <button type="button" id="ema-alert-condition" class="condition-toggle red-mode"
+                            data-state="below" onclick="toggleConditionState('ema-alert-condition')">BELOW</button>
                     </div>
                 </div>
                 <div class="action-group">
-                    <button class="toggle-btn" onclick="toggleAlert('standing')">START</button>
+                    <button class="toggle-btn" onclick="toggleAlert('ema-alert')">START</button>
                 </div>
             </div>
 
-            <!-- EMA Cross -->
+            <!-- EMA Cross
             <div class="alert-card" id="ema-cross-card">
                 <div class="card-header">
                     <h2>EMA CROSS</h2>
@@ -191,6 +152,7 @@
                     <button class="toggle-btn" onclick="toggleAlert('ema-cross')">START</button>
                 </div>
             </div>
+            -->
 
             <!-- Heikin Ashi -->
             <div class="alert-card" id="heikin-card">
