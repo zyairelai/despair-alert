@@ -183,11 +183,11 @@ async function checkAlert(id) {
             }
         }
 
-        if (id === 'liquidity') {
+        if (id === 'sfp-short') {
             const tfSelectors = [
-                document.getElementById('liquidity-1-tf-menu'),
-                document.getElementById('liquidity-2-tf-menu'),
-                document.getElementById('liquidity-3-tf-menu')
+                document.getElementById('sfp-short-1-tf-menu'),
+                document.getElementById('sfp-short-2-tf-menu'),
+                document.getElementById('sfp-short-3-tf-menu')
             ];
             const tfs = tfSelectors
                 .filter(el => el !== null)
@@ -211,10 +211,10 @@ async function checkAlert(id) {
                     }
                 }
 
-                // Condition: current high >= 99.95% of previous high AND current candle is RED (close < open)
-                if (currentCandle.high >= (previousCandle.high * 0.9995) && currentCandle.close < currentCandle.open) {
-                    const voiceMsg = `${shortSymbol} ${currentTf} LIQUIDITY HUNT ACTIVATED.`;
-                    triggerAlert(id, `🩸 ${shortSymbol} ${currentTf} LIQUIDITY HUNT 🩸`, voiceMsg);
+                // Condition: Real-time SFP / Emergency (Current high > previous high AND current candle is RED)
+                if (currentCandle.high > previousCandle.high && currentCandle.close < currentCandle.open) {
+                    const voiceMsg = `${currentTf} swing failure pattern detected.`;
+                    triggerAlert(id, `🩸 ${shortSymbol} ${currentTf} SFP SHORT 🩸`, voiceMsg);
                     break; // stop checking other TFs once one is triggered
                 }
             }

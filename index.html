@@ -229,49 +229,49 @@
                 </div>
             </div>
 
-            <!-- Liquidity -->
-            <div class="alert-card" id="liquidity-card">
+            <!-- SFP Short -->
+            <div class="alert-card" id="sfp-short-card">
                 <div class="card-header">
-                    <h2>LIQUIDITY</h2>
+                    <h2>SFP SHORT</h2>
                     <div class="status-indicator inactive">
-                        <div class="dot" id="liquidity-dot"></div>
-                        <span id="liquidity-status">INACTIVE</span>
+                        <div class="dot" id="sfp-short-dot"></div>
+                        <span id="sfp-short-status">INACTIVE</span>
                     </div>
                 </div>
                 <div class="card-content">
                     <!-- TF 1 -->
-                    <div class="tf-selector" id="liquidity-1-tf-selector">
-                        <button type="button" class="tf-current-btn" id="liquidity-1-tf-trigger"
-                            onclick="toggleTFMenu('liquidity-1')">15m</button>
-                        <div class="tf-dropdown-menu" id="liquidity-1-tf-menu" data-value="15m">
+                    <div class="tf-selector" id="sfp-short-1-tf-selector">
+                        <button type="button" class="tf-current-btn" id="sfp-short-1-tf-trigger"
+                            onclick="toggleTFMenu('sfp-short-1')">15m</button>
+                        <div class="tf-dropdown-menu" id="sfp-short-1-tf-menu" data-value="15m">
                             <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('sfp-short-1', '5m')">5m</button>
                                 <button type="button" class="tf-btn active"
-                                    onclick="setTF('liquidity-1', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '30m')">30m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '1h')">1H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '2h')">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '4h')">4H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '6h')">6H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-1', '1d')">1D</button>
+                                    onclick="setTF('sfp-short-1', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('sfp-short-1', '30m')">30m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('sfp-short-1', '1d')">1D</button>
+                                <button type="button" class="tf-btn" onclick="setTF('sfp-short-1', '1h')">1H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('sfp-short-1', '2h')">2H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('sfp-short-1', '4h')">4H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('sfp-short-1', '6h')">6H</button>
                             </div>
                         </div>
                     </div>
-                    <!-- TF 2 (Was TF 3) -->
-                    <div class="tf-selector" id="liquidity-3-tf-selector">
-                        <button type="button" class="tf-current-btn" id="liquidity-3-tf-trigger"
-                            onclick="toggleTFMenu('liquidity-3')">2h</button>
-                        <div class="tf-dropdown-menu" id="liquidity-3-tf-menu" data-value="2h">
+                    <!-- TF 2 -->
+                    <div class="tf-selector" id="sfp-short-3-tf-selector">
+                        <button type="button" class="tf-current-btn" id="sfp-short-3-tf-trigger"
+                            onclick="toggleTFMenu('sfp-short-3')">2h</button>
+                        <div class="tf-dropdown-menu" id="sfp-short-3-tf-menu" data-value="2h">
                             <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-3', '5m')">5m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-3', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-3', '30m')">30m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-3', '1h')">1H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('sfp-short-3', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('sfp-short-3', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('sfp-short-3', '30m')">30m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('sfp-short-3', '1d')">1D</button>
+                                <button type="button" class="tf-btn" onclick="setTF('sfp-short-3', '1h')">1H</button>
                                 <button type="button" class="tf-btn active"
-                                    onclick="setTF('liquidity-3', '2h')">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-3', '4h')">4H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-3', '6h')">6H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('liquidity-3', '1d')">1D</button>
+                                    onclick="setTF('sfp-short-3', '2h')">2H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('sfp-short-3', '4h')">4H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('sfp-short-3', '6h')">6H</button>
                             </div>
                         </div>
                     </div>
@@ -279,7 +279,7 @@
                     <div class="input-row spacer"></div>
                 </div>
                 <div class="action-group">
-                    <button class="toggle-btn" onclick="toggleAlert('liquidity')">START</button>
+                    <button class="toggle-btn" onclick="toggleAlert('sfp-short')">START</button>
                 </div>
             </div>
         </div>
