@@ -85,6 +85,10 @@ def heikin_ashi(klines):
     return heikin_ashi_df[result_cols]
 
 def one_minute_short(pair, interval, label):
+    # Cooldown: Delay processing by 30 seconds at the start of the hour
+    if (time.time() % 3600) < 30:
+        return
+
     try:
         timeframe = heikin_ashi(get_klines(pair, interval))
         last_candle = timeframe.iloc[-1]

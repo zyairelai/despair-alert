@@ -64,6 +64,10 @@ def detect_pattern(df):
     return None, None
 
 def monitor():
+    # Cooldown: Delay processing by 30 seconds at the start of the hour
+    if (time.time() % 3600) < 30:
+        return
+
     global LAST_ALERT_CANDLE, LAST_ALERT_PATTERN
     try:
         df = get_klines(SYMBOL, INTERVAL)
