@@ -2,7 +2,6 @@ let SYMBOL = localStorage.getItem('globalSymbol') || "BTCUSDT";
 let started = false;
 let sessionStarted = true;
 let lastBeepInterval = 0;
-let beepMode = 'interval';
 let monitoringStartTime = 0;
 let audioCtx = null;
 
@@ -174,13 +173,8 @@ function tick() {
     // which can be missed if the browser throttles background tabs.
     const currentInterval = Math.floor(nowTime / (5 * 60 * 1000));
     if (currentInterval > lastBeepInterval) {
-        const trendText = document.getElementById("trendDisplay").innerText;
-        const isNoTrade = trendText === "NO TRADE ZONE";
-
-        if (beepMode === 'interval' || (beepMode === 'trend' && !isNoTrade)) {
-            console.log("Beeping for interval", currentInterval, "at", now.toLocaleTimeString());
-            beep();
-        }
+        console.log("Beeping for interval", currentInterval, "at", now.toLocaleTimeString());
+        beep();
         lastBeepInterval = currentInterval;
     }
 
@@ -205,12 +199,7 @@ function start() {
     beep();
 }
 
-function setBeepMode(mode) {
-    beepMode = mode;
-    document.getElementById('beepInterval').classList.toggle('active', mode === 'interval');
-    document.getElementById('beepTrend').classList.toggle('active', mode === 'trend');
-    console.log("Beep mode set to:", mode);
-}
+// Beep logic simplified to always trigger on 5m interval
 let monitorInterval = null;
 
 function toggleGlobalSymbol() {

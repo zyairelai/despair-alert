@@ -326,6 +326,13 @@ select option {
     border-color: var(--accent-red) !important;
 }
 
+.disabled-mode {
+    color: var(--text-dim) !important;
+    border-color: var(--glass-border) !important;
+    cursor: default !important;
+    pointer-events: none !important;
+}
+
 .running-title {
     color: var(--accent-red) !important;
 }
@@ -349,6 +356,10 @@ select option {
 
 #global-symbol.title-red {
     color: var(--accent-red) !important;
+}
+
+#global-symbol.title-yellow {
+    color: var(--accent-yellow) !important;
 }
 
 

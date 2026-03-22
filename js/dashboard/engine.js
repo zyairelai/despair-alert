@@ -169,17 +169,16 @@ async function checkAlert(id) {
                 if (currentCandle.low <= emaValCurrent && currentCandle.high >= emaValCurrent) {
                     triggerAlert(id, `🔔 ${shortSymbol} ${tf} TOUCH ${period}EMA 🔔`, `${shortSymbol} ${tf} candle touched ${period} EMA`);
                 }
-            } else {
-                // Stand mode
+            } else if (mode === 'close') {
                 const condEl = document.getElementById('ema-alert-condition');
                 const condition = condEl.dataset.state || condEl.value;
                 const emaValPrev = calculateEMA(prices.slice(0, -1), period);
                 const prevClose = klines[klines.length - 2].close;
 
                 if (condition === 'above' && prevClose > emaValPrev) {
-                    triggerAlert(id, `🚀 ${shortSymbol} ${tf} STAND ABOVE ${period}EMA 🚀`, `${shortSymbol} ${tf} EMA STAND above ${period} EMA`);
+                    triggerAlert(id, `🚀 ${shortSymbol} ${tf} CLOSE ABOVE ${period}EMA 🚀`, `${shortSymbol} ${tf} candle closed above ${period} EMA`);
                 } else if (condition === 'below' && prevClose < emaValPrev) {
-                    triggerAlert(id, `💥 ${shortSymbol} ${tf} STAND BELOW ${period}EMA 💥`, `${shortSymbol} ${tf} EMA STAND below ${period} EMA`);
+                    triggerAlert(id, `💥 ${shortSymbol} ${tf} CLOSE BELOW ${period}EMA 💥`, `${shortSymbol} ${tf} candle closed below ${period} EMA`);
                 }
             }
         }

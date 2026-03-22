@@ -64,7 +64,7 @@
                 </div>
             </div>
 
-            <!-- EMA Alert (Combined Touch & Stand) -->
+            <!-- EMA Alert (Combined Touch & Close) -->
             <div class="alert-card" id="ema-alert-card">
                 <div class="card-header">
                     <h2>EMA</h2>
@@ -96,10 +96,10 @@
                         <button type="button" id="ema-alert-mode" class="condition-toggle" data-state="touch"
                             onclick="toggleEMAAlertMode()">TOUCH</button>
                     </div>
-                    <div class="input-row" id="ema-alert-side-row" style="display:none">
+                    <div class="input-row" id="ema-alert-side-row">
                         <label>Side</label>
-                        <button type="button" id="ema-alert-condition" class="condition-toggle red-mode"
-                            data-state="below" onclick="toggleConditionState('ema-alert-condition')">BELOW</button>
+                        <button type="button" id="ema-alert-condition" class="condition-toggle disabled-mode"
+                            data-state="below" onclick="toggleConditionState('ema-alert-condition')">-</button>
                     </div>
                 </div>
                 <div class="action-group">

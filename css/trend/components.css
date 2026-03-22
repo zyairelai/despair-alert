@@ -30,6 +30,10 @@
     color: var(--accent-red) !important;
 }
 
+#global-symbol.title-yellow {
+    color: var(--accent-yellow) !important;
+}
+
 
 .status-display {
     display: flex;

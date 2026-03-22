@@ -19,12 +19,24 @@ async function updateTitleAndFavicon() {
             haClose = currentHaClose;
         }
 
+        const k = klines[klines.length - 1];
+        const haHigh = Math.max(k.high, haOpen, haClose);
+        const haLow = Math.min(k.low, haOpen, haClose);
+
         const titleEl = document.getElementById('global-symbol');
-        let colorClass = (haClose > haOpen) ? "title-green" : "title-red";
-        let faviconPath = (haClose > haOpen) ? "images/favicon_green.png" : "images/favicon_red.png";
+        let colorClass = "title-yellow";
+        let faviconPath = "images/favicon_yellow.png";
+
+        if (haOpen === haHigh) {
+            colorClass = "title-red";
+            faviconPath = "images/favicon_red.png";
+        } else if (haOpen === haLow) {
+            colorClass = "title-green";
+            faviconPath = "images/favicon_green.png";
+        }
 
         // Apply classes
-        titleEl.classList.remove('title-green', 'title-red');
+        titleEl.classList.remove('title-green', 'title-red', 'title-yellow');
         titleEl.classList.add(colorClass);
 
         // Update Favicon (on all pages)
@@ -46,5 +58,5 @@ function updateFavicon(faviconPath) {
 }
 
 // Global script should handle the interval
-setInterval(updateTitleAndFavicon, 10000);
+setInterval(updateTitleAndFavicon, 5000);
 updateTitleAndFavicon(); // Initial run

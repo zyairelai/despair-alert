@@ -61,7 +61,7 @@ function updateConditionUI(el) {
 
 function toggleConditionState(id) {
     const btn = document.getElementById(id);
-    if (!btn) return;
+    if (!btn || btn.classList.contains('disabled-mode')) return;
 
     let currentState = btn.dataset.state;
     let nextState, nextText;
@@ -75,7 +75,7 @@ function toggleConditionState(id) {
     } else if (id === 'ema-cross-condition') {
         nextState = currentState === 'up' ? 'down' : 'up';
         nextText = nextState === 'up' ? 'UP' : 'DOWN';
-    } else if (id === 'ema-alert-condition' || id === 'standing-condition') {
+    } else if (id === 'ema-alert-condition') {
         nextState = currentState === 'above' ? 'below' : 'above';
         nextText = nextState === 'above' ? 'ABOVE' : 'BELOW';
     }
@@ -93,16 +93,20 @@ function toggleEMAAlertMode() {
     if (!btn || !sideRow) return;
 
     const currentState = btn.dataset.state;
-    const nextState = currentState === 'touch' ? 'stand' : 'touch';
-    const nextText = nextState.toUpperCase();
+    const nextState = currentState === 'touch' ? 'close' : 'touch';
+    const sideBtn = document.getElementById('ema-alert-condition');
 
     btn.dataset.state = nextState;
-    btn.innerText = nextText;
+    btn.innerText = nextState.toUpperCase();
 
-    if (nextState === 'stand') {
-        sideRow.style.display = 'flex';
+    if (nextState === 'close') {
+        sideBtn.classList.remove('disabled-mode');
+        sideBtn.innerText = sideBtn.dataset.state.toUpperCase();
+        updateConditionUI(sideBtn);
     } else {
-        sideRow.style.display = 'none';
+        sideBtn.classList.add('disabled-mode');
+        sideBtn.classList.remove('green-mode', 'red-mode');
+        sideBtn.innerText = "-";
     }
 
     console.log(`EMA Alert mode toggled to: ${nextState}`);
