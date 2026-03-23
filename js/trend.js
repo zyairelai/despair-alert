@@ -73,7 +73,22 @@ async function updateTrend() {
             fetchKlines("5m")
         ]);
 
-        if (p1h.length < 4) return;
+        // 5m (LTF) UI Update - only depends on p5m
+        if (p5m.length >= 21) {
+            const ema10_5m = calculateEMA(p5m, 10);
+            const ema20_5m = calculateEMA(p5m, 20);
+            const ltfUp = ema10_5m > ema20_5m;
+            const ltfDown = ema10_5m < ema20_5m;
+
+            const ltfRow = document.getElementById("ltfRow");
+            const ltfStatus = document.getElementById("ltfStatus");
+            if (ltfRow && ltfStatus && ema10_5m !== null && ema20_5m !== null) {
+                ltfStatus.innerText = ltfUp ? 'UP' : 'DOWN';
+                ltfRow.className = `status-row ${ltfUp ? 'status-up' : 'status-down'}`;
+            }
+        }
+
+        if (p1h.length < 4 || p5m.length < 21) return;
 
         // Emergency 1h Logic: Current high > max(previous 3 highs) AND current 1h candle is RED
         const cur1h = p1h[p1h.length - 1];
@@ -81,14 +96,43 @@ async function updateTrend() {
         const maxPrevHigh = Math.max(...prev3h.map(k => k.high));
         const isEmergency = cur1h.high > maxPrevHigh && cur1h.close < cur1h.open;
 
-        const trendDisplay = document.getElementById("trendDisplay");
+        const ema10_5m = calculateEMA(p5m, 10);
+        const ema20_5m = calculateEMA(p5m, 20);
+        const ltfUp = ema10_5m > ema20_5m;
+        const ltfDown = ema10_5m < ema20_5m;
 
-        if (isEmergency) {
-            trendDisplay.innerText = "EMERGENCY DOWNTREND";
+        let currentTrend = "NEUTRAL";
+        if (isEmergency) currentTrend = "DOWNTREND";
+        else if (ltfUp) currentTrend = "UPTREND";
+        else if (ltfDown) currentTrend = "DOWNTREND";
+
+        const trendDisplay = document.getElementById("trendDisplay");
+        const symbolBtn = document.getElementById("global-symbol");
+
+        if (currentTrend === "UPTREND") {
+            trendDisplay.innerText = "CURRENTLY UPTREND";
+            trendDisplay.className = "overall-trend trend-up";
+            if (symbolBtn) {
+                symbolBtn.classList.add("title-green");
+                symbolBtn.classList.remove("title-red", "title-yellow");
+            }
+            updateFavicon("images/favicon_green.png");
+        } else if (currentTrend === "DOWNTREND") {
+            trendDisplay.innerText = isEmergency ? "EMERGENCY DOWNTREND" : "CURRENTLY DOWNTREND";
             trendDisplay.className = "overall-trend trend-down";
+            if (symbolBtn) {
+                symbolBtn.classList.add("title-red");
+                symbolBtn.classList.remove("title-green", "title-yellow");
+            }
+            updateFavicon("images/favicon_red.png");
         } else {
-            trendDisplay.innerText = "MONITORING...";
+            trendDisplay.innerText = "INITIALIZING...";
             trendDisplay.className = "overall-trend trend-neutral";
+            if (symbolBtn) {
+                symbolBtn.classList.remove("title-green", "title-red");
+                symbolBtn.classList.add("title-yellow");
+            }
+            updateFavicon("images/favicon_yellow.png");
         }
 
         checkAndSendAlert(p1h, p15m, p5m, isEmergency);
@@ -118,11 +162,6 @@ function checkAndSendAlert(p1h, p15m, p5m, isEmergency = false) {
     const cooldownEnd = lastEmergencyHour ? (parseInt(lastEmergencyHour) + 3600000 + 30000) : 0;
     const isNewEmergencyHour = nowTs >= cooldownEnd;
 
-    // 0. Skip if monitoring started less than 1 minute ago
-    if (Date.now() - monitoringStartTime < 60000) {
-        return;
-    }
-
     // 1. Emergency Case: 1H Breakdown
     if (isEmergency && isNewEmergencyHour) {
         const symbolShort = SYMBOL.replace("USDT", "");
@@ -136,12 +175,36 @@ function checkAndSendAlert(p1h, p15m, p5m, isEmergency = false) {
         return;
     }
 
-    // 1.5. Calculate EMA Filters (Stricter Condition)
-    const ema10_15m = calculateEMA(p15m, 10);
-    const ema20_15m = calculateEMA(p15m, 20);
+    // 1.5. Local Variables for Cross Logic
     const ema10_5m = calculateEMA(p5m, 10);
     const ema20_5m = calculateEMA(p5m, 20);
+    const ltfUp = ema10_5m > ema20_5m;
+    const ltfDown = ema10_5m < ema20_5m;
 
+    // 1.6. Bearish Cross Logic (Only alert UP to DOWN on closed candle)
+    const lastAlertTrend = localStorage.getItem('lastAlertTrend'); // Store previous trend state
+    const current5mTs = p5m[p5m.length - 1].timestamp;
+    const lastAlertCandle = localStorage.getItem('lastAlertCandle');
+    const isNewCandle = !lastAlertCandle || current5mTs > parseInt(lastAlertCandle);
+
+    const closedCandles = p5m.slice(0, -1);
+    const ema10_closed = calculateEMA(closedCandles, 10);
+    const ema20_closed = calculateEMA(closedCandles, 20);
+    const ema10_prev_closed = calculateEMA(closedCandles.slice(0, -1), 10);
+    const ema20_prev_closed = calculateEMA(closedCandles.slice(0, -1), 20);
+
+    const isBearishCross = (ema10_prev_closed > ema20_prev_closed) && (ema10_closed < ema20_closed);
+
+    if (isBearishCross && isNewCandle) {
+        const symbolShort = SYMBOL.replace("USDT", "");
+        const msg = `💥 ${symbolShort} 5m EMA BEARISH CROSS 💥`;
+        sendTelegramAlert(msg);
+        speak(`${symbolShort} 5 minute trend turned into DOWN.`);
+        localStorage.setItem('lastAlertCandle', current5mTs.toString());
+    }
+
+    const ema10_15m = calculateEMA(p15m, 10);
+    const ema20_15m = calculateEMA(p15m, 20);
     const isEmaConditionMet = (ema20_15m > ema10_15m) || (ema20_5m > ema10_5m);
 
     // 2. Shooting Star Case: 15m, 5m
@@ -228,8 +291,8 @@ function start() {
     lastBeepInterval = Math.floor(Date.now() / (5 * 60 * 1000));
 
     monitorInterval = setInterval(tick, 1000);
+    updateTrend(); // Initial Immediate Update
     tick();
-    updateTrend();
 
     // Initial check does not beep or alert, just verifies audio
     beep();
@@ -270,6 +333,14 @@ function updateGlobalSymbol() {
     }
 
     // FULL UI RESET: Revert elements to initial state
+    document.getElementById("ltfStatus").innerText = "LOADING...";
+    document.getElementById("ltfRow").className = "status-row status-neutral";
+
+    const symbolBtn = document.getElementById("global-symbol");
+    if (symbolBtn) {
+        symbolBtn.classList.remove("title-green", "title-red");
+        symbolBtn.classList.add("title-yellow");
+    }
     const trendDisplay = document.getElementById("trendDisplay");
     trendDisplay.innerText = "INITIALIZING...";
     trendDisplay.className = "overall-trend trend-neutral";

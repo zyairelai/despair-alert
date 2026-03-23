@@ -66,19 +66,19 @@ async function checkAlert(id) {
             const longEl = document.getElementById('ema-cross-long');
             const shortPeriod = parseInt(shortEl.value) || parseInt(shortEl.placeholder) || 10;
             const longPeriod = parseInt(longEl.value) || parseInt(longEl.placeholder) || 20;
-            const el = document.getElementById('ema-cross-condition');
-            const condition = el.dataset.state || el.value;
 
             const klines = await fetchKlines(symbol, tf);
+            if (klines.length < Math.max(shortPeriod, longPeriod) + 2) return;
             const prices = klines.map(k => k.close);
 
             const emaShortCurrent = calculateEMA(prices, shortPeriod);
             const emaLongCurrent = calculateEMA(prices, longPeriod);
+            const emaShortPrev = calculateEMA(prices.slice(0, -1), shortPeriod);
+            const emaLongPrev = calculateEMA(prices.slice(0, -1), longPeriod);
 
-            if (condition === 'up' && emaShortCurrent > emaLongCurrent) {
-                triggerAlert(id, `🚀 ${shortSymbol} ${tf} EMA CROSS UP 🚀`, `${shortSymbol} ${tf} EMA cross to uptrend`);
-            } else if (condition === 'down' && emaShortCurrent < emaLongCurrent) {
-                triggerAlert(id, `💥 ${shortSymbol} ${tf} EMA CROSS DOWN 💥`, `${shortSymbol} ${tf} EMA cross to downtrend`);
+            // Trigger only on Bearish Cross (UP-to-DOWN) on closed candle
+            if (emaShortPrev > emaLongPrev && emaShortCurrent < emaLongCurrent) {
+                triggerAlert(id, `🩸 ${shortSymbol} ${tf} EMA BEARISH CROSS 🩸`, `Trend for ${shortSymbol} ${tf} turned into DOWN.`);
             }
         }
 
@@ -186,7 +186,6 @@ async function checkAlert(id) {
         if (id === 'sfp-short') {
             const tfSelectors = [
                 document.getElementById('sfp-short-1-tf-menu'),
-                document.getElementById('sfp-short-2-tf-menu'),
                 document.getElementById('sfp-short-3-tf-menu')
             ];
             const tfs = tfSelectors
