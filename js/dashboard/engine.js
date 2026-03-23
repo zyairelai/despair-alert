@@ -128,8 +128,8 @@ async function checkAlert(id) {
                 const nextCandleTime = Math.ceil(now / tfMs) * tfMs;
                 const msRemaining = nextCandleTime - now;
 
-                if (msRemaining <= 5000) {
-                    console.log(`Auto-stopping ${id} (5s before next candle)`);
+                if (msRemaining <= 3000) {
+                    console.log(`Auto-stopping ${id} (3s before next candle)`);
                     toggleAlert(id);
                     return;
                 }

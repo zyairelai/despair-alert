@@ -56,7 +56,7 @@ function toggleAlert(id) {
         statusText.innerText = "MONITORING";
 
         checkAlert(id);
-        alert.interval = setInterval(() => checkAlert(id), 5000);
+        alert.interval = setInterval(() => checkAlert(id), 3000);
     }
 }
 

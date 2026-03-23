@@ -58,5 +58,5 @@ function updateFavicon(faviconPath) {
 }
 
 // Global script should handle the interval
-setInterval(updateTitleAndFavicon, 5000);
+setInterval(updateTitleAndFavicon, 3000);
 updateTitleAndFavicon(); // Initial run
