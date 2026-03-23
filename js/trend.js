@@ -76,22 +76,52 @@ async function updateTrend() {
         // 5m (LTF) UI Update - only depends on p5m
         const closed5m = p5m.slice(0, -1);
 
-        // 5m (LTF) UI Update - only depends on closed5m
-        if (closed5m.length >= 21) {
-            const ema10_5m = calculateEMA(closed5m, 10);
-            const ema20_5m = calculateEMA(closed5m, 20);
-            const ltfUp = ema10_5m > ema20_5m;
-            const ltfDown = ema10_5m < ema20_5m;
+        if (closed5m.length < 51) return; // Need at least 50 for EMA50 + some buffer
 
-            const ltfRow = document.getElementById("ltfRow");
-            const ltfStatus = document.getElementById("ltfStatus");
-            if (ltfRow && ltfStatus && ema10_5m !== null && ema20_5m !== null) {
-                ltfStatus.innerText = ltfUp ? 'UP' : 'DOWN';
-                ltfRow.className = `status-row ${ltfUp ? 'status-up' : 'status-down'}`;
+        // Helper to check 10/20/50 condition for a slice
+        const getTrendAt = (slice) => {
+            const ema10 = calculateEMA(slice, 10);
+            const ema20 = calculateEMA(slice, 20);
+            const ema50 = calculateEMA(slice, 50);
+
+            if (ema10 === null || ema20 === null || ema50 === null) return "NEUTRAL";
+
+            // Uptrend: 10 > 20 > 50 (Wait 4 candles logic applied outside)
+            // Downtrend: 10 < 20 (Immediately)
+            if (ema10 < ema20) return "DOWNTREND";
+            if (ema10 > ema20 && ema20 > ema50) return "UPTREND_CANDIDATE";
+            return "NEUTRAL";
+        };
+
+        // Check last 5 closed candles for Uptrend (EMA10 > EMA20 > EMA50)
+        let isUptrendConfirmed = true;
+        for (let i = 0; i < 5; i++) {
+            const slice = closed5m.slice(0, closed5m.length - i);
+            if (getTrendAt(slice) !== "UPTREND_CANDIDATE") {
+                isUptrendConfirmed = false;
+                break;
             }
         }
 
-        if (p1h.length < 4 || closed5m.length < 21) return;
+        // Current closed candle trend for UI
+        const lastClosedTrend = getTrendAt(closed5m);
+        const ltfStatus = document.getElementById("ltfStatus");
+        const ltfRow = document.getElementById("ltfRow");
+
+        if (ltfRow && ltfStatus) {
+            if (lastClosedTrend === "DOWNTREND") {
+                ltfStatus.innerText = 'DOWN';
+                ltfRow.className = 'status-row status-down';
+            } else if (isUptrendConfirmed) {
+                ltfStatus.innerText = 'UP';
+                ltfRow.className = 'status-row status-up';
+            } else {
+                ltfStatus.innerText = 'NEUTRAL';
+                ltfRow.className = 'status-row status-neutral';
+            }
+        }
+
+        if (p1h.length < 4) return;
 
         // Emergency 1h Logic: Current high > max(previous 3 highs) AND current 1h candle is RED
         const cur1h = p1h[p1h.length - 1];
@@ -99,18 +129,15 @@ async function updateTrend() {
         const maxPrevHigh = Math.max(...prev3h.map(k => k.high));
         const isEmergency = cur1h.high > maxPrevHigh && cur1h.close < cur1h.open;
 
-        const ema10_5m = calculateEMA(closed5m, 10);
-        const ema20_5m = calculateEMA(closed5m, 20);
-        const ltfUp = ema10_5m > ema20_5m;
-        const ltfDown = ema10_5m < ema20_5m;
-
-        let currentTrend = "NEUTRAL";
+        let currentTrend = "NO TRADE ZONE";
         if (isEmergency) currentTrend = "DOWNTREND";
-        else if (ltfUp) currentTrend = "UPTREND";
-        else if (ltfDown) currentTrend = "DOWNTREND";
+        else if (isUptrendConfirmed) currentTrend = "UPTREND";
+        else if (lastClosedTrend === "DOWNTREND") currentTrend = "DOWNTREND";
 
         const trendDisplay = document.getElementById("trendDisplay");
         const symbolBtn = document.getElementById("global-symbol");
+
+        const lastTrendState = localStorage.getItem('lastTrendState') || "INITIALIZING";
 
         if (currentTrend === "UPTREND") {
             trendDisplay.innerText = "CURRENTLY UPTREND";
@@ -120,6 +147,13 @@ async function updateTrend() {
                 symbolBtn.classList.remove("title-red", "title-yellow");
             }
             updateFavicon("images/favicon_green.png");
+
+            // Alert only on change to UPTREND
+            if (lastTrendState !== "UPTREND") {
+                const symbolShort = SYMBOL.replace("USDT", "");
+                speak(`${symbolShort} 5 minute trend turned into UP.`);
+                sendTelegramAlert(`🚀 ${symbolShort} 5m Trend: UPTREND 🚀`);
+            }
         } else if (currentTrend === "DOWNTREND") {
             trendDisplay.innerText = isEmergency ? "EMERGENCY DOWNTREND" : "CURRENTLY DOWNTREND";
             trendDisplay.className = "overall-trend trend-down";
@@ -128,8 +162,15 @@ async function updateTrend() {
                 symbolBtn.classList.remove("title-green", "title-yellow");
             }
             updateFavicon("images/favicon_red.png");
+
+            // Alert only on change to DOWNTREND
+            if (lastTrendState !== "DOWNTREND") {
+                const symbolShort = SYMBOL.replace("USDT", "");
+                speak(`${symbolShort} 5 minute trend turned into DOWN.`);
+                sendTelegramAlert(`💥 ${symbolShort} 5m Trend: DOWNTREND 💥`);
+            }
         } else {
-            trendDisplay.innerText = "INITIALIZING...";
+            trendDisplay.innerText = "NO TRADE ZONE";
             trendDisplay.className = "overall-trend trend-neutral";
             if (symbolBtn) {
                 symbolBtn.classList.remove("title-green", "title-red");
@@ -137,6 +178,8 @@ async function updateTrend() {
             }
             updateFavicon("images/favicon_yellow.png");
         }
+
+        localStorage.setItem('lastTrendState', currentTrend);
 
         checkAndSendAlert(p1h, p15m, p5m, isEmergency);
     } catch (e) {

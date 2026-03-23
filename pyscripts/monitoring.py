@@ -49,6 +49,7 @@ def get_klines(pair, interval):
     candlestick = pandas.DataFrame(result, columns=cols).sort_values("timestamp")
     candlestick['10EMA'] = candlestick['close'].ewm(span=10, adjust=False).mean()
     candlestick['20EMA'] = candlestick['close'].ewm(span=20, adjust=False).mean()
+    candlestick['50EMA'] = candlestick['close'].ewm(span=50, adjust=False).mean()
     return candlestick
 
 def monitor():
@@ -61,33 +62,31 @@ def monitor():
         prev_1h = df_1h.iloc[-2]
         
         # 5m candles: last_closed is iloc[-2], current is iloc[-1]
-        last_closed = df_ltf.iloc[-2]
-        current_ltf = df_ltf.iloc[-1]
+        if len(df_ltf) < 51: return
+        last_closed_idx = len(df_ltf) - 2
+        
+        # Check last 5 closed candles for Uptrend (EMA10 > EMA20 > EMA50)
+        is_uptrend_confirmed = True
+        for i in range(5):
+            if get_trend_at(df_ltf, last_closed_idx - i) != "UPTREND_CANDIDATE":
+                is_uptrend_confirmed = False
+                break
+        
+        last_closed_trend = get_trend_at(df_ltf, last_closed_idx)
         
         # Emergency 1h Logic: Current high > previous high AND current 1h candle is RED
         is_emergency = last_1h['high'] > prev_1h['high'] and last_1h['close'] < last_1h['open']
 
-        # Trend logic (Alerting on closed candle):
-        # 5m (LTF): 10/20 EMA cross
-        ltf_up = last_closed['10EMA'] > last_closed['20EMA']
-        ltf_down = last_closed['10EMA'] < last_closed['20EMA']
-        
         if is_emergency: current_trend = "DOWNTREND"
-        elif ltf_up: current_trend = "UPTREND"
-        elif ltf_down: current_trend = "DOWNTREND"
+        elif is_uptrend_confirmed: current_trend = "UPTREND"
+        elif last_closed_trend == "DOWNTREND": current_trend = "DOWNTREND"
         else: current_trend = "NO TRADE ZONE"
         
-        ltf_color = "green" if ltf_up else "red" if ltf_down else "yellow"
         trend_color = "green" if current_trend == "UPTREND" else "red" if current_trend == "DOWNTREND" else "yellow"
-        
-        ltf_label = 'UP' if ltf_up else ('DOWN' if ltf_down else 'NO TRADE ZONE')
-        
-        # Output lines with independent coloring
         display_trend = "EMERGENCY DOWNTREND" if is_emergency else current_trend
+        # Output lines
         lines = [
             f"\r[{colored(SYMBOL, 'cyan')}]",
-            colored(f" {LTF}: {ltf_label}", ltf_color),
-            "", # Spacer line
             colored(f" [+] OVERALL TREND: {display_trend}", trend_color)
         ]
         
@@ -98,7 +97,7 @@ def monitor():
         sys.stdout.flush()
         
         # Alert Logic: Trigger once per 5m candle change after candle close
-        current_candle_ts = current_ltf['timestamp']
+        current_candle_ts = df_ltf.iloc[-1]['timestamp']
         current_hour_ts = last_1h['timestamp']
         
         is_new_candle = LAST_ALERT_CANDLE is None or current_candle_ts > LAST_ALERT_CANDLE
@@ -118,29 +117,31 @@ def monitor():
 
         # 1. Emergency Case: Bypass candle rule
         if is_emergency:
-            trigger_msg = f"🚨 {SYMBOL.replace('USDT', '')} 1H EMERGENCY DOWNTREND 🚨"
-            telegram_bot_sendtext(trigger_msg)
+            if LAST_ALERT_TREND != "DOWNTREND":
+                trigger_msg = f"🚨 {SYMBOL.replace('USDT', '')} 1H EMERGENCY DOWNTREND 🚨"
+                telegram_bot_sendtext(trigger_msg)
             LAST_ALERT_TREND = "DOWNTREND"
             LAST_ALERT_CANDLE = current_candle_ts
             LAST_EMERGENCY_HOUR = current_hour_ts
             LAST_TREND = current_trend
             return
 
-        # 2. Standard Case: Once per 5m candle start, check if trend of CLOSED candle changed
-        if is_new_candle and current_trend != LAST_ALERT_TREND:
-            first_run = LAST_ALERT_TREND is None
-            trigger_msg = None
-            emoji = ""
-            
-            if current_trend == "UPTREND":
-                emoji = "🚀"
-                trigger_msg = f"{emoji} {SYMBOL.replace('USDT', '')} Trend: {current_trend} {emoji}"
-            elif current_trend == "DOWNTREND":
-                emoji = "💥"
-                trigger_msg = f"{emoji} {SYMBOL.replace('USDT', '')} Trend: {current_trend} {emoji}"
-            
-            if trigger_msg and not first_run:
-                telegram_bot_sendtext(trigger_msg)
+        # 2. Standard Case: Alert only on change TO UPTREND or TO DOWNTREND
+        if current_trend != LAST_ALERT_TREND:
+            if current_trend in ["UPTREND", "DOWNTREND"]:
+                first_run = LAST_ALERT_TREND is None
+                trigger_msg = None
+                emoji = ""
+                
+                if current_trend == "UPTREND":
+                    emoji = "🚀"
+                    trigger_msg = f"{emoji} {SYMBOL.replace('USDT', '')} Trend: {current_trend} {emoji}"
+                elif current_trend == "DOWNTREND":
+                    emoji = "💥"
+                    trigger_msg = f"{emoji} {SYMBOL.replace('USDT', '')} Trend: {current_trend} {emoji}"
+                
+                if trigger_msg and not first_run:
+                    telegram_bot_sendtext(trigger_msg)
             
             LAST_ALERT_TREND = current_trend
             LAST_ALERT_CANDLE = current_candle_ts
