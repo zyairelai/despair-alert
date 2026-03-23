@@ -197,10 +197,11 @@ async function checkAlert(id) {
 
             for (const currentTf of uniqueTfs) {
                 const klines = await fetchKlines(symbol, currentTf);
-                if (klines.length < 2) continue;
+                if (klines.length < 4) continue;
 
                 const currentCandle = klines[klines.length - 1];
-                const previousCandle = klines[klines.length - 2];
+                const previousKlines = klines.slice(klines.length - 4, klines.length - 1); // 3 previous candles
+                const maxPreviousHigh = Math.max(...previousKlines.map(k => k.high));
 
                 // Guard: For 1h or higher, skip if the candle is less than 3 minutes old
                 const isHtf = currentTf.includes('h') || currentTf.includes('d');
@@ -211,10 +212,9 @@ async function checkAlert(id) {
                     }
                 }
 
-                // Condition: Real-time SFP / Emergency (Current high > previous high AND current candle is RED)
-                if (currentCandle.high > previousCandle.high && currentCandle.close < currentCandle.open) {
-                    const voiceMsg = `${currentTf} swing failure pattern detected.`;
-                    triggerAlert(id, `🩸 ${shortSymbol} ${currentTf} SFP SHORT 🩸`, voiceMsg);
+                if (currentCandle.high > maxPreviousHigh && currentCandle.close < currentCandle.open) {
+                    const voiceMsg = `${currentTf} bearish swing failure pattern detected.`;
+                    triggerAlert(id, `🩸 ${shortSymbol} ${currentTf} BEARISH SFP 🩸`, voiceMsg);
                     break; // stop checking other TFs once one is triggered
                 }
             }
