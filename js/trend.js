@@ -131,7 +131,16 @@ async function updateTrend() {
 
         const lastTrendState = localStorage.getItem('lastTrendState') || "INITIALIZING";
 
-        if (currentTrend === "UPTREND") {
+        // UI Visuals - Priority to EMERGENCY if present
+        if (isEmergency) {
+            trendDisplay.innerText = "1H EMERGENCY BREAKDOWN";
+            trendDisplay.className = "overall-trend trend-down";
+            if (symbolBtn) {
+                symbolBtn.classList.add("title-red");
+                symbolBtn.classList.remove("title-green", "title-yellow");
+            }
+            updateFavicon("images/favicon_red.png");
+        } else if (currentTrend === "UPTREND") {
             trendDisplay.innerText = "CURRENTLY UPTREND";
             trendDisplay.className = "overall-trend trend-up";
             if (symbolBtn) {
@@ -139,13 +148,6 @@ async function updateTrend() {
                 symbolBtn.classList.remove("title-red", "title-yellow");
             }
             updateFavicon("images/favicon_green.png");
-
-            // Alert only on change to UPTREND and NOT on first initial load
-            if (lastTrendState !== "UPTREND" && lastTrendState !== "INITIALIZING") {
-                const symbolShort = SYMBOL.replace("USDT", "");
-                speak(`${symbolShort} trend: UPTREND`);
-                sendTelegramAlert(`🚀 ${symbolShort} trend: UPTREND 🚀`);
-            }
         } else if (currentTrend === "DOWNTREND") {
             trendDisplay.innerText = "CURRENTLY DOWNTREND";
             trendDisplay.className = "overall-trend trend-down";
@@ -154,13 +156,6 @@ async function updateTrend() {
                 symbolBtn.classList.remove("title-green", "title-yellow");
             }
             updateFavicon("images/favicon_red.png");
-
-            // Alert only on change to DOWNTREND and NOT on first initial load
-            if (lastTrendState !== "DOWNTREND" && lastTrendState !== "INITIALIZING") {
-                const symbolShort = SYMBOL.replace("USDT", "");
-                speak(`${symbolShort} trend: DOWNTREND`);
-                sendTelegramAlert(`💥 ${symbolShort} trend: DOWNTREND 💥`);
-            }
         } else {
             trendDisplay.innerText = "NO TRADE ZONE";
             trendDisplay.className = "overall-trend trend-neutral";
@@ -169,6 +164,21 @@ async function updateTrend() {
                 symbolBtn.classList.add("title-yellow");
             }
             updateFavicon("images/favicon_yellow.png");
+        }
+
+        // Trend Alerts (Independent of Emergency)
+        if (currentTrend === "UPTREND") {
+            if (lastTrendState !== "UPTREND" && lastTrendState !== "INITIALIZING") {
+                const symbolShort = SYMBOL.replace("USDT", "");
+                speak(`${symbolShort} trend: UPTREND`);
+                sendTelegramAlert(`🚀 ${symbolShort} trend: UPTREND 🚀`);
+            }
+        } else if (currentTrend === "DOWNTREND") {
+            if (lastTrendState !== "DOWNTREND" && lastTrendState !== "INITIALIZING") {
+                const symbolShort = SYMBOL.replace("USDT", "");
+                speak(`${symbolShort} trend: DOWNTREND`);
+                sendTelegramAlert(`💥 ${symbolShort} trend: DOWNTREND 💥`);
+            }
         }
 
         localStorage.setItem('lastTrendState', currentTrend);
@@ -210,7 +220,6 @@ function checkAndSendAlert(p1h, p15m, p5m, isEmergency = false) {
 
         localStorage.setItem('lastEmergencyHour', currentHourTs.toString());
         sessionStarted = true;
-        return;
     }
 
     // 1.5. Local Variables for Cross Logic (Stable Trend)

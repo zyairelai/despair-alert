@@ -77,8 +77,7 @@ def monitor():
         # Emergency 1h Logic: Current high > previous high AND current 1h candle is RED
         is_emergency = last_1h['high'] > prev_1h['high'] and last_1h['close'] < last_1h['open']
 
-        if is_emergency: current_trend = "DOWNTREND"
-        elif is_uptrend_confirmed: current_trend = "UPTREND"
+        if is_uptrend_confirmed: current_trend = "UPTREND"
         elif last_closed_trend == "DOWNTREND": current_trend = "DOWNTREND"
         else: current_trend = "NO TRADE ZONE"
         
@@ -115,16 +114,11 @@ def monitor():
             LAST_TREND = current_trend
             return
 
-        # 1. Emergency Case: Bypass candle rule
-        if is_emergency:
-            if LAST_ALERT_TREND != "DOWNTREND":
-                trigger_msg = f"🚨 {SYMBOL.replace('USDT', '')} 1H EMERGENCY DOWNTREND 🚨"
-                telegram_bot_sendtext(trigger_msg)
-            LAST_ALERT_TREND = "DOWNTREND"
-            LAST_ALERT_CANDLE = current_candle_ts
+        # 1. Emergency Case: Alert once per hour
+        if is_emergency and is_new_emergency_hour:
+            trigger_msg = f"🚨 {SYMBOL.replace('USDT', '')} 1H EMERGENCY DOWNTREND 🚨"
+            telegram_bot_sendtext(trigger_msg)
             LAST_EMERGENCY_HOUR = current_hour_ts
-            LAST_TREND = current_trend
-            return
 
         # 2. Standard Case: Alert only on change TO UPTREND or TO DOWNTREND
         if current_trend != LAST_ALERT_TREND:
