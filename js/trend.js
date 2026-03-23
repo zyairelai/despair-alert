@@ -74,9 +74,12 @@ async function updateTrend() {
         ]);
 
         // 5m (LTF) UI Update - only depends on p5m
-        if (p5m.length >= 21) {
-            const ema10_5m = calculateEMA(p5m, 10);
-            const ema20_5m = calculateEMA(p5m, 20);
+        const closed5m = p5m.slice(0, -1);
+
+        // 5m (LTF) UI Update - only depends on closed5m
+        if (closed5m.length >= 21) {
+            const ema10_5m = calculateEMA(closed5m, 10);
+            const ema20_5m = calculateEMA(closed5m, 20);
             const ltfUp = ema10_5m > ema20_5m;
             const ltfDown = ema10_5m < ema20_5m;
 
@@ -88,7 +91,7 @@ async function updateTrend() {
             }
         }
 
-        if (p1h.length < 4 || p5m.length < 21) return;
+        if (p1h.length < 4 || closed5m.length < 21) return;
 
         // Emergency 1h Logic: Current high > max(previous 3 highs) AND current 1h candle is RED
         const cur1h = p1h[p1h.length - 1];
@@ -96,8 +99,8 @@ async function updateTrend() {
         const maxPrevHigh = Math.max(...prev3h.map(k => k.high));
         const isEmergency = cur1h.high > maxPrevHigh && cur1h.close < cur1h.open;
 
-        const ema10_5m = calculateEMA(p5m, 10);
-        const ema20_5m = calculateEMA(p5m, 20);
+        const ema10_5m = calculateEMA(closed5m, 10);
+        const ema20_5m = calculateEMA(closed5m, 20);
         const ltfUp = ema10_5m > ema20_5m;
         const ltfDown = ema10_5m < ema20_5m;
 
@@ -175,9 +178,10 @@ function checkAndSendAlert(p1h, p15m, p5m, isEmergency = false) {
         return;
     }
 
-    // 1.5. Local Variables for Cross Logic
-    const ema10_5m = calculateEMA(p5m, 10);
-    const ema20_5m = calculateEMA(p5m, 20);
+    // 1.5. Local Variables for Cross Logic (Stable Trend)
+    const closed5m = p5m.slice(0, -1);
+    const ema10_5m = calculateEMA(closed5m, 10);
+    const ema20_5m = calculateEMA(closed5m, 20);
     const ltfUp = ema10_5m > ema20_5m;
     const ltfDown = ema10_5m < ema20_5m;
 
@@ -361,5 +365,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('global-symbol');
     if (btn) {
         btn.innerText = SYMBOL;
+        btn.classList.add('title-yellow');
     }
 });
