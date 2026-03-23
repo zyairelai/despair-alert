@@ -57,9 +57,8 @@ function isShootingStar(klines) {
 
 async function updateTrend() {
     try {
-        const [p1h, p30m, p15m, p5m] = await Promise.all([
+        const [p1h, p15m, p5m] = await Promise.all([
             fetchKlines("1h"),
-            fetchKlines("30m"),
             fetchKlines("15m"),
             fetchKlines("5m")
         ]);
@@ -82,7 +81,7 @@ async function updateTrend() {
             trendDisplay.className = "overall-trend trend-neutral";
         }
 
-        checkAndSendAlert(p1h, p30m, p15m, p5m, isEmergency);
+        checkAndSendAlert(p1h, p15m, p5m, isEmergency);
     } catch (e) {
         console.error("Trend update failed", e);
     }
@@ -100,7 +99,7 @@ function updateFavicon(path) {
 }
 
 
-function checkAndSendAlert(p1h, p30m, p15m, p5m, isEmergency = false) {
+function checkAndSendAlert(p1h, p15m, p5m, isEmergency = false) {
     const lastEmergencyHour = localStorage.getItem('lastEmergencyHour');
 
     const now = new Date();
@@ -127,7 +126,7 @@ function checkAndSendAlert(p1h, p30m, p15m, p5m, isEmergency = false) {
         return;
     }
 
-    // 2. Shooting Star Case: 1H, 30m, 15m
+    // 2. Shooting Star Case: 1H, 15m
     const checkSS = (tf, klines, intervalMs, storageKey) => {
         const lastAlert = localStorage.getItem(storageKey);
         const intervalStart = Math.floor(nowTs / intervalMs) * intervalMs;
@@ -152,7 +151,6 @@ function checkAndSendAlert(p1h, p30m, p15m, p5m, isEmergency = false) {
 
     // Check each timeframe independently
     checkSS("1H", p1h, 3600000, 'lastSS1h');
-    checkSS("30m", p30m, 1800000, 'lastSS30m');
     checkSS("15m", p15m, 900000, 'lastSS15m');
 }
 
@@ -263,7 +261,6 @@ function updateGlobalSymbol() {
     localStorage.removeItem('lastAlertCandle');
     localStorage.removeItem('lastEmergencyHour');
     localStorage.removeItem('lastSS1h');
-    localStorage.removeItem('lastSS30m');
     localStorage.removeItem('lastSS15m');
     localStorage.removeItem('lastShootingStarHour');
 }
