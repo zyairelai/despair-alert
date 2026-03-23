@@ -55,6 +55,16 @@ function isShootingStar(klines) {
     return cond1 && cond2 && cond3 && cond4;
 }
 
+function calculateEMA(data, period) {
+    if (data.length < period) return null;
+    const k = 2 / (period + 1);
+    let ema = data.slice(0, period).reduce((acc, val) => acc + val.close, 0) / period;
+    for (let i = period; i < data.length; i++) {
+        ema = (data[i].close - ema) * k + ema;
+    }
+    return ema;
+}
+
 async function updateTrend() {
     try {
         const [p1h, p15m, p5m] = await Promise.all([
@@ -126,8 +136,18 @@ function checkAndSendAlert(p1h, p15m, p5m, isEmergency = false) {
         return;
     }
 
-    // 2. Shooting Star Case: 1H, 15m
+    // 1.5. Calculate EMA Filters (Stricter Condition)
+    const ema10_15m = calculateEMA(p15m, 10);
+    const ema20_15m = calculateEMA(p15m, 20);
+    const ema10_5m = calculateEMA(p5m, 10);
+    const ema20_5m = calculateEMA(p5m, 20);
+
+    const isEmaConditionMet = (ema20_15m > ema10_15m) || (ema20_5m > ema10_5m);
+
+    // 2. Shooting Star Case: 15m, 5m
     const checkSS = (tf, klines, intervalMs, storageKey) => {
+        if (!isEmaConditionMet) return false; // Early exit if EMA condition fails
+
         const lastAlert = localStorage.getItem(storageKey);
         const intervalStart = Math.floor(nowTs / intervalMs) * intervalMs;
 
@@ -150,8 +170,8 @@ function checkAndSendAlert(p1h, p15m, p5m, isEmergency = false) {
     };
 
     // Check each timeframe independently
-    checkSS("1H", p1h, 3600000, 'lastSS1h');
     checkSS("15m", p15m, 900000, 'lastSS15m');
+    checkSS("5m", p5m, 300000, 'lastSS5m');
 }
 
 function beep() {
