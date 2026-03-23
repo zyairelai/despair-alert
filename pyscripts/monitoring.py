@@ -135,10 +135,10 @@ def monitor():
                 
                 if current_trend == "UPTREND":
                     emoji = "🚀"
-                    trigger_msg = f"{emoji} {SYMBOL.replace('USDT', '')} Trend: {current_trend} {emoji}"
+                    trigger_msg = f"{emoji} {SYMBOL.replace('USDT', '')} trend: {current_trend} {emoji}"
                 elif current_trend == "DOWNTREND":
                     emoji = "💥"
-                    trigger_msg = f"{emoji} {SYMBOL.replace('USDT', '')} Trend: {current_trend} {emoji}"
+                    trigger_msg = f"{emoji} {SYMBOL.replace('USDT', '')} trend: {current_trend} {emoji}"
                 
                 if trigger_msg and not first_run:
                     telegram_bot_sendtext(trigger_msg)

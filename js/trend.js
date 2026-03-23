@@ -104,22 +104,8 @@ async function updateTrend() {
         }
 
         // Current closed candle trend for UI
+        // Current closed candle trend
         const lastClosedTrend = getTrendAt(closed5m);
-        const ltfStatus = document.getElementById("ltfStatus");
-        const ltfRow = document.getElementById("ltfRow");
-
-        if (ltfRow && ltfStatus) {
-            if (lastClosedTrend === "DOWNTREND") {
-                ltfStatus.innerText = 'DOWN';
-                ltfRow.className = 'status-row status-down';
-            } else if (isUptrendConfirmed) {
-                ltfStatus.innerText = 'UP';
-                ltfRow.className = 'status-row status-up';
-            } else {
-                ltfStatus.innerText = 'NEUTRAL';
-                ltfRow.className = 'status-row status-neutral';
-            }
-        }
 
         if (p1h.length < 4) return;
 
@@ -148,11 +134,11 @@ async function updateTrend() {
             }
             updateFavicon("images/favicon_green.png");
 
-            // Alert only on change to UPTREND
-            if (lastTrendState !== "UPTREND") {
+            // Alert only on change to UPTREND and NOT on first initial load
+            if (lastTrendState !== "UPTREND" && lastTrendState !== "INITIALIZING") {
                 const symbolShort = SYMBOL.replace("USDT", "");
-                speak(`${symbolShort} 5 minute trend turned into UP.`);
-                sendTelegramAlert(`🚀 ${symbolShort} 5m Trend: UPTREND 🚀`);
+                speak(`${symbolShort} trend: UPTREND`);
+                sendTelegramAlert(`🚀 ${symbolShort} trend: UPTREND 🚀`);
             }
         } else if (currentTrend === "DOWNTREND") {
             trendDisplay.innerText = isEmergency ? "EMERGENCY DOWNTREND" : "CURRENTLY DOWNTREND";
@@ -163,11 +149,11 @@ async function updateTrend() {
             }
             updateFavicon("images/favicon_red.png");
 
-            // Alert only on change to DOWNTREND
-            if (lastTrendState !== "DOWNTREND") {
+            // Alert only on change to DOWNTREND and NOT on first initial load
+            if (lastTrendState !== "DOWNTREND" && lastTrendState !== "INITIALIZING") {
                 const symbolShort = SYMBOL.replace("USDT", "");
-                speak(`${symbolShort} 5 minute trend turned into DOWN.`);
-                sendTelegramAlert(`💥 ${symbolShort} 5m Trend: DOWNTREND 💥`);
+                speak(`${symbolShort} trend: DOWNTREND`);
+                sendTelegramAlert(`💥 ${symbolShort} trend: DOWNTREND 💥`);
             }
         } else {
             trendDisplay.innerText = "NO TRADE ZONE";
@@ -380,8 +366,6 @@ function updateGlobalSymbol() {
     }
 
     // FULL UI RESET: Revert elements to initial state
-    document.getElementById("ltfStatus").innerText = "LOADING...";
-    document.getElementById("ltfRow").className = "status-row status-neutral";
 
     const symbolBtn = document.getElementById("global-symbol");
     if (symbolBtn) {
