@@ -93,9 +93,9 @@ async function updateTrend() {
             return "NEUTRAL";
         };
 
-        // Check last 5 closed candles for Uptrend (EMA10 > EMA20 > EMA50)
+        // Check last 4 closed candles for Uptrend (EMA10 > EMA20 > EMA50)
         let isUptrendConfirmed = true;
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 4; i++) {
             const slice = closed5m.slice(0, closed5m.length - i);
             if (getTrendAt(slice) !== "UPTREND_CANDIDATE") {
                 isUptrendConfirmed = false;
@@ -103,9 +103,14 @@ async function updateTrend() {
             }
         }
 
-        // Current closed candle trend for UI
-        // Current closed candle trend
-        const lastClosedTrend = getTrendAt(closed5m);
+        // Downtrend: 10/20 EMA crossing downtrend (previous close crossing)
+        const closedCandles = p5m.slice(0, -1);
+        const ema10_closed = calculateEMA(closedCandles, 10);
+        const ema20_closed = calculateEMA(closedCandles, 20);
+        const ema10_prev_closed = calculateEMA(closedCandles.slice(0, -1), 10);
+        const ema20_prev_closed = calculateEMA(closedCandles.slice(0, -1), 20);
+
+        const isBearishCross = (ema10_prev_closed > ema20_prev_closed) && (ema10_closed < ema20_closed);
 
         if (p1h.length < 4) return;
 
@@ -116,9 +121,10 @@ async function updateTrend() {
         const isEmergency = cur1h.high > maxPrevHigh && cur1h.close < cur1h.open;
 
         let currentTrend = "NO TRADE ZONE";
-        if (isEmergency) currentTrend = "DOWNTREND";
-        else if (isUptrendConfirmed) currentTrend = "UPTREND";
-        else if (lastClosedTrend === "DOWNTREND") currentTrend = "DOWNTREND";
+        if (isUptrendConfirmed) currentTrend = "UPTREND";
+        else if (isBearishCross) currentTrend = "DOWNTREND";
+        // Keep DOWNTREND state if already in DOWNTREND and EMA10 < EMA20
+        else if ((localStorage.getItem('lastTrendState') === "DOWNTREND") && (ema10_closed < ema20_closed)) currentTrend = "DOWNTREND";
 
         const trendDisplay = document.getElementById("trendDisplay");
         const symbolBtn = document.getElementById("global-symbol");
@@ -141,7 +147,7 @@ async function updateTrend() {
                 sendTelegramAlert(`🚀 ${symbolShort} trend: UPTREND 🚀`);
             }
         } else if (currentTrend === "DOWNTREND") {
-            trendDisplay.innerText = isEmergency ? "EMERGENCY DOWNTREND" : "CURRENTLY DOWNTREND";
+            trendDisplay.innerText = "CURRENTLY DOWNTREND";
             trendDisplay.className = "overall-trend trend-down";
             if (symbolBtn) {
                 symbolBtn.classList.add("title-red");
