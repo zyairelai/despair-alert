@@ -86,31 +86,41 @@ async function updateTrend() {
 
             if (ema10 === null || ema20 === null || ema50 === null) return "NEUTRAL";
 
-            // Uptrend: 10 > 20 > 50 (Wait 4 candles logic applied outside)
-            // Downtrend: 10 < 20 (Immediately)
             if (ema10 < ema20) return "DOWNTREND";
-            if (ema10 > ema20 && ema20 > ema50) return "UPTREND_CANDIDATE";
+            if (ema10 > ema20 && ema20 > ema50) return "UPTREND";
             return "NEUTRAL";
         };
 
-        // Check last 4 closed candles for Uptrend (EMA10 > EMA20 > EMA50)
-        let isUptrendConfirmed = true;
-        for (let i = 0; i < 4; i++) {
-            const slice = closed5m.slice(0, closed5m.length - i);
-            if (getTrendAt(slice) !== "UPTREND_CANDIDATE") {
-                isUptrendConfirmed = false;
-                break;
-            }
-        }
-
-        // Downtrend: 10/20 EMA crossing downtrend (previous close crossing)
         const closedCandles = p5m.slice(0, -1);
         const ema10_closed = calculateEMA(closedCandles, 10);
         const ema20_closed = calculateEMA(closedCandles, 20);
+        const ema50_closed = calculateEMA(closedCandles, 50);
+
+        // Trend Determination Logic
+        let currentTrend = "NO TRADE ZONE";
+
+        // 1. Downtrend check (Immediate on closed candle)
+        if (ema10_closed < ema20_closed) {
+            currentTrend = "DOWNTREND";
+        }
+        // 2. Uptrend check (Requires 4 consecutive closed candles)
+        else {
+            let isUptrendConfirmed = true;
+            for (let i = 0; i < 4; i++) {
+                const slice = closedCandles.slice(0, closedCandles.length - i);
+                if (getTrendAt(slice) !== "UPTREND") {
+                    isUptrendConfirmed = false;
+                    break;
+                }
+            }
+            if (isUptrendConfirmed) {
+                currentTrend = "UPTREND";
+            }
+        }
+
         const ema10_prev_closed = calculateEMA(closedCandles.slice(0, -1), 10);
         const ema20_prev_closed = calculateEMA(closedCandles.slice(0, -1), 20);
-
-        const isBearishCross = (ema10_prev_closed > ema20_prev_closed) && (ema10_closed < ema20_closed);
+        const isBearishCross = (ema10_prev_closed >= ema20_prev_closed) && (ema10_closed < ema20_closed);
 
         if (p1h.length < 4) return;
 
@@ -120,16 +130,10 @@ async function updateTrend() {
         const maxPrevHigh = Math.max(...prev3h.map(k => k.high));
         const isEmergency = cur1h.high > maxPrevHigh && cur1h.close < cur1h.open;
 
-        let currentTrend = "NO TRADE ZONE";
-        if (isUptrendConfirmed) currentTrend = "UPTREND";
-        else if (isBearishCross) currentTrend = "DOWNTREND";
-        // Keep DOWNTREND state if already in DOWNTREND and EMA10 < EMA20
-        else if ((localStorage.getItem('lastTrendState') === "DOWNTREND") && (ema10_closed < ema20_closed)) currentTrend = "DOWNTREND";
-
         const trendDisplay = document.getElementById("trendDisplay");
         const symbolBtn = document.getElementById("global-symbol");
 
-        const lastTrendState = localStorage.getItem('lastTrendState') || "INITIALIZING";
+        const lastAlertTrend = localStorage.getItem('lastAlertTrend') || "INITIALIZING";
 
         // UI Visuals - Priority to EMERGENCY if present
         if (isEmergency) {
@@ -167,18 +171,21 @@ async function updateTrend() {
         }
 
         // Trend Alerts (Independent of Emergency)
-        if (currentTrend === "UPTREND") {
-            if (lastTrendState !== "UPTREND" && lastTrendState !== "INITIALIZING") {
-                const symbolShort = SYMBOL.replace("USDT", "");
-                speak(`${symbolShort} trend: UPTREND`);
-                sendTelegramAlert(`🚀 ${symbolShort} trend: UPTREND 🚀`);
-            }
-        } else if (currentTrend === "DOWNTREND") {
-            if (lastTrendState !== "DOWNTREND" && lastTrendState !== "INITIALIZING") {
+        if (currentTrend === "UPTREND" && lastAlertTrend !== "UPTREND") {
+            const symbolShort = SYMBOL.replace("USDT", "");
+            speak(`${symbolShort} trend: UPTREND`);
+            sendTelegramAlert(`🚀 ${symbolShort} trend: UPTREND 🚀`);
+            localStorage.setItem('lastAlertTrend', "UPTREND");
+        } else if (currentTrend === "DOWNTREND" && lastAlertTrend !== "DOWNTREND") {
+            if (isBearishCross) {
                 const symbolShort = SYMBOL.replace("USDT", "");
                 speak(`${symbolShort} trend: DOWNTREND`);
                 sendTelegramAlert(`💥 ${symbolShort} trend: DOWNTREND 💥`);
             }
+            localStorage.setItem('lastAlertTrend', "DOWNTREND");
+        } else if (currentTrend === "NO TRADE ZONE" && lastAlertTrend !== "NO TRADE ZONE" && lastAlertTrend !== "INITIALIZING") {
+            // Drop to NO TRADE ZONE, allow re-trigger on next trend change
+            localStorage.setItem('lastAlertTrend', "NO TRADE ZONE");
         }
 
         localStorage.setItem('lastTrendState', currentTrend);

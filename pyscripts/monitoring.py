@@ -52,6 +52,17 @@ def get_klines(pair, interval):
     candlestick['50EMA'] = candlestick['close'].ewm(span=50, adjust=False).mean()
     return candlestick
 
+def get_trend_at(df, idx):
+    if idx < 0 or idx >= len(df): return "NEUTRAL"
+    row = df.iloc[idx]
+    ema10 = row['10EMA']
+    ema20 = row['20EMA']
+    ema50 = row['50EMA']
+    
+    if ema10 < ema20: return "DOWNTREND"
+    if ema10 > ema20 and ema20 > ema50: return "UPTREND"
+    return "NEUTRAL"
+
 def monitor():
     global LAST_TREND, LAST_ALERT_TREND, LAST_ALERT_CANDLE, LAST_EMERGENCY_HOUR
     try:
@@ -61,25 +72,28 @@ def monitor():
         last_1h = df_1h.iloc[-1]
         prev_1h = df_1h.iloc[-2]
         
-        # 5m candles: last_closed is iloc[-2], current is iloc[-1]
-        if len(df_ltf) < 51: return
-        last_closed_idx = len(df_ltf) - 2
+        # Trend Determination Logic
+        current_trend = "NO TRADE ZONE"
+
+        # 1. Downtrend check (Immediate on closed candle)
+        if last_closed_row['10EMA'] < last_closed_row['20EMA']:
+            current_trend = "DOWNTREND"
+        # 2. Uptrend check (Requires 4 consecutive closed candles)
+        else:
+            is_uptrend_confirmed = True
+            for i in range(4):
+                if get_trend_at(df_ltf, last_closed_idx - i) != "UPTREND":
+                    is_uptrend_confirmed = False
+                    break
+            if is_uptrend_confirmed:
+                current_trend = "UPTREND"
         
-        # Check last 5 closed candles for Uptrend (EMA10 > EMA20 > EMA50)
-        is_uptrend_confirmed = True
-        for i in range(5):
-            if get_trend_at(df_ltf, last_closed_idx - i) != "UPTREND_CANDIDATE":
-                is_uptrend_confirmed = False
-                break
-        
-        last_closed_trend = get_trend_at(df_ltf, last_closed_idx)
+        # Bearish Cross Detection (for transition alert)
+        prev_closed_row = df_ltf.iloc[last_closed_idx - 1]
+        is_bearish_cross = prev_closed_row['10EMA'] >= prev_closed_row['20EMA'] and last_closed_row['10EMA'] < last_closed_row['20EMA']
         
         # Emergency 1h Logic: Current high > previous high AND current 1h candle is RED
         is_emergency = last_1h['high'] > prev_1h['high'] and last_1h['close'] < last_1h['open']
-
-        if is_uptrend_confirmed: current_trend = "UPTREND"
-        elif last_closed_trend == "DOWNTREND": current_trend = "DOWNTREND"
-        else: current_trend = "NO TRADE ZONE"
         
         trend_color = "green" if current_trend == "UPTREND" else "red" if current_trend == "DOWNTREND" else "yellow"
         display_trend = "EMERGENCY DOWNTREND" if is_emergency else current_trend
@@ -120,25 +134,22 @@ def monitor():
             telegram_bot_sendtext(trigger_msg)
             LAST_EMERGENCY_HOUR = current_hour_ts
 
-        # 2. Standard Case: Alert only on change TO UPTREND or TO DOWNTREND
-        if current_trend != LAST_ALERT_TREND:
-            if current_trend in ["UPTREND", "DOWNTREND"]:
-                first_run = LAST_ALERT_TREND is None
-                trigger_msg = None
-                emoji = ""
-                
-                if current_trend == "UPTREND":
-                    emoji = "🚀"
-                    trigger_msg = f"{emoji} {SYMBOL.replace('USDT', '')} trend: {current_trend} {emoji}"
-                elif current_trend == "DOWNTREND":
-                    emoji = "💥"
-                    trigger_msg = f"{emoji} {SYMBOL.replace('USDT', '')} trend: {current_trend} {emoji}"
-                
-                if trigger_msg and not first_run:
-                    telegram_bot_sendtext(trigger_msg)
+        # 2. Standard Case: Alert based on refined status
+        trigger_msg = None
+        if current_trend == "UPTREND" and LAST_ALERT_TREND != "UPTREND":
+            trigger_msg = f"🚀 {SYMBOL.replace('USDT', '')} trend: UPTREND 🚀"
+            LAST_ALERT_TREND = "UPTREND"
+        elif current_trend == "DOWNTREND" and LAST_ALERT_TREND != "DOWNTREND":
+            if is_bearish_cross:
+                trigger_msg = f"💥 {SYMBOL.replace('USDT', '')} trend: DOWNTREND 💥"
+            LAST_ALERT_TREND = "DOWNTREND"
+        elif current_trend == "NO TRADE ZONE" and LAST_ALERT_TREND != "NO TRADE ZONE":
+            LAST_ALERT_TREND = "NO TRADE ZONE"
+
+        if trigger_msg:
+            telegram_bot_sendtext(trigger_msg)
             
-            LAST_ALERT_TREND = current_trend
-            LAST_ALERT_CANDLE = current_candle_ts
+        LAST_ALERT_CANDLE = current_candle_ts
             
         LAST_TREND = current_trend
     except Exception as e: pass
