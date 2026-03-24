@@ -65,7 +65,7 @@ function calculateEMA(data, period) {
     return ema;
 }
 
-async function updateTrend() {
+async function updateTrend(isInitial = false) {
     try {
         const [p1h, p15m, p5m] = await Promise.all([
             fetchKlines("1h"),
@@ -173,14 +173,18 @@ async function updateTrend() {
         // Trend Alerts (Independent of Emergency)
         if (currentTrend === "UPTREND" && lastAlertTrend !== "UPTREND") {
             const symbolShort = SYMBOL.replace("USDT", "");
-            speak(`${symbolShort} trend: UPTREND`);
-            sendTelegramAlert(`🚀 ${symbolShort} trend: UPTREND 🚀`);
+            if (!isInitial) {
+                speak(`${symbolShort} trend: UPTREND`);
+                sendTelegramAlert(`🚀 ${symbolShort} trend: UPTREND 🚀`);
+            }
             localStorage.setItem('lastAlertTrend', "UPTREND");
         } else if (currentTrend === "DOWNTREND" && lastAlertTrend !== "DOWNTREND") {
             if (isBearishCross) {
                 const symbolShort = SYMBOL.replace("USDT", "");
-                speak(`${symbolShort} trend: DOWNTREND`);
-                sendTelegramAlert(`💥 ${symbolShort} trend: DOWNTREND 💥`);
+                if (!isInitial) {
+                    speak(`${symbolShort} trend: DOWNTREND`);
+                    sendTelegramAlert(`💥 ${symbolShort} trend: DOWNTREND 💥`);
+                }
             }
             localStorage.setItem('lastAlertTrend', "DOWNTREND");
         } else if (currentTrend === "NO TRADE ZONE" && lastAlertTrend !== "NO TRADE ZONE" && lastAlertTrend !== "INITIALIZING") {
@@ -250,6 +254,7 @@ function checkAndSendAlert(p1h, p15m, p5m, isEmergency = false) {
 
     const isBearishCross = (ema10_prev_closed > ema20_prev_closed) && (ema10_closed < ema20_closed);
 
+    /**
     if (isBearishCross && isNewCandle) {
         const symbolShort = SYMBOL.replace("USDT", "");
         const msg = `💥 ${symbolShort} 5m EMA BEARISH CROSS 💥`;
@@ -257,6 +262,7 @@ function checkAndSendAlert(p1h, p15m, p5m, isEmergency = false) {
         speak(`${symbolShort} 5 minute trend turned into DOWN.`);
         localStorage.setItem('lastAlertCandle', current5mTs.toString());
     }
+    **/
 
     const ema10_15m = calculateEMA(p15m, 10);
     const ema20_15m = calculateEMA(p15m, 20);
@@ -346,7 +352,7 @@ function start() {
     lastBeepInterval = Math.floor(Date.now() / (5 * 60 * 1000));
 
     monitorInterval = setInterval(tick, 1000);
-    updateTrend(); // Initial Immediate Update
+    updateTrend(true); // Initial Immediate Update (no alerts)
     tick();
 
     // Initial check does not beep or alert, just verifies audio
