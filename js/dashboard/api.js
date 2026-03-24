@@ -39,17 +39,59 @@ async function fetchPrice(symbol) {
     return parseFloat(data.price);
 }
 
+const klineCache = {};
+
 async function fetchKlines(symbol, interval) {
-    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=100`;
-    const resp = await fetch(url);
-    const data = await resp.json();
-    return data.map(d => ({
-        time: d[0],
-        open: parseFloat(d[1]),
-        high: parseFloat(d[2]),
-        low: parseFloat(d[3]),
-        close: parseFloat(d[4])
-    }));
+    const cacheKey = `${symbol}_${interval}`;
+    const now = Date.now();
+
+    // 1. Check if there's a valid cache (less than 2s old)
+    if (klineCache[cacheKey] && !klineCache[cacheKey].inFlight && (now - klineCache[cacheKey].timestamp < 2000)) {
+        return klineCache[cacheKey].data;
+    }
+
+    // 2. Check if a request is already in flight for this exact symbol/tf
+    if (klineCache[cacheKey] && klineCache[cacheKey].inFlight) {
+        return klineCache[cacheKey].promise;
+    }
+
+    // 3. Otherwise, perform new fetch and store promise for coalescing
+    const fetchPromise = (async () => {
+        try {
+            const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=100`;
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error(`Binance API error: ${resp.status}`);
+            const data = await resp.json();
+            const formatted = data.map(d => ({
+                time: d[0],
+                open: parseFloat(d[1]),
+                high: parseFloat(d[2]),
+                low: parseFloat(d[3]),
+                close: parseFloat(d[4])
+            }));
+
+            // Update cache with fresh data
+            klineCache[cacheKey] = {
+                data: formatted,
+                timestamp: Date.now(),
+                inFlight: false,
+                promise: null
+            };
+            return formatted;
+        } catch (e) {
+            delete klineCache[cacheKey]; // Clear cache on error so next attempt can retry
+            throw e;
+        }
+    })();
+
+    // Mark as in-flight
+    klineCache[cacheKey] = {
+        promise: fetchPromise,
+        inFlight: true,
+        timestamp: now
+    };
+
+    return fetchPromise;
 }
 
 async function sendTelegramAlert(message, customChatId = null) {
