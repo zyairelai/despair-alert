@@ -172,12 +172,10 @@ async function updateTrend(isInitial = false) {
             }
             localStorage.setItem('lastAlertTrend', "UPTREND");
         } else if (currentTrend === "DOWNTREND" && lastAlertTrend !== "DOWNTREND") {
-            if (isBearishCross) {
-                const symbolShort = SYMBOL.replace("USDT", "");
-                if (!isInitial) {
-                    speak(`${symbolShort} trend: DOWNTREND`);
-                    sendTelegramAlert(`💥 ${symbolShort} trend: DOWNTREND 💥`);
-                }
+            const symbolShort = SYMBOL.replace("USDT", "");
+            if (!isInitial) {
+                speak(`${symbolShort} trend: DOWNTREND`);
+                sendTelegramAlert(`💥 ${symbolShort} trend: DOWNTREND 💥`);
             }
             localStorage.setItem('lastAlertTrend', "DOWNTREND");
         } else if (currentTrend === "NO TRADE ZONE" && lastAlertTrend !== "NO TRADE ZONE" && lastAlertTrend !== "INITIALIZING") {

@@ -75,6 +75,10 @@ def monitor():
         # Trend Determination Logic
         current_trend = "NO TRADE ZONE"
 
+        # Indices for closed candles
+        last_closed_idx = len(df_ltf) - 2
+        last_closed_row = df_ltf.iloc[last_closed_idx]
+
         # 1. Downtrend check (Immediate on closed candle)
         if last_closed_row['10EMA'] < last_closed_row['20EMA']:
             current_trend = "DOWNTREND"
@@ -87,10 +91,6 @@ def monitor():
                     break
             if is_uptrend_confirmed:
                 current_trend = "UPTREND"
-        
-        # Bearish Cross Detection (for transition alert)
-        prev_closed_row = df_ltf.iloc[last_closed_idx - 1]
-        is_bearish_cross = prev_closed_row['10EMA'] >= prev_closed_row['20EMA'] and last_closed_row['10EMA'] < last_closed_row['20EMA']
         
         # Emergency 1h Logic: Current high > previous high AND current 1h candle is RED
         is_emergency = last_1h['high'] > prev_1h['high'] and last_1h['close'] < last_1h['open']
@@ -140,8 +140,7 @@ def monitor():
             trigger_msg = f"🚀 {SYMBOL.replace('USDT', '')} trend: UPTREND 🚀"
             LAST_ALERT_TREND = "UPTREND"
         elif current_trend == "DOWNTREND" and LAST_ALERT_TREND != "DOWNTREND":
-            if is_bearish_cross:
-                trigger_msg = f"💥 {SYMBOL.replace('USDT', '')} trend: DOWNTREND 💥"
+            trigger_msg = f"💥 {SYMBOL.replace('USDT', '')} trend: DOWNTREND 💥"
             LAST_ALERT_TREND = "DOWNTREND"
         elif current_trend == "NO TRADE ZONE" and LAST_ALERT_TREND != "NO TRADE ZONE":
             LAST_ALERT_TREND = "NO TRADE ZONE"
