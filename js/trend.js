@@ -78,18 +78,7 @@ async function updateTrend(isInitial = false) {
 
         if (closed5m.length < 51) return; // Need at least 50 for EMA50 + some buffer
 
-        // Helper to check 10/20/50 condition for a slice
-        const getTrendAt = (slice) => {
-            const ema10 = calculateEMA(slice, 10);
-            const ema20 = calculateEMA(slice, 20);
-            const ema50 = calculateEMA(slice, 50);
 
-            if (ema10 === null || ema20 === null || ema50 === null) return "NEUTRAL";
-
-            if (ema10 < ema20) return "DOWNTREND";
-            if (ema10 > ema20 && ema20 > ema50) return "UPTREND";
-            return "NEUTRAL";
-        };
 
         const closedCandles = p5m.slice(0, -1);
         const ema10_closed = calculateEMA(closedCandles, 10);
@@ -103,17 +92,20 @@ async function updateTrend(isInitial = false) {
         if (ema10_closed < ema20_closed) {
             currentTrend = "DOWNTREND";
         }
-        // 2. Uptrend check (Requires 4 consecutive closed candles)
+        // 2. Uptrend check (Requires 4 consecutive closed candles where 10 > 20, AND most recent 10 > 50)
         else {
-            let isUptrendConfirmed = true;
+            let is10Above20For4 = true;
             for (let i = 0; i < 4; i++) {
                 const slice = closedCandles.slice(0, closedCandles.length - i);
-                if (getTrendAt(slice) !== "UPTREND") {
-                    isUptrendConfirmed = false;
+                const ema10 = calculateEMA(slice, 10);
+                const ema20 = calculateEMA(slice, 20);
+                if (ema10 === null || ema20 === null || ema10 <= ema20) {
+                    is10Above20For4 = false;
                     break;
                 }
             }
-            if (isUptrendConfirmed) {
+
+            if (is10Above20For4 && ema10_closed > ema50_closed) {
                 currentTrend = "UPTREND";
             }
         }
