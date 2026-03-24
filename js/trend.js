@@ -2,6 +2,7 @@ let SYMBOL = localStorage.getItem('globalSymbol') || "BTCUSDT";
 let started = false;
 let sessionStarted = true;
 let lastBeepInterval = 0;
+let beepInterval = parseInt(localStorage.getItem('beepInterval')) || 5;
 let monitoringStartTime = 0;
 let audioCtx = null;
 
@@ -311,21 +312,20 @@ function tick() {
     const m = now.getMinutes();
     const s = now.getSeconds();
 
-    // Calculate seconds until next 5m mark for display
-    const next = 5 - (m % 5);
+    // Calculate seconds until next interval mark for display
+    const next = beepInterval - (m % beepInterval);
     let r = next * 60 - s;
-    if (r === 300) r = 0;
+    if (r === (beepInterval * 60)) r = 0;
 
     const mStr = String(Math.floor(r / 60)).padStart(2, '0');
     const sStr = String(r % 60).padStart(2, '0');
     document.getElementById("countdown").innerText = `${mStr}:${sStr}`;
 
-    // Robust Beep Logic: Check if we've entered a new 5-minute interval
-    // This is more reliable than checking exact seconds (r === 0) 
-    // which can be missed if the browser throttles background tabs.
-    const currentInterval = Math.floor(nowTime / (5 * 60 * 1000));
+    // Robust Beep Logic: Check if we've entered a new interval
+    const mInterval = beepInterval * 60 * 1000;
+    const currentInterval = Math.floor(nowTime / mInterval);
     if (currentInterval > lastBeepInterval) {
-        console.log("Beeping for interval", currentInterval, "at", now.toLocaleTimeString());
+        console.log(`Beeping for ${beepInterval}m interval`, currentInterval, "at", now.toLocaleTimeString());
         beep();
         lastBeepInterval = currentInterval;
     }
@@ -341,7 +341,7 @@ function start() {
     monitoringStartTime = Date.now();
 
     // Initialize to current interval to avoid double-beep on start
-    lastBeepInterval = Math.floor(Date.now() / (5 * 60 * 1000));
+    lastBeepInterval = Math.floor(Date.now() / (beepInterval * 60 * 1000));
 
     monitorInterval = setInterval(tick, 1000);
     updateTrend(true); // Initial Immediate Update (no alerts)
@@ -414,4 +414,29 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerText = SYMBOL;
         btn.classList.add('title-yellow');
     }
+
+    // Initialize Beep Mode UI
+    updateBeepUI();
 });
+
+function setBeepInterval(m) {
+    beepInterval = m;
+    localStorage.setItem('beepInterval', m);
+    updateBeepUI();
+    console.log("Beep interval set to:", m, "minutes");
+
+    // Reset lastBeepInterval to current so it doesn't immediately beep if we just switched
+    lastBeepInterval = Math.floor(Date.now() / (m * 60 * 1000));
+
+    // Immediate UI Update
+    tick();
+}
+
+function updateBeepUI() {
+    const b5 = document.getElementById('beep5m');
+    const b15 = document.getElementById('beep15m');
+    if (b5 && b15) {
+        b5.classList.toggle('active', beepInterval === 5);
+        b15.classList.toggle('active', beepInterval === 15);
+    }
+}
