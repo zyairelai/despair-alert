@@ -1,0 +1,14 @@
+./long.py
+
+./short.py 
+{'orderId': 8389766139067053713, 'symbol': 'ETHUSDT', 'status': 'NEW', 'clientOrderId': 'x-Cb7ytekJ7891c8454a441df5af3a23', 'price': '0.00', 'avgPrice': '0.00', 'origQty': '0.010', 'executedQty': '0.000', 'cumQty': '0.000', 'cumQuote': '0.00000', 'timeInForce': 'GTC', 'type': 'MARKET', 'reduceOnly': False, 'closePosition': False, 'side': 'SELL', 'positionSide': 'BOTH', 'stopPrice': '0.00', 'workingType': 'CONTRACT_PRICE', 'priceProtect': False, 'origType': 'MARKET', 'priceMatch': 'NONE', 'selfTradePreventionMode': 'EXPIRE_MAKER', 'goodTillDate': 0, 'updateTime': 1774451032981}
+
+./close_position.py 
+[{'symbol': 'ETHUSDT', 'positionSide': 'BOTH', 'positionAmt': '-0.010', 'entryPrice': '2175.0', 'breakEvenPrice': '2173.9125', 'markPrice': '2166.12000000', 'unRealizedProfit': '0.08880000', 'liquidationPrice': '2208.87089940', 'isolatedMargin': '0.51586383', 'notional': '-21.66120000', 'marginAsset': 'USDT', 'isolatedWallet': '0.42706383', 'initialMargin': '0.43322400', 'maintMargin': '0.08664480', 'positionInitialMargin': '0.43322400', 'openOrderInitialMargin': '0', 'adl': 3, 'bidNotional': '0', 'askNotional': '0', 'updateTime': 1774451032981}]
+
+Position Information:
+[{'symbol': 'ETHUSDT', 'positionSide': 'BOTH', 'positionAmt': '-0.010', 'entryPrice': '2175.0', 'breakEvenPrice': '2173.9125', 'markPrice': '2174.33563566', 'unRealizedProfit': '0.00664364', 'liquidationPrice': '2208.87089940', 'isolatedMargin': '0.43370747', 'notional': '-21.74335635', 'marginAsset': 'USDT', 'isolatedWallet': '0.42706383', 'initialMargin': '0.43486713', 'maintMargin': '0.08697342', 'positionInitialMargin': '0.43486713', 'openOrderInitialMargin': '0', 'adl': 3, 'bidNotional': '0', 'askNotional': '0', 'updateTime': 1774451032981}]
+
+Account Trades:
+[{'symbol': 'ETHUSDT', 'id': 7862424282, 'orderId': 8389766139067053713, 'side': 'SELL', 'price': '2175', 'qty': '0.010', 'realizedPnl': '0', 'quoteQty': '21.75000', 'commission': '0.01087500', 'commissionAsset': 'USDT', 'time': 1774451032981, 'positionSide': 'BOTH', 'maker': False, 'buyer': False}, {'symbol': 'ETHUSDT', 'id': 7862481571, 'orderId': 8389766139071863177, 'side': 'BUY', 'price': '2165.71', 'qty': '0.010', 'realizedPnl': '0.09290000', 'quoteQty': '21.65710', 'commission': '0.01082855', 'commissionAsset': 'USDT', 'time': 1774451341046, 'positionSide': 'BOTH', 'maker': False, 'buyer': True}]
+

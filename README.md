@@ -31,7 +31,7 @@ compdef _python_argcomplete zones
 - BingX
 - BitGet
 - Bybit
-- Crypto
+- Crypto.com
 - Kucoin
 - MEXC
 - OKX
