@@ -8,3 +8,8 @@ exchanges = ['binance']
 # Trading Parameters
 pair = "BTCUSDT"
 quantity = 0.01
+
+# Command-line override for quantity
+if len(sys.argv) > 1:
+    try: quantity = float(sys.argv[1])
+    except ValueError: pass
