@@ -85,6 +85,9 @@ async function checkAlert(id) {
         if (id === 'heikin') {
             const el = document.getElementById('heikin-condition');
             const condition = el.dataset.state || el.value;
+            const modeEl = document.getElementById('heikin-mode');
+            const mode = modeEl ? modeEl.dataset.state : 'is';
+
             const klines = await fetchKlines(symbol, tf);
 
             if (klines.length < 50) return; // Need history for stable HA
@@ -105,16 +108,37 @@ async function checkAlert(id) {
 
                 // Only evaluate the final (current) candle
                 if (i === klines.length - 1) {
+                    let isPerfectGreen = haClose > haOpen && Math.abs(currentHaLow - haOpen) < (haOpen * 0.00001);
+                    let isPerfectRed = haClose < haOpen && Math.abs(currentHaHigh - haOpen) < (haOpen * 0.00001);
+
+                    let triggered = false;
+                    let msg = "";
+                    let voiceMsg = "";
+
                     if (condition === 'perfect-green') {
-                        // Perfect Green: Close > Open AND No lower wick (Low == Open)
-                        if (haClose > haOpen && Math.abs(currentHaLow - haOpen) < (haOpen * 0.00001)) {
-                            triggerAlert(id, `🚀 ${shortSymbol} ${tf} HEIKIN ASHI GREEN 🚀`, `${shortSymbol} ${tf} HEIKIN ASHI turned into GREEN color`);
+                        if (mode === 'is' && isPerfectGreen) {
+                            triggered = true;
+                            msg = `🚀 ${shortSymbol} ${tf} HEIKIN ASHI GREEN 🚀`;
+                            voiceMsg = `${shortSymbol} ${tf} HEIKIN ASHI turned into GREEN color`;
+                        } else if (mode === 'not' && !isPerfectGreen) {
+                            triggered = true;
+                            msg = `⚠️ ${shortSymbol} ${tf} HA NOT GREEN ⚠️`;
+                            voiceMsg = `${shortSymbol} ${tf} HEIKIN ASHI is no longer perfect GREEN`;
                         }
                     } else if (condition === 'perfect-red') {
-                        // Perfect Red: Close < Open AND No upper wick (High == Open)
-                        if (haClose < haOpen && Math.abs(currentHaHigh - haOpen) < (haOpen * 0.00001)) {
-                            triggerAlert(id, `💥 ${shortSymbol} ${tf} HEIKIN ASHI RED 💥`, `${shortSymbol} ${tf} HEIKIN ASHI turned into RED color`);
+                        if (mode === 'is' && isPerfectRed) {
+                            triggered = true;
+                            msg = `💥 ${shortSymbol} ${tf} HEIKIN ASHI RED 💥`;
+                            voiceMsg = `${shortSymbol} ${tf} HEIKIN ASHI turned into RED color`;
+                        } else if (mode === 'not' && !isPerfectRed) {
+                            triggered = true;
+                            msg = `⚠️ ${shortSymbol} ${tf} HA NOT RED ⚠️`;
+                            voiceMsg = `${shortSymbol} ${tf} HEIKIN ASHI is no longer perfect RED`;
                         }
+                    }
+
+                    if (triggered) {
+                        triggerAlert(id, msg, voiceMsg);
                     }
                 }
             }

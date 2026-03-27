@@ -112,6 +112,19 @@ function toggleEMAAlertMode() {
     console.log(`EMA Alert mode toggled to: ${nextState}`);
 }
 
+function toggleHeikinMode() {
+    const btn = document.getElementById('heikin-mode');
+    if (!btn) return;
+
+    const currentState = btn.dataset.state;
+    const nextState = currentState === 'is' ? 'not' : 'is';
+
+    btn.dataset.state = nextState;
+    btn.innerText = nextState.toUpperCase();
+
+    console.log(`Heikin mode toggled to: ${nextState}`);
+}
+
 function toggleGlobalSymbol() {
     // const btn = document.getElementById('global-symbol');
     // if (!btn) return;

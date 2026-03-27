@@ -166,7 +166,8 @@ select:focus {
     border-color: var(--text-dim);
 }
 
-#ema-alert-mode {
+#ema-alert-mode,
+#heikin-mode {
     color: #ffffff;
 }
 
