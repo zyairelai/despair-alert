@@ -6,6 +6,39 @@ let beepInterval = parseInt(localStorage.getItem('beepInterval')) || 5;
 let monitoringStartTime = 0;
 let audioCtx = null;
 
+// Secret Telegram Toggle (Trend Change Alerts Only)
+window.telegramEnabled = false;
+let teleBuffer = "";
+
+document.addEventListener('keydown', (e) => {
+    // Basic buffer logic to detect "te", "tt", "on", "off"
+    teleBuffer += e.key.toLowerCase();
+    if (teleBuffer.length > 5) teleBuffer = teleBuffer.slice(-5);
+
+    const lastTwo = teleBuffer.slice(-2);
+    const lastThree = teleBuffer.slice(-3);
+
+    if (!window.telegramEnabled && (lastTwo === "te" || lastTwo === "tt" || lastTwo === "on")) {
+        window.telegramEnabled = true;
+        console.log("SECRET: Trend Telegram Alerts Enabled.");
+
+        // Play pickup sound
+        const audio = new Audio('images/pickup.mp3');
+        audio.play().catch(err => console.error("Sound play failed:", err));
+
+        teleBuffer = ""; // Reset buffer
+    } else if (window.telegramEnabled && (lastThree === "off" || lastTwo === "zz" || lastTwo === "oo")) {
+        window.telegramEnabled = false;
+        console.log("SECRET: Trend Telegram Alerts Disabled.");
+
+        // Play gameover sound
+        const audio = new Audio('images/gameover.mp3');
+        audio.play().catch(err => console.error("Sound play failed:", err));
+
+        teleBuffer = ""; // Reset buffer
+    }
+});
+
 function getAudioContext() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -168,14 +201,18 @@ async function updateTrend(isInitial = false) {
             const symbolShort = SYMBOL.replace("USDT", "");
             if (!isInitial) {
                 speak(`${symbolShort} trend: UPTREND`);
-                sendTelegramAlert(`🚀 ${symbolShort} trend: UPTREND 🚀`);
+                if (window.telegramEnabled) {
+                    sendTelegramAlert(`🚀 ${symbolShort} trend: UPTREND 🚀`);
+                }
             }
             localStorage.setItem('lastAlertTrend', "UPTREND");
         } else if (currentTrend === "DOWNTREND" && lastAlertTrend !== "DOWNTREND") {
             const symbolShort = SYMBOL.replace("USDT", "");
             if (!isInitial) {
                 speak(`${symbolShort} trend: DOWNTREND`);
-                sendTelegramAlert(`💥 ${symbolShort} trend: DOWNTREND 💥`);
+                if (window.telegramEnabled) {
+                    sendTelegramAlert(`💥 ${symbolShort} trend: DOWNTREND 💥`);
+                }
             }
             localStorage.setItem('lastAlertTrend', "DOWNTREND");
         } else if (currentTrend === "NO TRADE ZONE" && lastAlertTrend !== "NO TRADE ZONE" && lastAlertTrend !== "INITIALIZING") {
