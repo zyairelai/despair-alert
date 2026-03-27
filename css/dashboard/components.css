@@ -167,7 +167,8 @@ select:focus {
 }
 
 #ema-alert-mode,
-#heikin-mode {
+#heikin-mode,
+#rawcandle-mode {
     color: #ffffff;
 }
 

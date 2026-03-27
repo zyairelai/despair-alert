@@ -145,34 +145,50 @@ async function checkAlert(id) {
         }
 
         if (id === 'rawcandle') {
-            // Auto-Stop logic: Stop 5 seconds before the candle closes
-            const tfMs = tfToMs(tf);
-            if (tfMs > 0) {
-                const now = Date.now();
-                const nextCandleTime = Math.ceil(now / tfMs) * tfMs;
-                const msRemaining = nextCandleTime - now;
+            const el = document.getElementById('rawcandle-condition');
+            const condition = el.dataset.state || el.value;
+            const modeEl = document.getElementById('rawcandle-mode');
+            const mode = modeEl ? modeEl.dataset.state : 'turned';
 
-                if (msRemaining <= 3000) {
-                    console.log(`Auto-stopping ${id} (3s before next candle)`);
-                    toggleAlert(id);
-                    return;
+            const klines = await fetchKlines(symbol, tf);
+            if (klines.length < 2) return;
+
+            // Auto-Stop logic: Stop 5 seconds before the candle closes (ONLY for TURNED mode)
+            if (mode === 'turned') {
+                const tfMs = tfToMs(tf);
+                if (tfMs > 0) {
+                    const now = Date.now();
+                    const nextCandleTime = Math.ceil(now / tfMs) * tfMs;
+                    const msRemaining = nextCandleTime - now;
+
+                    if (msRemaining <= 3000) {
+                        console.log(`Auto-stopping ${id} (3s before next candle)`);
+                        toggleAlert(id);
+                        return;
+                    }
                 }
             }
 
-            const el = document.getElementById('rawcandle-condition');
-            const condition = el.dataset.state || el.value;
-            const klines = await fetchKlines(symbol, tf);
-            if (klines.length < 1) return;
+            const k = mode === 'closed' ? klines[klines.length - 2] : klines[klines.length - 1];
+            const isGreen = k.close > k.open;
+            const isRed = k.close < k.open;
 
-            const k = klines[klines.length - 1];
-            if (condition === 'green') {
-                if (k.close > k.open) {
-                    triggerAlert(id, `🚀 ${shortSymbol} ${tf} RAW GREEN 🚀`, `${shortSymbol} ${tf} RAW candle turned into GREEN color`);
-                }
-            } else if (condition === 'red') {
-                if (k.close < k.open) {
-                    triggerAlert(id, `💥 ${shortSymbol} ${tf} RAW RED 💥`, `${shortSymbol} ${tf} RAW candle turned into RED color`);
-                }
+            let triggered = false;
+            let msg = "";
+            let voiceMsg = "";
+
+            if (condition === 'green' && isGreen) {
+                triggered = true;
+                msg = `🚀 ${shortSymbol} ${tf} RAW GREEN (${mode.toUpperCase()}) 🚀`;
+                voiceMsg = `${shortSymbol} ${tf} RAW candle ${mode === 'closed' ? 'closed' : 'turned'} GREEN`;
+            } else if (condition === 'red' && isRed) {
+                triggered = true;
+                msg = `💥 ${shortSymbol} ${tf} RAW RED (${mode.toUpperCase()}) 💥`;
+                voiceMsg = `${shortSymbol} ${tf} RAW candle ${mode === 'closed' ? 'closed' : 'turned'} RED`;
+            }
+
+            if (triggered) {
+                triggerAlert(id, msg, voiceMsg);
             }
         }
 

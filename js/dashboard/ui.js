@@ -112,6 +112,7 @@ function toggleEMAAlertMode() {
     console.log(`EMA Alert mode toggled to: ${nextState}`);
 }
 
+
 function toggleHeikinMode() {
     const btn = document.getElementById('heikin-mode');
     if (!btn) return;
@@ -123,6 +124,19 @@ function toggleHeikinMode() {
     btn.innerText = nextState.toUpperCase();
 
     console.log(`Heikin mode toggled to: ${nextState}`);
+}
+
+function toggleRawCandleMode() {
+    const btn = document.getElementById('rawcandle-mode');
+    if (!btn) return;
+
+    const currentState = btn.dataset.state;
+    const nextState = currentState === 'turned' ? 'closed' : 'turned';
+
+    btn.dataset.state = nextState;
+    btn.innerText = nextState.toUpperCase();
+
+    console.log(`Raw Candle mode toggled to: ${nextState}`);
 }
 
 function toggleGlobalSymbol() {
