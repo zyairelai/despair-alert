@@ -223,6 +223,75 @@ async function checkAlert(id) {
             }
         }
 
+        if (id === 'breakout') {
+            const lookbackEl = document.getElementById('breakout-lookback');
+            const lookback = parseInt(lookbackEl.value) || parseInt(lookbackEl.placeholder) || 3;
+            const modeEl = document.getElementById('breakout-mode');
+            const mode = modeEl ? modeEl.dataset.state : 'ha';
+            const condEl = document.getElementById('breakout-condition');
+            const side = condEl ? condEl.dataset.state : 'both';
+
+            const klines = await fetchKlines(symbol, tf);
+            if (klines.length < lookback + 1) return;
+
+            let currentHigh, currentLow, prevHighs, prevLows;
+
+            if (mode === 'ha') {
+                // Heikin Ashi Calculation
+                let haKlines = [];
+                let haOpen = (klines[0].open + klines[0].close) / 2;
+                let haClose = (klines[0].open + klines[0].high + klines[0].low + klines[0].close) / 4;
+
+                haKlines.push({ high: Math.max(klines[0].high, haOpen, haClose), low: Math.min(klines[0].low, haOpen, haClose) });
+
+                for (let i = 1; i < klines.length; i++) {
+                    const k = klines[i];
+                    const nextHaClose = (k.open + k.high + k.low + k.close) / 4;
+                    const nextHaOpen = (haOpen + haClose) / 2;
+                    const nextHaHigh = Math.max(k.high, nextHaOpen, nextHaClose);
+                    const nextHaLow = Math.min(k.low, nextHaOpen, nextHaClose);
+
+                    haKlines.push({ high: nextHaHigh, low: nextHaLow });
+                    haOpen = nextHaOpen;
+                    haClose = nextHaClose;
+                }
+
+                currentHigh = haKlines[haKlines.length - 1].high;
+                currentLow = haKlines[haKlines.length - 1].low;
+                const previousHaKlines = haKlines.slice(-(lookback + 1), -1);
+                prevHighs = previousHaKlines.map(k => k.high);
+                prevLows = previousHaKlines.map(k => k.low);
+            } else {
+                // RAW Candle
+                currentHigh = klines[klines.length - 1].high;
+                currentLow = klines[klines.length - 1].low;
+                const previousKlines = klines.slice(-(lookback + 1), -1);
+                prevHighs = previousKlines.map(k => k.high);
+                prevLows = previousKlines.map(k => k.low);
+            }
+
+            const maxPrevHigh = Math.max(...prevHighs);
+            const minPrevLow = Math.min(...prevLows);
+
+            let triggered = false;
+            let msg = "";
+            let voiceMsg = "";
+
+            if ((side === 'both' || side === 'up') && currentHigh > maxPrevHigh) {
+                triggered = true;
+                msg = `🚀 ${shortSymbol} ${tf} BREAKOUT UP (Prev ${lookback}) 🚀`;
+                voiceMsg = `${shortSymbol} ${tf} breakout above previous ${lookback} candles`;
+            } else if ((side === 'both' || side === 'down') && currentLow < minPrevLow) {
+                triggered = true;
+                msg = `💥 ${shortSymbol} ${tf} BREAKOUT DOWN (Prev ${lookback}) 💥`;
+                voiceMsg = `${shortSymbol} ${tf} breakout below previous ${lookback} candles`;
+            }
+
+            if (triggered) {
+                triggerAlert(id, msg, voiceMsg);
+            }
+        }
+
         if (id === 'sfp-short') {
             const tfSelectors = [
                 document.getElementById('sfp-short-1-tf-menu'),

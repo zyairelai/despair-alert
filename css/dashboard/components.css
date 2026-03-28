@@ -168,8 +168,13 @@ select:focus {
 
 #ema-alert-mode,
 #heikin-mode,
-#rawcandle-mode {
+#rawcandle-mode,
+#breakout-mode {
     color: #ffffff;
+}
+
+.alert-card.white-text .condition-toggle:not(.green-mode):not(.red-mode) {
+    color: #ffffff !important;
 }
 
 /* Ensure option visibility and colors */

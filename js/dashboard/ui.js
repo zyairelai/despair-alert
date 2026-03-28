@@ -56,6 +56,8 @@ function updateConditionUI(el) {
     } else if (val.includes('RED') || val.includes('DOWN') || val.includes('BELOW')) {
         el.classList.remove('green-mode');
         el.classList.add('red-mode');
+    } else {
+        el.classList.remove('green-mode', 'red-mode');
     }
 }
 
@@ -78,6 +80,17 @@ function toggleConditionState(id) {
     } else if (id === 'ema-alert-condition') {
         nextState = currentState === 'above' ? 'below' : 'above';
         nextText = nextState === 'above' ? 'ABOVE' : 'BELOW';
+    } else if (id === 'breakout-condition') {
+        if (currentState === 'both') {
+            nextState = 'up';
+            nextText = 'UP';
+        } else if (currentState === 'up') {
+            nextState = 'down';
+            nextText = 'DOWN';
+        } else {
+            nextState = 'both';
+            nextText = 'BOTH';
+        }
     }
 
     btn.dataset.state = nextState;
@@ -139,6 +152,19 @@ function toggleRawCandleMode() {
     console.log(`Raw Candle mode toggled to: ${nextState}`);
 }
 
+function toggleBreakoutMode() {
+    const btn = document.getElementById('breakout-mode');
+    if (!btn) return;
+
+    const currentState = btn.dataset.state;
+    const nextState = currentState === 'ha' ? 'raw' : 'ha';
+
+    btn.dataset.state = nextState;
+    btn.innerText = nextState.toUpperCase();
+
+    console.log(`Breakout mode toggled to: ${nextState}`);
+}
+
 function toggleGlobalSymbol() {
     // const btn = document.getElementById('global-symbol');
     // if (!btn) return;
@@ -186,7 +212,8 @@ function setupNumericInputs() {
     const numericSelectors = [
         '#price-target-1', '#price-target-2', '#price-target-3',
         '#ema-cross-short', '#ema-cross-long',
-        '#line-touch-price', '#standing-level', '#ema-alert-level'
+        '#line-touch-price', '#standing-level', '#ema-alert-level',
+        '#breakout-lookback'
     ];
 
     numericSelectors.forEach(selector => {
