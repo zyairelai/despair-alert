@@ -197,6 +197,10 @@ async function updateTrend(isInitial = false) {
         }
 
         // Trend Alerts (Independent of Emergency)
+        const current5mTs = p5m[p5m.length - 1].timestamp;
+        const lastTrendAlertCandle = localStorage.getItem('lastTrendAlertCandle');
+        const isNewTrendCandle = !lastTrendAlertCandle || current5mTs > parseInt(lastTrendAlertCandle);
+
         if (currentTrend === "UPTREND" && lastAlertTrend !== "UPTREND") {
             const symbolShort = SYMBOL.replace("USDT", "");
             if (!isInitial) {
@@ -206,17 +210,17 @@ async function updateTrend(isInitial = false) {
                 }
             }
             localStorage.setItem('lastAlertTrend', "UPTREND");
-        } else if (currentTrend === "DOWNTREND" && lastAlertTrend !== "DOWNTREND") {
+        } else if (isBearishCross && isNewTrendCandle) {
             const symbolShort = SYMBOL.replace("USDT", "");
             if (!isInitial) {
-                speak(`${symbolShort} trend: DOWNTREND`);
+                speak(`${symbolShort} trend turned into DOWNTREND`);
                 if (window.telegramEnabled) {
                     sendTelegramAlert(`💥 ${symbolShort} trend: DOWNTREND 💥`);
                 }
             }
             localStorage.setItem('lastAlertTrend', "DOWNTREND");
+            localStorage.setItem('lastTrendAlertCandle', current5mTs.toString());
         } else if (currentTrend === "NO TRADE ZONE" && lastAlertTrend !== "NO TRADE ZONE" && lastAlertTrend !== "INITIALIZING") {
-            // Drop to NO TRADE ZONE, allow re-trigger on next trend change
             localStorage.setItem('lastAlertTrend', "NO TRADE ZONE");
         }
 
@@ -435,6 +439,7 @@ function updateGlobalSymbol() {
 
     // Reset session markers
     localStorage.removeItem('lastAlertTrend');
+    localStorage.removeItem('lastTrendAlertCandle');
     localStorage.removeItem('lastAlertCandle');
     localStorage.removeItem('lastEmergencyHour');
     localStorage.removeItem('lastSS1h');
