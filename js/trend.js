@@ -142,10 +142,10 @@ async function updateTrend(isInitial = false) {
 
         if (p1h.length < 4) return;
 
-        // Emergency 1h Logic: Current high > max(previous 3 highs) AND current 1h candle is RED
+        // Emergency 1h Logic: Current high > previous high AND current 1h candle is RED
         const cur1h = p1h[p1h.length - 1];
-        const prev3h = p1h.slice(p1h.length - 4, p1h.length - 1);
-        const maxPrevHigh = Math.max(...prev3h.map(k => k.high));
+        const prev1h = p1h[p1h.length - 2];
+        const maxPrevHigh = prev1h.high;
         const isEmergency = cur1h.high > maxPrevHigh && cur1h.close < cur1h.open;
 
         const trendDisplay = document.getElementById("trendDisplay");
