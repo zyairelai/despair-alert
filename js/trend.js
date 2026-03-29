@@ -122,31 +122,23 @@ async function updateTrend(isInitial = false) {
         // Trend Determination Logic
         let currentTrend = "NO TRADE ZONE";
 
-        // 1. Downtrend check (Immediate on closed candle)
-        if (ema10_closed < ema20_closed) {
-            currentTrend = "DOWNTREND";
-        }
-        // 2. Uptrend check (Requires 4 consecutive closed candles where 10 > 20, AND most recent 10 > 50)
-        else {
-            let is10Above20For4 = true;
-            for (let i = 0; i < 4; i++) {
-                const slice = closedCandles.slice(0, closedCandles.length - i);
-                const ema10 = calculateEMA(slice, 10);
-                const ema20 = calculateEMA(slice, 20);
-                if (ema10 === null || ema20 === null || ema10 <= ema20) {
-                    is10Above20For4 = false;
-                    break;
-                }
-            }
+        if (closedCandles.length >= 2) {
+            const e10_0 = calculateEMA(closedCandles, 10);
+            const e20_0 = calculateEMA(closedCandles, 20);
+            const e50_0 = calculateEMA(closedCandles, 50);
 
-            if (is10Above20For4 && ema10_closed > ema50_closed) {
+            const e10_1 = calculateEMA(closedCandles.slice(0, -1), 10);
+            const e20_1 = calculateEMA(closedCandles.slice(0, -1), 20);
+
+            // 1. Downtrend check (2 consecutive closed candles where 10 < 20)
+            if (e10_0 < e20_0 && e10_1 < e20_1) {
+                currentTrend = "DOWNTREND";
+            }
+            // 2. Uptrend check (2 consecutive closed candles where 10 > 20, AND most recent 10 > 50)
+            else if (e10_0 > e20_0 && e10_1 > e20_1 && e10_0 > e50_0) {
                 currentTrend = "UPTREND";
             }
         }
-
-        const ema10_prev_closed = calculateEMA(closedCandles.slice(0, -1), 10);
-        const ema20_prev_closed = calculateEMA(closedCandles.slice(0, -1), 20);
-        const isBearishCross = (ema10_prev_closed >= ema20_prev_closed) && (ema10_closed < ema20_closed);
 
         if (p1h.length < 4) return;
 
@@ -196,32 +188,31 @@ async function updateTrend(isInitial = false) {
             updateFavicon("images/favicon_yellow.png");
         }
 
-        // Trend Alerts (Independent of Emergency)
+        // Trend Alerts 
         const current5mTs = p5m[p5m.length - 1].timestamp;
         const lastTrendAlertCandle = localStorage.getItem('lastTrendAlertCandle');
         const isNewTrendCandle = !lastTrendAlertCandle || current5mTs > parseInt(lastTrendAlertCandle);
 
-        if (currentTrend === "UPTREND" && lastAlertTrend !== "UPTREND") {
+        if (currentTrend !== lastAlertTrend) {
             const symbolShort = SYMBOL.replace("USDT", "");
+
             if (!isInitial) {
-                speak(`${symbolShort} trend: UPTREND`);
-                if (window.telegramEnabled) {
-                    sendTelegramAlert(`🚀 ${symbolShort} trend: UPTREND 🚀`);
+                if (currentTrend === "UPTREND") {
+                    speak(`${symbolShort} trend: UPTREND`);
+                    if (window.telegramEnabled) {
+                        sendTelegramAlert(`🚀 ${symbolShort} trend: UPTREND 🚀`);
+                    }
+                } else if (currentTrend === "DOWNTREND") {
+                    speak(`${symbolShort} trend turned into DOWNTREND`);
+                    if (window.telegramEnabled) {
+                        sendTelegramAlert(`💥 ${symbolShort} trend: DOWNTREND 💥`);
+                    }
                 }
             }
-            localStorage.setItem('lastAlertTrend', "UPTREND");
-        } else if (isBearishCross && isNewTrendCandle) {
-            const symbolShort = SYMBOL.replace("USDT", "");
-            if (!isInitial) {
-                speak(`${symbolShort} trend turned into DOWNTREND`);
-                if (window.telegramEnabled) {
-                    sendTelegramAlert(`💥 ${symbolShort} trend: DOWNTREND 💥`);
-                }
+            localStorage.setItem('lastAlertTrend', currentTrend);
+            if (currentTrend !== "NO TRADE ZONE") {
+                localStorage.setItem('lastTrendAlertCandle', current5mTs.toString());
             }
-            localStorage.setItem('lastAlertTrend', "DOWNTREND");
-            localStorage.setItem('lastTrendAlertCandle', current5mTs.toString());
-        } else if (currentTrend === "NO TRADE ZONE" && lastAlertTrend !== "NO TRADE ZONE" && lastAlertTrend !== "INITIALIZING") {
-            localStorage.setItem('lastAlertTrend', "NO TRADE ZONE");
         }
 
         localStorage.setItem('lastTrendState', currentTrend);
