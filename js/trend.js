@@ -119,25 +119,22 @@ async function updateTrend(isInitial = false) {
         const ema20_closed = calculateEMA(closedCandles, 20);
         const ema50_closed = calculateEMA(closedCandles, 50);
 
-        // Trend Determination Logic
+        // Simplify Trend Determination Logic as requested
+        const e10_5m = calculateEMA(closedCandles, 10);
+        const e20_5m = calculateEMA(closedCandles, 20);
+        const e50_5m = calculateEMA(closedCandles, 50);
+
+        // Ensure we use closed candles for 15m EMA calculation
+        const closed15m = p15m.slice(0, -1);
+        const e10_15m = calculateEMA(closed15m, 10);
+        const e20_15m = calculateEMA(closed15m, 20);
+
         let currentTrend = "NO TRADE ZONE";
 
-        if (closedCandles.length >= 2) {
-            const e10_0 = calculateEMA(closedCandles, 10);
-            const e20_0 = calculateEMA(closedCandles, 20);
-            const e50_0 = calculateEMA(closedCandles, 50);
-
-            const e10_1 = calculateEMA(closedCandles.slice(0, -1), 10);
-            const e20_1 = calculateEMA(closedCandles.slice(0, -1), 20);
-
-            // 1. Downtrend check (2 consecutive closed candles where 10 < 20)
-            if (e10_0 < e20_0 && e10_1 < e20_1) {
-                currentTrend = "DOWNTREND";
-            }
-            // 2. Uptrend check (2 consecutive closed candles where 10 > 20, AND most recent 10 > 50)
-            else if (e10_0 > e20_0 && e10_1 > e20_1 && e10_0 > e50_0) {
-                currentTrend = "UPTREND";
-            }
+        if (e10_5m > e20_5m && e10_5m > e50_5m && e10_15m > e20_15m) {
+            currentTrend = "UPTREND";
+        } else if (e20_5m > e10_5m) {
+            currentTrend = "DOWNTREND";
         }
 
         if (p1h.length < 4) return;

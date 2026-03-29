@@ -89,13 +89,7 @@ function processSpeechQueue() {
 function speak(text, callback) {
     if (!text) return;
 
-    // 1. Queue first read
-    speechQueue.push({ text: text });
-
-    // 2. Queue 0.5 second pause
-    speechQueue.push({ type: 'pause', duration: 300 });
-
-    // 3. Queue second read with final callback
+    // Queue only one read to reduce repetition (user requested "2 times" instead of "4 times")
     speechQueue.push({ text: text, callback: callback });
 
     processSpeechQueue();
