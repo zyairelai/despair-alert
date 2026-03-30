@@ -45,7 +45,7 @@ function getAudioContext() {
 }
 
 async function fetchKlines(interval) {
-    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${SYMBOL}&interval=${interval}&limit=100`;
+    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${SYMBOL}&interval=${interval}&limit=200`;
     const resp = await fetch(url);
     const data = await resp.json();
     return data.map(d => ({
@@ -57,18 +57,31 @@ async function fetchKlines(interval) {
     }));
 }
 
-function getHAColor(klines) {
+function calculateEMA(data, period) {
+    if (data.length < period) return null;
+    const k = 2 / (period + 1);
+    let ema = data.slice(0, period).reduce((acc, val) => acc + val, 0) / period;
+    for (let i = period; i < data.length; i++) {
+        ema = (data[i] - ema) * k + ema;
+    }
+    return ema;
+}
+
+function getHA(klines) {
     if (klines.length < 2) return null;
-    // Initial HA values
     let haOpen = (klines[0].open + klines[0].close) / 2;
     let haClose = (klines[0].open + klines[0].high + klines[0].low + klines[0].close) / 4;
+    let haHigh = klines[0].high;
+    let haLow = klines[0].low;
 
     for (let i = 1; i < klines.length; i++) {
         const k = klines[i];
         haOpen = (haOpen + haClose) / 2;
         haClose = (k.open + k.high + k.low + k.close) / 4;
+        haHigh = Math.max(k.high, haOpen, haClose);
+        haLow = Math.min(k.low, haOpen, haClose);
     }
-    return haClose > haOpen ? "GREEN" : "RED";
+    return { open: haOpen, high: haHigh, low: haLow, close: haClose, color: haClose > haOpen ? "GREEN" : "RED" };
 }
 
 async function updateTrend() {
@@ -83,8 +96,13 @@ async function updateTrend() {
         const prev1h = p1h[p1h.length - 2];
 
         // 1. HA & Raw Color Detection (1H Only)
-        const ha1h = getHAColor(p1h);
+        const ha1h = getHA(p1h);
         const raw1h = cur1h.close > cur1h.open ? "GREEN" : "RED";
+
+        // 1.2. EMA 50 Calculation
+        const closes = p1h.map(k => k.close);
+        const ema50 = calculateEMA(closes, 50);
+        const isAboveEma = ha1h && ema50 && ha1h.close > ema50;
 
         // 1.5. 1H Price Action Conditions
         const prev1hMinBody = Math.min(prev1h.open, prev1h.close);
@@ -93,8 +111,8 @@ async function updateTrend() {
         const priceHighBroken = cur1h.high > prev1hMaxBody;
 
         // 2. Trend Logic (1H Only + Price Condition)
-        const isRedSingularity = (ha1h === "RED" && raw1h === "RED" && priceLowBroken);
-        const isUptrend = (ha1h === "GREEN" && raw1h === "GREEN" && priceHighBroken);
+        const isRedSingularity = (ha1h && ha1h.color === "RED" && raw1h === "RED" && priceLowBroken);
+        const isUptrend = (ha1h && ha1h.color === "GREEN" && raw1h === "GREEN" && priceHighBroken && isAboveEma);
 
         // 3. Emergency 1h Logic
         const maxPrevHigh = prev1h.high;
@@ -301,8 +319,7 @@ function updateGlobalSymbol() {
     localStorage.removeItem('lastTrendAlertCandle');
     localStorage.removeItem('lastAlertCandle');
     localStorage.removeItem('lastEmergencyHour');
-    localStorage.removeItem('lastSS1h');
-    localStorage.removeItem('lastShootingStarHour');
+    localStorage.removeItem('lastRedSingularityHour');
 }
 
 // Ensure the dropdown matches the stored symbol on load
