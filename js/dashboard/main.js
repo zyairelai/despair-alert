@@ -87,7 +87,7 @@ document.addEventListener('keydown', (e) => {
     teleBuffer += e.key.toLowerCase();
     if (teleBuffer.length > 5) teleBuffer = teleBuffer.slice(-5);
 
-    const lastTwo = teleBuffer.slice(-2);
+    const lastTwo = teleBuffer.slice(-  2);
     const lastThree = teleBuffer.slice(-3);
 
     if (!window.telegramEnabled && (lastTwo === "te" || lastTwo === "tt" || lastTwo === "on")) {

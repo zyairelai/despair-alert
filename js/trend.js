@@ -5,7 +5,7 @@ let beepInterval = parseInt(localStorage.getItem('beepInterval')) || 5;
 let audioCtx = null;
 
 // Secret Telegram Toggle (Trend Change Alerts Only)
-window.telegramEnabled = false;
+window.telegramEnabled = true;
 let teleBuffer = "";
 
 document.addEventListener('keydown', (e) => {
@@ -186,7 +186,7 @@ function checkAndSendAlert(p1h, isEmergency = false, isRedSingularity = false) {
     const cooldownEndEmergency = lastEmergencyHour ? (parseInt(lastEmergencyHour) + 3600000 + 30000) : 0;
     if (isEmergency && nowTs >= cooldownEndEmergency) {
         const msg = `🩸 ${symbolShort} 1H EMERGENCY BREAKDOWN 🩸`;
-        sendTelegramAlert(msg);
+        if (window.telegramEnabled) sendTelegramAlert(msg);
         speak(`${symbolShort} 1 hour emergency breakdown.`);
         localStorage.setItem('lastEmergencyHour', currentHourTs.toString());
     }
@@ -196,7 +196,7 @@ function checkAndSendAlert(p1h, isEmergency = false, isRedSingularity = false) {
     const cooldownEndRS = lastRedSingularityHour ? (parseInt(lastRedSingularityHour) + 3600000 + 30000) : 0;
     if (isRedSingularity && nowTs >= cooldownEndRS) {
         const msg = `🩸 ${symbolShort} 1H RED SINGULARITY 🩸`;
-        sendTelegramAlert(msg);
+        if (window.telegramEnabled) sendTelegramAlert(msg);
         speak(`${symbolShort} 1 hour red singularity.`);
         localStorage.setItem('lastRedSingularityHour', currentHourTs.toString());
     }
