@@ -45,7 +45,7 @@ function getAudioContext() {
 }
 
 async function fetchKlines(interval) {
-    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${SYMBOL}&interval=${interval}&limit=200`;
+    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${SYMBOL}&interval=${interval}&limit=100`;
     const resp = await fetch(url);
     const data = await resp.json();
     return data.map(d => ({
