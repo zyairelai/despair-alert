@@ -61,26 +61,6 @@ async function checkAlert(id) {
             }
         }
 
-        if (id === 'ema-cross') {
-            const shortEl = document.getElementById('ema-cross-short');
-            const longEl = document.getElementById('ema-cross-long');
-            const shortPeriod = parseInt(shortEl.value) || parseInt(shortEl.placeholder) || 10;
-            const longPeriod = parseInt(longEl.value) || parseInt(longEl.placeholder) || 20;
-
-            const klines = await fetchKlines(symbol, tf);
-            if (klines.length < Math.max(shortPeriod, longPeriod) + 2) return;
-            const prices = klines.map(k => k.close);
-
-            const emaShortCurrent = calculateEMA(prices, shortPeriod);
-            const emaLongCurrent = calculateEMA(prices, longPeriod);
-            const emaShortPrev = calculateEMA(prices.slice(0, -1), shortPeriod);
-            const emaLongPrev = calculateEMA(prices.slice(0, -1), longPeriod);
-
-            // Trigger only on Bearish Cross (UP-to-DOWN) on closed candle
-            if (emaShortPrev > emaLongPrev && emaShortCurrent < emaLongCurrent) {
-                triggerAlert(id, `🩸 ${shortSymbol} ${tf} EMA BEARISH CROSS 🩸`, `Trend for ${shortSymbol} ${tf} turned into DOWN.`);
-            }
-        }
 
         if (id === 'heikin') {
             const el = document.getElementById('heikin-condition');
@@ -344,7 +324,7 @@ function triggerAlert(id, message, voiceMessage = null) {
     speak(textToSpeak, cleanUI);
 
     // Special channel for EMA Alert, EMA Cross, Heikin, and Shooting Star
-    const wolvesRiseIds = ['ema-alert', 'ema-cross', 'heikin'];
+    const wolvesRiseIds = ['ema-alert', 'heikin'];
     const telegramChatId = wolvesRiseIds.includes(id) ? "@futures_wolves_rise" : null;
 
     // Send Telegram Alert ONLY if enabled (Secret Toggle)

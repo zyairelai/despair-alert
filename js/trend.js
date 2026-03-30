@@ -44,28 +44,6 @@ function getAudioContext() {
     return audioCtx;
 }
 
-async function fetchKlines(interval) {
-    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${SYMBOL}&interval=${interval}&limit=200`;
-    const resp = await fetch(url);
-    const data = await resp.json();
-    return data.map(d => ({
-        timestamp: d[0],
-        open: parseFloat(d[1]),
-        high: parseFloat(d[2]),
-        low: parseFloat(d[3]),
-        close: parseFloat(d[4])
-    }));
-}
-
-function calculateEMA(data, period) {
-    if (data.length < period) return null;
-    const k = 2 / (period + 1);
-    let ema = data.slice(0, period).reduce((acc, val) => acc + val, 0) / period;
-    for (let i = period; i < data.length; i++) {
-        ema = (data[i] - ema) * k + ema;
-    }
-    return ema;
-}
 
 function getHA(klines) {
     if (klines.length < 2) return null;
@@ -87,7 +65,7 @@ function getHA(klines) {
 async function updateTrend() {
     try {
         const [p1h] = await Promise.all([
-            fetchKlines("1h")
+            fetchKlines(SYMBOL, "1h")
         ]);
 
         if (p1h.length < 50) return;
@@ -162,16 +140,6 @@ async function updateTrend() {
     }
 }
 
-function updateFavicon(path) {
-    let link = document.getElementById('favicon') || document.querySelector("link[rel~='icon']");
-    if (!link) {
-        link = document.createElement('link');
-        link.id = 'favicon';
-        link.rel = 'icon';
-        document.getElementsByTagName('head')[0].appendChild(link);
-    }
-    link.href = path;
-}
 
 
 function checkAndSendAlert(p1h, isEmergency = false, isRedSingularity = false) {
@@ -195,7 +163,7 @@ function checkAndSendAlert(p1h, isEmergency = false, isRedSingularity = false) {
     const lastRedSingularityHour = localStorage.getItem('lastRedSingularityHour');
     const cooldownEndRS = lastRedSingularityHour ? (parseInt(lastRedSingularityHour) + 3600000 + 30000) : 0;
     if (isRedSingularity && nowTs >= cooldownEndRS) {
-        const msg = `🩸 ${symbolShort} 1H RED SINGULARITY 🩸`;
+        const msg = `💥 ${symbolShort} 1H RED SINGULARITY 💥`;
         if (window.telegramEnabled) sendTelegramAlert(msg);
         speak(`${symbolShort} 1 hour red singularity.`);
         localStorage.setItem('lastRedSingularityHour', currentHourTs.toString());
@@ -270,17 +238,6 @@ function start() {
 // Beep logic simplified to always trigger on 5m interval
 let monitorInterval = null;
 
-function toggleGlobalSymbol() {
-    // const btn = document.getElementById('global-symbol');
-    // if (!btn) return;
-
-    // const currentSymbol = btn.innerText;
-    // const nextSymbol = currentSymbol === 'BTCUSDT' ? 'ETHUSDT' : 'BTCUSDT';
-
-    // btn.innerText = nextSymbol;
-    // updateGlobalSymbol();
-    console.log("Symbol toggle disabled (static BTC)");
-}
 
 function updateGlobalSymbol() {
     const btn = document.getElementById('global-symbol');

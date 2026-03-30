@@ -72,9 +72,6 @@ function toggleConditionState(id) {
     } else if (id === 'rawcandle-condition') {
         nextState = currentState === 'green' ? 'red' : 'green';
         nextText = nextState === 'green' ? 'GREEN' : 'RED';
-    } else if (id === 'ema-cross-condition') {
-        nextState = currentState === 'up' ? 'down' : 'up';
-        nextText = nextState === 'up' ? 'UP' : 'DOWN';
     } else if (id === 'ema-alert-condition') {
         nextState = currentState === 'above' ? 'below' : 'above';
         nextText = nextState === 'above' ? 'ABOVE' : 'BELOW';
@@ -163,17 +160,6 @@ function toggleBreakoutMode() {
     console.log(`Breakout mode toggled to: ${nextState}`);
 }
 
-function toggleGlobalSymbol() {
-    // const btn = document.getElementById('global-symbol');
-    // if (!btn) return;
-
-    // const currentSymbol = btn.innerText;
-    // const nextSymbol = currentSymbol === 'BTCUSDT' ? 'ETHUSDT' : 'BTCUSDT';
-
-    // btn.innerText = nextSymbol;
-    // updateGlobalSymbol();
-    console.log("Symbol toggle disabled (static BTC)");
-}
 
 async function updateGlobalSymbol() {
     const btn = document.getElementById('global-symbol');
@@ -209,7 +195,6 @@ async function updateGlobalSymbol() {
 function setupNumericInputs() {
     const numericSelectors = [
         '#price-target-1', '#price-target-2', '#price-target-3',
-        '#ema-cross-short', '#ema-cross-long',
         '#line-touch-price', '#standing-level', '#ema-alert-level',
         '#breakout-lookback'
     ];

@@ -1,7 +1,6 @@
 const alerts = {
     price: { active: false, interval: null, lastTriggerCandleTime: null },
     'ema-alert': { active: false, interval: null },
-    'ema-cross': { active: false, interval: null },
     heikin: { active: false, interval: null },
     rawcandle: { active: false, interval: null },
     breakout: { active: false, interval: null }

@@ -32,12 +32,6 @@ async function fetchDailyLevels(symbol) {
     }
 }
 
-async function fetchPrice(symbol) {
-    const url = `https://fapi.binance.com/fapi/v1/ticker/price?symbol=${symbol}`;
-    const resp = await fetch(url);
-    const data = await resp.json();
-    return parseFloat(data.price);
-}
 
 const klineCache = {};
 

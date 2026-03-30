@@ -20,7 +20,7 @@
 
     <div class="container">
         <header style="margin-bottom: 1.2rem;">
-            <button id="global-symbol" onclick="toggleGlobalSymbol()">BTCUSDT</button>
+            <button id="global-symbol">BTCUSDT</button>
         </header>
 
         <div class="alert-grid">
@@ -107,49 +107,6 @@
                 </div>
             </div>
 
-            <!-- EMA Cross -->
-            <!--
-            <div class="alert-card" id="ema-cross-card">
-                <div class="card-header">
-                    <h2>EMA TREND</h2>
-                    <div class="status-indicator inactive">
-                        <div class="dot" id="ema-cross-dot"></div>
-                        <span id="ema-cross-status">INACTIVE</span>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <div class="tf-selector" id="ema-cross-tf-selector">
-                        <button type="button" class="tf-current-btn" id="ema-cross-tf-trigger"
-                            onclick="toggleTFMenu('ema-cross')">5m</button>
-                        <div class="tf-dropdown-menu" id="ema-cross-tf-menu" data-value="5m">
-                            <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '1m')">1m</button>
-                                <button type="button" class="tf-btn active"
-                                    onclick="setTF('ema-cross', '5m')">5m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('ema-cross', '1h')">1H</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="input-row">
-                        <label>Short</label>
-                        <input type="number" id="ema-cross-short" placeholder="10">
-                    </div>
-                    <div class="input-row">
-                        <label>Long</label>
-                        <input type="number" id="ema-cross-long" placeholder="20">
-                    </div>
-                    <div class="input-row">
-                        <label>Side</label>
-                        <button type="button" id="ema-cross-condition" class="condition-toggle red-mode"
-                            data-state="down">DOWN</button>
-                    </div>
-                </div>
-                <div class="action-group">
-                    <button class="toggle-btn" onclick="toggleAlert('ema-cross')">START</button>
-                </div>
-            </div>
-            -->
 
             <!-- BREAKOUT -->
             <div class="alert-card white-text" id="breakout-card">
