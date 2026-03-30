@@ -7,7 +7,7 @@ from api_universal import UniversalAPI
 async def execute_long(exchange_id):
     try:
         api = UniversalAPI(exchange_id)
-        res = await api.market_open_long(arguments.pair, arguments.quantity)
+        res = await api.market_open_long(arguments.pair, arguments.quantity/2)
         if res and res.get('id'):
             print(f"🚀 {exchange_id.upper()}: LONG TO THE MOON 🚀")
         await api.close()

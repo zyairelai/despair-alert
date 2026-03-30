@@ -1,9 +1,7 @@
 let SYMBOL = localStorage.getItem('globalSymbol') || "BTCUSDT";
 let started = false;
-let sessionStarted = true;
 let lastBeepInterval = 0;
 let beepInterval = parseInt(localStorage.getItem('beepInterval')) || 5;
-let monitoringStartTime = 0;
 let audioCtx = null;
 
 // Secret Telegram Toggle (Trend Change Alerts Only)
@@ -59,98 +57,57 @@ async function fetchKlines(interval) {
     }));
 }
 
-function isShootingStar(klines) {
-    if (klines.length < 7) return false;
+function getHAColor(klines) {
+    if (klines.length < 2) return null;
+    // Initial HA values
+    let haOpen = (klines[0].open + klines[0].close) / 2;
+    let haClose = (klines[0].open + klines[0].high + klines[0].low + klines[0].close) / 4;
 
-    const ss = klines[klines.length - 2]; // Target candle (last closed)
-    const prior3 = klines.slice(klines.length - 5, klines.length - 2); // -3, -4, -5
-    const prior5 = klines.slice(klines.length - 7, klines.length - 2); // -3, -4, -5, -6, -7
-
-    const ssBody = Math.abs(ss.open - ss.close);
-    const ssUpperWick = ss.high - Math.max(ss.open, ss.close);
-    const ssLowerWick = Math.min(ss.open, ss.close) - ss.low;
-    const ssRangeHC = ss.high - ss.close;
-
-    // 1. Upper wick > (body + lower wick)
-    const cond1 = ssUpperWick > (ssBody + ssLowerWick);
-
-    // 2. Upper wick > max upper wick of last 3 candles before SS
-    const maxUpperWick3 = Math.max(...prior3.map(k => k.high - Math.max(k.open, k.close)));
-    const cond2 = ssUpperWick > maxUpperWick3;
-
-    // 3. Range (high-close) > average range (high-close) of last 5 candles before SS
-    const avgRangeHC5 = prior5.reduce((sum, k) => sum + (k.high - k.close), 0) / 5;
-    const cond3 = ssRangeHC > avgRangeHC5;
-
-    // 4. High > highest high of last 5 candles before SS
-    const maxHigh5 = Math.max(...prior5.map(k => k.high));
-    const cond4 = ss.high > maxHigh5;
-
-    return cond1 && cond2 && cond3 && cond4;
-}
-
-function calculateEMA(data, period) {
-    if (data.length < period) return null;
-    const k = 2 / (period + 1);
-    let ema = data.slice(0, period).reduce((acc, val) => acc + val.close, 0) / period;
-    for (let i = period; i < data.length; i++) {
-        ema = (data[i].close - ema) * k + ema;
+    for (let i = 1; i < klines.length; i++) {
+        const k = klines[i];
+        haOpen = (haOpen + haClose) / 2;
+        haClose = (k.open + k.high + k.low + k.close) / 4;
     }
-    return ema;
+    return haClose > haOpen ? "GREEN" : "RED";
 }
 
-async function updateTrend(isInitial = false) {
+async function updateTrend() {
     try {
-        const [p1h, p15m, p5m] = await Promise.all([
+        const [p1h, p15m] = await Promise.all([
             fetchKlines("1h"),
-            fetchKlines("15m"),
-            fetchKlines("5m")
+            fetchKlines("15m")
         ]);
 
-        // 5m (LTF) UI Update - only depends on p5m
-        const closed5m = p5m.slice(0, -1);
+        if (p1h.length < 50 || p15m.length < 50) return;
 
-        if (closed5m.length < 51) return; // Need at least 50 for EMA50 + some buffer
-
-
-
-        const closedCandles = p5m.slice(0, -1);
-        const ema10_closed = calculateEMA(closedCandles, 10);
-        const ema20_closed = calculateEMA(closedCandles, 20);
-        const ema50_closed = calculateEMA(closedCandles, 50);
-
-        // Simplify Trend Determination Logic as requested
-        const e10_5m = calculateEMA(closedCandles, 10);
-        const e20_5m = calculateEMA(closedCandles, 20);
-        const e50_5m = calculateEMA(closedCandles, 50);
-
-        // Ensure we use closed candles for 15m EMA calculation
-        const closed15m = p15m.slice(0, -1);
-        const e10_15m = calculateEMA(closed15m, 10);
-        const e20_15m = calculateEMA(closed15m, 20);
-
-        let currentTrend = "NO TRADE ZONE";
-
-        if (e10_5m > e20_5m && e10_5m > e50_5m && e10_15m > e20_15m) {
-            currentTrend = "UPTREND";
-        } else if (e20_5m > e10_5m) {
-            currentTrend = "DOWNTREND";
-        }
-
-        if (p1h.length < 4) return;
-
-        // Emergency 1h Logic: Current high > previous high AND current 1h candle is RED
         const cur1h = p1h[p1h.length - 1];
         const prev1h = p1h[p1h.length - 2];
+        const cur15m = p15m[p15m.length - 1];
+
+        // 1. HA & Raw Color Detection (Alignment)
+        const ha1h = getHAColor(p1h);
+        const raw1h = cur1h.close > cur1h.open ? "GREEN" : "RED";
+        const ha15m = getHAColor(p15m);
+        const raw15m = cur15m.close > cur15m.open ? "GREEN" : "RED";
+
+        // 1.5. 1H Price Action Conditions
+        const prev1hMinBody = Math.min(prev1h.open, prev1h.close);
+        const prev1hMaxBody = Math.max(prev1h.open, prev1h.close);
+        const priceLowBroken = cur1h.low < prev1hMinBody;
+        const priceHighBroken = cur1h.high > prev1hMaxBody;
+
+        // 2. Alignment Logic (Now includes 1H Price Condition)
+        const isRedSingularity = (ha1h === "RED" && raw1h === "RED" && priceLowBroken) && (ha15m === "RED" && raw15m === "RED");
+        const isUptrend = (ha1h === "GREEN" && raw1h === "GREEN" && priceHighBroken) && (ha15m === "GREEN" && raw15m === "GREEN");
+
+        // 3. Emergency 1h Logic
         const maxPrevHigh = prev1h.high;
         const isEmergency = cur1h.high > maxPrevHigh && cur1h.close < cur1h.open;
 
         const trendDisplay = document.getElementById("trendDisplay");
         const symbolBtn = document.getElementById("global-symbol");
 
-        const lastAlertTrend = localStorage.getItem('lastAlertTrend') || "INITIALIZING";
-
-        // UI Visuals - Priority to EMERGENCY if present
+        // UI Visuals
         if (isEmergency) {
             trendDisplay.innerText = "1H EMERGENCY BREAKDOWN";
             trendDisplay.className = "overall-trend trend-down";
@@ -159,15 +116,7 @@ async function updateTrend(isInitial = false) {
                 symbolBtn.classList.remove("title-green", "title-yellow");
             }
             updateFavicon("images/favicon_red.png");
-        } else if (currentTrend === "UPTREND") {
-            trendDisplay.innerText = "CURRENTLY UPTREND";
-            trendDisplay.className = "overall-trend trend-up";
-            if (symbolBtn) {
-                symbolBtn.classList.add("title-green");
-                symbolBtn.classList.remove("title-red", "title-yellow");
-            }
-            updateFavicon("images/favicon_green.png");
-        } else if (currentTrend === "DOWNTREND") {
+        } else if (isRedSingularity) {
             trendDisplay.innerText = "CURRENTLY DOWNTREND";
             trendDisplay.className = "overall-trend trend-down";
             if (symbolBtn) {
@@ -175,6 +124,14 @@ async function updateTrend(isInitial = false) {
                 symbolBtn.classList.remove("title-green", "title-yellow");
             }
             updateFavicon("images/favicon_red.png");
+        } else if (isUptrend) {
+            trendDisplay.innerText = "CURRENTLY UPTREND";
+            trendDisplay.className = "overall-trend trend-up";
+            if (symbolBtn) {
+                symbolBtn.classList.add("title-green");
+                symbolBtn.classList.remove("title-red", "title-yellow");
+            }
+            updateFavicon("images/favicon_green.png");
         } else {
             trendDisplay.innerText = "NO TRADE ZONE";
             trendDisplay.className = "overall-trend trend-neutral";
@@ -185,36 +142,7 @@ async function updateTrend(isInitial = false) {
             updateFavicon("images/favicon_yellow.png");
         }
 
-        // Trend Alerts 
-        const current5mTs = p5m[p5m.length - 1].timestamp;
-        const lastTrendAlertCandle = localStorage.getItem('lastTrendAlertCandle');
-        const isNewTrendCandle = !lastTrendAlertCandle || current5mTs > parseInt(lastTrendAlertCandle);
-
-        if (currentTrend !== lastAlertTrend) {
-            const symbolShort = SYMBOL.replace("USDT", "");
-
-            if (!isInitial) {
-                if (currentTrend === "UPTREND") {
-                    speak(`${symbolShort} trend: UPTREND`);
-                    if (window.telegramEnabled) {
-                        sendTelegramAlert(`🚀 ${symbolShort} trend: UPTREND 🚀`);
-                    }
-                } else if (currentTrend === "DOWNTREND") {
-                    speak(`${symbolShort} trend turned into DOWNTREND`);
-                    if (window.telegramEnabled) {
-                        sendTelegramAlert(`💥 ${symbolShort} trend: DOWNTREND 💥`);
-                    }
-                }
-            }
-            localStorage.setItem('lastAlertTrend', currentTrend);
-            if (currentTrend !== "NO TRADE ZONE") {
-                localStorage.setItem('lastTrendAlertCandle', current5mTs.toString());
-            }
-        }
-
-        localStorage.setItem('lastTrendState', currentTrend);
-
-        checkAndSendAlert(p1h, p15m, p5m, isEmergency);
+        checkAndSendAlert(p1h, isEmergency, isRedSingularity);
     } catch (e) {
         console.error("Trend update failed", e);
     }
@@ -232,90 +160,32 @@ function updateFavicon(path) {
 }
 
 
-function checkAndSendAlert(p1h, p15m, p5m, isEmergency = false) {
-    const lastEmergencyHour = localStorage.getItem('lastEmergencyHour');
-
+function checkAndSendAlert(p1h, isEmergency = false, isRedSingularity = false) {
     const now = new Date();
     const nowTs = now.getTime();
     const currentHourTs = Math.floor(nowTs / (3600 * 1000)) * (3600 * 1000);
-    const cooldownEnd = lastEmergencyHour ? (parseInt(lastEmergencyHour) + 3600000 + 30000) : 0;
-    const isNewEmergencyHour = nowTs >= cooldownEnd;
+
+    const symbolShort = SYMBOL.replace("USDT", "");
 
     // 1. Emergency Case: 1H Breakdown
-    if (isEmergency && isNewEmergencyHour) {
-        const symbolShort = SYMBOL.replace("USDT", "");
+    const lastEmergencyHour = localStorage.getItem('lastEmergencyHour');
+    const cooldownEndEmergency = lastEmergencyHour ? (parseInt(lastEmergencyHour) + 3600000 + 30000) : 0;
+    if (isEmergency && nowTs >= cooldownEndEmergency) {
         const msg = `🩸 ${symbolShort} 1H EMERGENCY BREAKDOWN 🩸`;
-
         sendTelegramAlert(msg);
         speak(`${symbolShort} 1 hour emergency breakdown.`);
-
         localStorage.setItem('lastEmergencyHour', currentHourTs.toString());
-        sessionStarted = true;
     }
 
-    // 1.5. Local Variables for Cross Logic (Stable Trend)
-    const closed5m = p5m.slice(0, -1);
-    const ema10_5m = calculateEMA(closed5m, 10);
-    const ema20_5m = calculateEMA(closed5m, 20);
-    const ltfUp = ema10_5m > ema20_5m;
-    const ltfDown = ema10_5m < ema20_5m;
-
-    // 1.6. Bearish Cross Logic (Only alert UP to DOWN on closed candle)
-    const lastAlertTrend = localStorage.getItem('lastAlertTrend'); // Store previous trend state
-    const current5mTs = p5m[p5m.length - 1].timestamp;
-    const lastAlertCandle = localStorage.getItem('lastAlertCandle');
-    const isNewCandle = !lastAlertCandle || current5mTs > parseInt(lastAlertCandle);
-
-    const closedCandles = p5m.slice(0, -1);
-    const ema10_closed = calculateEMA(closedCandles, 10);
-    const ema20_closed = calculateEMA(closedCandles, 20);
-    const ema10_prev_closed = calculateEMA(closedCandles.slice(0, -1), 10);
-    const ema20_prev_closed = calculateEMA(closedCandles.slice(0, -1), 20);
-
-    const isBearishCross = (ema10_prev_closed > ema20_prev_closed) && (ema10_closed < ema20_closed);
-
-    /**
-    if (isBearishCross && isNewCandle) {
-        const symbolShort = SYMBOL.replace("USDT", "");
-        const msg = `💥 ${symbolShort} 5m EMA BEARISH CROSS 💥`;
+    // 2. Red Singularity Alert
+    const lastRedSingularityHour = localStorage.getItem('lastRedSingularityHour');
+    const cooldownEndRS = lastRedSingularityHour ? (parseInt(lastRedSingularityHour) + 3600000 + 30000) : 0;
+    if (isRedSingularity && nowTs >= cooldownEndRS) {
+        const msg = `🩸 ${symbolShort} 1H RED SINGULARITY 🩸`;
         sendTelegramAlert(msg);
-        speak(`${symbolShort} 5 minute trend turned into DOWN.`);
-        localStorage.setItem('lastAlertCandle', current5mTs.toString());
+        speak(`${symbolShort} 1 hour red singularity.`);
+        localStorage.setItem('lastRedSingularityHour', currentHourTs.toString());
     }
-    **/
-
-    const ema10_15m = calculateEMA(p15m, 10);
-    const ema20_15m = calculateEMA(p15m, 20);
-    const isEmaConditionMet = (ema20_15m > ema10_15m) || (ema20_5m > ema10_5m);
-
-    // 2. Shooting Star Case: 15m, 5m
-    const checkSS = (tf, klines, intervalMs, storageKey) => {
-        if (!isEmaConditionMet) return false; // Early exit if EMA condition fails
-
-        const lastAlert = localStorage.getItem(storageKey);
-        const intervalStart = Math.floor(nowTs / intervalMs) * intervalMs;
-
-        // Cooldown: Mute until the NEXT interval + 30 seconds
-        const cooldownEnd = lastAlert ? (parseInt(lastAlert) + intervalMs + 30000) : 0;
-        const isCooledDown = nowTs >= cooldownEnd;
-
-        if (isCooledDown && isShootingStar(klines)) {
-            const symbolShort = SYMBOL.replace("USDT", "");
-            const emoji = "🌠";
-            const msg = `${emoji} ${symbolShort} ${tf} SHOOTING STAR ${emoji}`;
-
-            sendTelegramAlert(msg);
-            speak(`${symbolShort} ${tf} shooting star detected.`);
-
-            localStorage.setItem(storageKey, intervalStart.toString());
-            return true;
-        }
-        return false;
-    };
-
-    // Check each timeframe independently
-    checkSS("15m", p15m, 900000, 'lastSS15m');
-    checkSS("5m", p5m, 300000, 'lastSS5m');
 }
 
 function beep() {
@@ -365,13 +235,18 @@ function start() {
     started = true;
     document.getElementById("startBtn").disabled = true;
     document.getElementById("startBtn").innerText = "MONITORING ACTIVE";
-    monitoringStartTime = Date.now();
+
+    // Initialize alert cooldowns to now to avoid immediate trigger on first run
+    const nowTs = Date.now();
+    const currentHourTs = Math.floor(nowTs / (3600 * 1000)) * (3600 * 1000);
+    localStorage.setItem('lastEmergencyHour', currentHourTs.toString());
+    localStorage.setItem('lastRedSingularityHour', currentHourTs.toString());
 
     // Initialize to current interval to avoid double-beep on start
-    lastBeepInterval = Math.floor(Date.now() / (beepInterval * 60 * 1000));
+    lastBeepInterval = Math.floor(nowTs / (beepInterval * 60 * 1000));
 
     monitorInterval = setInterval(tick, 1000);
-    updateTrend(true); // Initial Immediate Update (no alerts)
+    updateTrend(); // Initial Immediate Update (silenced by cooldown)
     tick();
 
     // Initial check does not beep or alert, just verifies audio
