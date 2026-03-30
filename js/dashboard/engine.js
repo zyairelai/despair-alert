@@ -292,41 +292,6 @@ async function checkAlert(id) {
             }
         }
 
-        if (id === 'sfp-short') {
-            const tfSelectors = [
-                document.getElementById('sfp-short-1-tf-menu'),
-                document.getElementById('sfp-short-3-tf-menu')
-            ];
-            const tfs = tfSelectors
-                .filter(el => el !== null)
-                .map(el => el.dataset.value);
-
-            const uniqueTfs = [...new Set(tfs)];
-
-            for (const currentTf of uniqueTfs) {
-                const klines = await fetchKlines(symbol, currentTf);
-                if (klines.length < 4) continue;
-
-                const currentCandle = klines[klines.length - 1];
-                const previousKlines = klines.slice(klines.length - 4, klines.length - 1); // 3 previous candles
-                const maxPreviousHigh = Math.max(...previousKlines.map(k => k.high));
-
-                // Guard: For 1h or higher, skip if the candle is less than 3 minutes old
-                const isHtf = currentTf.includes('h') || currentTf.includes('d');
-                if (isHtf) {
-                    const candleAgeSeconds = (Date.now() - currentCandle.time) / 1000;
-                    if (candleAgeSeconds < 180) {
-                        continue; // Skip this TF for now
-                    }
-                }
-
-                if (currentCandle.high > maxPreviousHigh && currentCandle.close < currentCandle.open) {
-                    const voiceMsg = `${currentTf} bearish swing failure pattern detected.`;
-                    triggerAlert(id, `🩸 ${shortSymbol} ${currentTf} BEARISH SFP 🩸`, voiceMsg);
-                    break; // stop checking other TFs once one is triggered
-                }
-            }
-        }
 
 
     } catch (e) {

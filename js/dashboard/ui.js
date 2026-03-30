@@ -25,14 +25,12 @@ function setTF(id, val) {
     // Update data attribute
     menu.dataset.value = val;
 
-    // Update trigger text
-    trigger.innerText = val;
-
-    // Update button states in grid
+    // Update button states and trigger text from button labels
     const buttons = menu.querySelectorAll('.tf-btn');
     buttons.forEach(btn => {
         if (btn.innerText.toLowerCase() === val.toLowerCase()) {
             btn.classList.add('active');
+            trigger.innerText = btn.innerText; // Use button text for display
         } else {
             btn.classList.remove('active');
         }
