@@ -73,22 +73,18 @@ function getHAColor(klines) {
 
 async function updateTrend() {
     try {
-        const [p1h, p15m] = await Promise.all([
-            fetchKlines("1h"),
-            fetchKlines("15m")
+        const [p1h] = await Promise.all([
+            fetchKlines("1h")
         ]);
 
-        if (p1h.length < 50 || p15m.length < 50) return;
+        if (p1h.length < 50) return;
 
         const cur1h = p1h[p1h.length - 1];
         const prev1h = p1h[p1h.length - 2];
-        const cur15m = p15m[p15m.length - 1];
 
-        // 1. HA & Raw Color Detection (Alignment)
+        // 1. HA & Raw Color Detection (1H Only)
         const ha1h = getHAColor(p1h);
         const raw1h = cur1h.close > cur1h.open ? "GREEN" : "RED";
-        const ha15m = getHAColor(p15m);
-        const raw15m = cur15m.close > cur15m.open ? "GREEN" : "RED";
 
         // 1.5. 1H Price Action Conditions
         const prev1hMinBody = Math.min(prev1h.open, prev1h.close);
@@ -96,9 +92,9 @@ async function updateTrend() {
         const priceLowBroken = cur1h.low < prev1hMinBody;
         const priceHighBroken = cur1h.high > prev1hMaxBody;
 
-        // 2. Alignment Logic (Now includes 1H Price Condition)
-        const isRedSingularity = (ha1h === "RED" && raw1h === "RED" && priceLowBroken) && (ha15m === "RED" && raw15m === "RED");
-        const isUptrend = (ha1h === "GREEN" && raw1h === "GREEN" && priceHighBroken) && (ha15m === "GREEN" && raw15m === "GREEN");
+        // 2. Trend Logic (1H Only + Price Condition)
+        const isRedSingularity = (ha1h === "RED" && raw1h === "RED" && priceLowBroken);
+        const isUptrend = (ha1h === "GREEN" && raw1h === "GREEN" && priceHighBroken);
 
         // 3. Emergency 1h Logic
         const maxPrevHigh = prev1h.high;
@@ -306,7 +302,6 @@ function updateGlobalSymbol() {
     localStorage.removeItem('lastAlertCandle');
     localStorage.removeItem('lastEmergencyHour');
     localStorage.removeItem('lastSS1h');
-    localStorage.removeItem('lastSS15m');
     localStorage.removeItem('lastShootingStarHour');
 }
 
