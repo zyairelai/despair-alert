@@ -138,12 +138,12 @@ function checkAndSendAlert(p1h, isEmergency = false, isRedSingularity = false, i
     // 1. Emergency Case: 1H Breakdown
     const lastEmergencyHour = localStorage.getItem('lastEmergencyHour');
     const cooldownEndEmergency = lastEmergencyHour ? (parseInt(lastEmergencyHour) + 3600000 + 30000) : 0;
-    if (isEmergency && nowTs >= cooldownEndEmergency) {
-        const msg = `🩸 ${symbolShort} 1H EMERGENCY BREAKDOWN 🩸`;
-        if (window.telegramEnabled) sendTelegramAlert(msg);
-        speak(`${symbolShort} 1 hour emergency breakdown.`);
-        localStorage.setItem('lastEmergencyHour', currentHourTs.toString());
-    }
+    // if (isEmergency && nowTs >= cooldownEndEmergency) {
+    //     const msg = `🩸 ${symbolShort} 1H EMERGENCY BREAKDOWN 🩸`;
+    //     if (window.telegramEnabled) sendTelegramAlert(msg);
+    //     speak(`${symbolShort} 1 hour emergency breakdown.`);
+    //     localStorage.setItem('lastEmergencyHour', currentHourTs.toString());
+    // }
 
     // 2. Red Singularity Alert
     const lastRedSingularityHour = localStorage.getItem('lastRedSingularityHour');
