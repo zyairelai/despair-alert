@@ -142,10 +142,24 @@ function toggleHeikinType() {
     if (!btn) return;
 
     const currentState = btn.dataset.state;
-    const nextState = currentState === 'perfect' ? 'doji' : 'perfect';
+    let nextState;
+
+    if (currentState === 'perfect') {
+        nextState = 'doji';
+    } else if (currentState === 'doji') {
+        nextState = 'any';
+    } else {
+        nextState = 'perfect';
+    }
 
     btn.dataset.state = nextState;
-    btn.innerText = nextState.toUpperCase();
+    btn.innerText = nextState === 'any' ? '-' : nextState.toUpperCase();
+
+    if (nextState === 'any') {
+        btn.classList.add('dimmed-mode');
+    } else {
+        btn.classList.remove('dimmed-mode');
+    }
 
     console.log(`Heikin type toggled to: ${nextState}`);
 }

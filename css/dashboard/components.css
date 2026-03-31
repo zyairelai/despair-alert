@@ -350,6 +350,11 @@ select option {
     pointer-events: none !important;
 }
 
+.dimmed-mode {
+    color: var(--text-dim) !important;
+    border-color: var(--glass-border) !important;
+}
+
 .running-title {
     color: var(--accent-red) !important;
 }

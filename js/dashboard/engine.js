@@ -105,6 +105,8 @@ async function checkAlert(id) {
                         }
                     } else if (type === 'doji') {
                         val = (color === 'green' ? isGreen : isRed) && hasTopWick && hasBottomWick;
+                    } else if (type === 'any') {
+                        val = (color === 'green' ? isGreen : isRed);
                     }
 
                     let triggered = (cond === 'is' ? val : !val);
@@ -112,10 +114,11 @@ async function checkAlert(id) {
                     let voiceMsg = "";
 
                     if (triggered) {
-                        const typeLabel = type.toUpperCase();
+                        const typeLabel = type === 'any' ? "" : type.toUpperCase();
                         const colorLabel = color.toUpperCase();
                         const condLabel = cond.toUpperCase();
-                        const voiceType = type === 'doji' ? 'indecisive' : typeLabel;
+                        let voiceType = type === 'doji' ? 'indecisive' : typeLabel;
+                        if (type === 'any') voiceType = "";
 
                         // Determine Emoji
                         let emoji = "⚠️";
@@ -125,8 +128,8 @@ async function checkAlert(id) {
                         if (isPerfectRed) emoji = "💥";
                         else if (isPerfectGreen) emoji = "🚀";
 
-                        msg = `${emoji} ${shortSymbol} ${tf} HEIKIN ${condLabel} ${typeLabel} ${colorLabel} ${emoji}`;
-                        voiceMsg = `${shortSymbol} ${tf} heikin ashi ${cond === 'is' ? 'is now' : 'is no longer'} ${voiceType} ${colorLabel}`;
+                        msg = `${emoji} ${shortSymbol} ${tf} HEIKIN ${condLabel}${typeLabel ? " " + typeLabel : ""} ${colorLabel} ${emoji}`;
+                        voiceMsg = `${shortSymbol} ${tf} heikin ashi ${cond === 'is' ? 'is now' : 'is no longer'}${voiceType ? " " + voiceType : ""} ${colorLabel}`;
                         triggerAlert(id, msg, voiceMsg);
                     }
                 }
