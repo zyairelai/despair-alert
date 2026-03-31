@@ -96,6 +96,12 @@ async function updateTrend() {
         const maxPrevHigh = prev1h.high;
         const isEmergency = cur1h.high > maxPrevHigh && cur1h.close < cur1h.open;
 
+        // Calculate Perfect Red for Previous Candle
+        const haPrev1h = getHA(p1h.slice(0, -1));
+        const isPrevPerfectRed = haPrev1h &&
+            haPrev1h.color === "RED" &&
+            haPrev1h.high <= Math.max(haPrev1h.open, haPrev1h.close) + (haPrev1h.open * 0.0001);
+
         const trendDisplay = document.getElementById("trendDisplay");
         const symbolBtn = document.getElementById("global-symbol");
 
@@ -114,7 +120,7 @@ async function updateTrend() {
             trendDisplay.className = "overall-trend trend-neutral";
         }
 
-        checkAndSendAlert(p1h, isEmergency, isRedSingularity);
+        checkAndSendAlert(p1h, isEmergency, isRedSingularity, isPrevPerfectRed);
     } catch (e) {
         console.error("Trend update failed", e);
     }
@@ -122,7 +128,7 @@ async function updateTrend() {
 
 
 
-function checkAndSendAlert(p1h, isEmergency = false, isRedSingularity = false) {
+function checkAndSendAlert(p1h, isEmergency = false, isRedSingularity = false, isPrevPerfectRed = false) {
     const now = new Date();
     const nowTs = now.getTime();
     const currentHourTs = Math.floor(nowTs / (3600 * 1000)) * (3600 * 1000);
@@ -142,7 +148,7 @@ function checkAndSendAlert(p1h, isEmergency = false, isRedSingularity = false) {
     // 2. Red Singularity Alert
     const lastRedSingularityHour = localStorage.getItem('lastRedSingularityHour');
     const cooldownEndRS = lastRedSingularityHour ? (parseInt(lastRedSingularityHour) + 3600000 + 30000) : 0;
-    if (isRedSingularity && nowTs >= cooldownEndRS) {
+    if (isRedSingularity && nowTs >= cooldownEndRS && !isPrevPerfectRed) {
         const msg = `💥 ${symbolShort} 1H RED SINGULARITY 💥`;
         if (window.telegramEnabled) sendTelegramAlert(msg);
         speak(`${symbolShort} 1 hour red singularity.`);
