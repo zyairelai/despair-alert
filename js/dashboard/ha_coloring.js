@@ -1,39 +1,16 @@
 async function updateTitleAndFavicon() {
     // Both Main Dashboard and Trend page now use this logic
-
-
     const symbol = document.getElementById('global-symbol').innerText;
     try {
-        const klines = await fetchKlines(symbol, "2h");
-        if (klines.length < 50) return;
+        const klines = await fetchKlines(symbol, "1d");
+        if (klines.length === 0) return;
 
-        // Stable HA Calculation
-        let haOpen = (klines[0].open + klines[0].close) / 2;
-        let haClose = (klines[0].open + klines[0].high + klines[0].low + klines[0].close) / 4;
-
-        for (let i = 1; i < klines.length; i++) {
-            const k = klines[i];
-            const currentHaClose = (k.open + k.high + k.low + k.close) / 4;
-            const currentHaOpen = (haOpen + haClose) / 2;
-            haOpen = currentHaOpen;
-            haClose = currentHaClose;
-        }
-
-        const k = klines[klines.length - 1];
-        const haHigh = Math.max(k.high, haOpen, haClose);
-        const haLow = Math.min(k.low, haOpen, haClose);
+        const last = klines[klines.length - 1];
+        const isGreen = last.close > last.open;
 
         const titleEl = document.getElementById('global-symbol');
-        let colorClass = "title-yellow";
-        let faviconPath = "images/favicon_yellow.png";
-
-        if (haOpen === haHigh) {
-            colorClass = "title-red";
-            faviconPath = "images/favicon_red.png";
-        } else if (haOpen === haLow) {
-            colorClass = "title-green";
-            faviconPath = "images/favicon_green.png";
-        }
+        let colorClass = isGreen ? "title-green" : "title-red";
+        let faviconPath = isGreen ? "images/favicon_green.png" : "images/favicon_red.png";
 
         // Apply classes
         titleEl.classList.remove('title-green', 'title-red', 'title-yellow');
@@ -43,7 +20,7 @@ async function updateTitleAndFavicon() {
         updateFavicon(faviconPath);
 
     } catch (e) {
-        console.error("HA coloring update failed", e);
+        console.error("1D coloring update failed", e);
     }
 }
 
@@ -58,5 +35,5 @@ function updateFavicon(faviconPath) {
 }
 
 // Global script should handle the interval
-setInterval(updateTitleAndFavicon, 1500);
+setInterval(updateTitleAndFavicon, 5000); // 5s is plenty for 1d color
 updateTitleAndFavicon(); // Initial run

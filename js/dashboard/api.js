@@ -7,7 +7,7 @@ async function fetchDailyLevels(symbol) {
             const prevDay = data[0];
             const high = Math.round(parseFloat(prevDay[2]));
             const low = Math.round(parseFloat(prevDay[3]));
-            const mid = Math.round((high + low) / 2);
+            const close = Math.round(parseFloat(prevDay[4]));
 
             const t1 = document.getElementById('price-target-1');
             const t2 = document.getElementById('price-target-2');
@@ -19,13 +19,13 @@ async function fetchDailyLevels(symbol) {
             }
             if (t2) {
                 t2.value = "";
-                t2.placeholder = mid;
+                t2.placeholder = close;
             }
             if (t3) {
                 t3.value = "";
                 t3.placeholder = low;
             }
-            console.log(`Updated placeholders for ${symbol}: High=${high}, Mid=${mid}, Low=${low}`);
+            console.log(`Updated placeholders for ${symbol}: High=${high}, Close=${close}, Low=${low}`);
         }
     } catch (e) {
         console.error("Failed to fetch daily levels", e);

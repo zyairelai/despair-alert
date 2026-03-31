@@ -79,7 +79,7 @@ window.speechSynthesis.onvoiceschanged = () => {
 
 // Start logic
 // Secret Telegram Toggle (Main Dashboard Only)
-window.telegramEnabled = false;
+window.telegramEnabled = true;
 let teleBuffer = "";
 document.addEventListener('keydown', (e) => {
     // Basic buffer logic to detect "te", "tt", "on", "off"

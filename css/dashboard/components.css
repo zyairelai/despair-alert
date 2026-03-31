@@ -168,12 +168,13 @@ select:focus {
 
 #ema-alert-mode,
 #heikin-mode,
+#heikin-type,
 #rawcandle-mode,
 #breakout-mode {
     color: #ffffff;
 }
 
-.alert-card.white-text .condition-toggle:not(.green-mode):not(.red-mode) {
+.alert-card.white-text .condition-toggle:not(.green-mode):not(.red-mode):not(.orange-mode) {
     color: #ffffff !important;
 }
 
@@ -331,6 +332,15 @@ select option {
 
 .red-mode:hover {
     border-color: var(--accent-red) !important;
+}
+
+.orange-mode {
+    color: #ff9933 !important;
+    border-color: rgba(255, 153, 51, 0.3) !important;
+}
+
+.orange-mode:hover {
+    border-color: #ff9933 !important;
 }
 
 .disabled-mode {

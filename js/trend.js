@@ -99,7 +99,7 @@ async function updateTrend() {
         const trendDisplay = document.getElementById("trendDisplay");
         const symbolBtn = document.getElementById("global-symbol");
 
-        // UI Visuals
+        // UI Visuals (Text only, favicon/title handled by ha_coloring.js)
         if (isEmergency) {
             trendDisplay.innerText = "1H EMERGENCY BREAKDOWN";
             trendDisplay.className = "overall-trend trend-down";
@@ -107,7 +107,6 @@ async function updateTrend() {
                 symbolBtn.classList.add("title-red");
                 symbolBtn.classList.remove("title-green", "title-yellow");
             }
-            updateFavicon("images/favicon_red.png");
         } else if (isRedSingularity) {
             trendDisplay.innerText = "CURRENTLY DOWNTREND";
             trendDisplay.className = "overall-trend trend-down";
@@ -115,7 +114,6 @@ async function updateTrend() {
                 symbolBtn.classList.add("title-red");
                 symbolBtn.classList.remove("title-green", "title-yellow");
             }
-            updateFavicon("images/favicon_red.png");
         } else if (isUptrend) {
             trendDisplay.innerText = "CURRENTLY UPTREND";
             trendDisplay.className = "overall-trend trend-up";
@@ -123,7 +121,6 @@ async function updateTrend() {
                 symbolBtn.classList.add("title-green");
                 symbolBtn.classList.remove("title-red", "title-yellow");
             }
-            updateFavicon("images/favicon_green.png");
         } else {
             trendDisplay.innerText = "NO TRADE ZONE";
             trendDisplay.className = "overall-trend trend-neutral";
@@ -131,7 +128,6 @@ async function updateTrend() {
                 symbolBtn.classList.remove("title-green", "title-red");
                 symbolBtn.classList.add("title-yellow");
             }
-            updateFavicon("images/favicon_yellow.png");
         }
 
         checkAndSendAlert(p1h, isEmergency, isRedSingularity);

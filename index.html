@@ -107,54 +107,6 @@
                 </div>
             </div>
 
-
-            <!-- BREAKOUT -->
-            <div class="alert-card white-text" id="breakout-card">
-                <div class="card-header">
-                    <h2>BREAKOUT</h2>
-                    <div class="status-indicator inactive">
-                        <div class="dot" id="breakout-dot"></div>
-                        <span id="breakout-status">INACTIVE</span>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <div class="tf-selector" id="breakout-tf-selector">
-                        <button type="button" class="tf-current-btn" id="breakout-tf-trigger"
-                            onclick="toggleTFMenu('breakout')">1H</button>
-                        <div class="tf-dropdown-menu" id="breakout-tf-menu" data-value="1h">
-                            <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('breakout', '5m')">5m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('breakout', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('breakout', '30m')">30m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('breakout', '1d')">1D</button>
-                                <button type="button" class="tf-btn active"
-                                    onclick="setTF('breakout', '1h')">1H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('breakout', '2h')">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('breakout', '4h')">4H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('breakout', '6h')">6H</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="input-row">
-                        <label>Candle</label>
-                        <input type="number" id="breakout-lookback" placeholder="3">
-                    </div>
-                    <div class="input-row">
-                        <label>Type</label>
-                        <button type="button" id="breakout-mode" class="condition-toggle" data-state="ha"
-                            onclick="toggleBreakoutMode()">HA</button>
-                    </div>
-                    <div class="input-row">
-                        <label>Side</label>
-                        <button type="button" id="breakout-condition" class="condition-toggle" data-state="both"
-                            onclick="toggleConditionState('breakout-condition')">BOTH</button>
-                    </div>
-                </div>
-                <div class="action-group">
-                    <button class="toggle-btn" onclick="toggleAlert('breakout')">START</button>
-                </div>
-            </div>
-
             <!-- Heikin Ashi -->
             <div class="alert-card" id="heikin-card">
                 <div class="card-header">
@@ -181,16 +133,20 @@
                             </div>
                         </div>
                     </div>
-                    <div class="input-row spacer"></div>
                     <div class="input-row">
-                        <label>Mode</label>
+                        <label>BOOLEAN</label>
                         <button type="button" id="heikin-mode" class="condition-toggle" data-state="is"
                             onclick="toggleHeikinMode()">IS</button>
                     </div>
                     <div class="input-row">
-                        <label>Color</label>
-                        <button type="button" id="heikin-condition" class="condition-toggle red-mode"
-                            data-state="perfect-red" onclick="toggleConditionState('heikin-condition')">RED</button>
+                        <label>MODE</label>
+                        <button type="button" id="heikin-type" class="condition-toggle" data-state="perfect"
+                            onclick="toggleHeikinType()">PERFECT</button>
+                    </div>
+                    <div class="input-row">
+                        <label>COLOR</label>
+                        <button type="button" id="heikin-condition" class="condition-toggle red-mode" data-state="red"
+                            onclick="toggleConditionState('heikin-condition')">RED</button>
                     </div>
                 </div>
                 <div class="action-group">
@@ -239,6 +195,53 @@
                 </div>
                 <div class="action-group">
                     <button class="toggle-btn" onclick="toggleAlert('rawcandle')">START</button>
+                </div>
+            </div>
+
+            <!-- BREAKOUT -->
+            <div class="alert-card white-text" id="breakout-card">
+                <div class="card-header">
+                    <h2>BREAKOUT</h2>
+                    <div class="status-indicator inactive">
+                        <div class="dot" id="breakout-dot"></div>
+                        <span id="breakout-status">INACTIVE</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="tf-selector" id="breakout-tf-selector">
+                        <button type="button" class="tf-current-btn" id="breakout-tf-trigger"
+                            onclick="toggleTFMenu('breakout')">1H</button>
+                        <div class="tf-dropdown-menu" id="breakout-tf-menu" data-value="1h">
+                            <div class="tf-grid">
+                                <button type="button" class="tf-btn" onclick="setTF('breakout', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('breakout', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('breakout', '30m')">30m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('breakout', '1d')">1D</button>
+                                <button type="button" class="tf-btn active"
+                                    onclick="setTF('breakout', '1h')">1H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('breakout', '2h')">2H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('breakout', '4h')">4H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('breakout', '6h')">6H</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>Candle</label>
+                        <input type="number" id="breakout-lookback" placeholder="3">
+                    </div>
+                    <div class="input-row">
+                        <label>Type</label>
+                        <button type="button" id="breakout-mode" class="condition-toggle" data-state="ha"
+                            onclick="toggleBreakoutMode()">HEIKIN</button>
+                    </div>
+                    <div class="input-row">
+                        <label>Side</label>
+                        <button type="button" id="breakout-condition" class="condition-toggle" data-state="both"
+                            onclick="toggleConditionState('breakout-condition')">BOTH</button>
+                    </div>
+                </div>
+                <div class="action-group">
+                    <button class="toggle-btn" onclick="toggleAlert('breakout')">START</button>
                 </div>
             </div>
 

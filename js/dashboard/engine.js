@@ -63,10 +63,12 @@ async function checkAlert(id) {
 
 
         if (id === 'heikin') {
-            const el = document.getElementById('heikin-condition');
-            const condition = el.dataset.state || el.value;
             const modeEl = document.getElementById('heikin-mode');
-            const mode = modeEl ? modeEl.dataset.state : 'is';
+            const cond = modeEl ? modeEl.dataset.state : 'is';
+            const typeEl = document.getElementById('heikin-type');
+            const type = typeEl ? typeEl.dataset.state : 'perfect';
+            const colorEl = document.getElementById('heikin-condition');
+            const color = colorEl ? colorEl.dataset.state : 'red';
 
             const klines = await fetchKlines(symbol, tf);
 
@@ -88,36 +90,43 @@ async function checkAlert(id) {
 
                 // Only evaluate the final (current) candle
                 if (i === klines.length - 1) {
-                    let isPerfectGreen = haClose > haOpen && Math.abs(currentHaLow - haOpen) < (haOpen * 0.00001);
-                    let isPerfectRed = haClose < haOpen && Math.abs(currentHaHigh - haOpen) < (haOpen * 0.00001);
+                    const isGreen = haClose > haOpen;
+                    const isRed = haClose < haOpen;
 
-                    let triggered = false;
+                    const hasTopWick = currentHaHigh > Math.max(haOpen, haClose) + (haOpen * 0.0001);
+                    const hasBottomWick = currentHaLow < Math.min(haOpen, haClose) - (haOpen * 0.0001);
+
+                    let val = false;
+                    if (type === 'perfect') {
+                        if (color === 'green') {
+                            val = isGreen && !hasBottomWick;
+                        } else {
+                            val = isRed && !hasTopWick;
+                        }
+                    } else if (type === 'doji') {
+                        val = (color === 'green' ? isGreen : isRed) && hasTopWick && hasBottomWick;
+                    }
+
+                    let triggered = (cond === 'is' ? val : !val);
                     let msg = "";
                     let voiceMsg = "";
 
-                    if (condition === 'perfect-green') {
-                        if (mode === 'is' && isPerfectGreen) {
-                            triggered = true;
-                            msg = `🚀 ${shortSymbol} ${tf} HEIKIN ASHI GREEN 🚀`;
-                            voiceMsg = `${shortSymbol} ${tf} HEIKIN ASHI turned into GREEN color`;
-                        } else if (mode === 'not' && !isPerfectGreen) {
-                            triggered = true;
-                            msg = `⚠️ ${shortSymbol} ${tf} HA NOT GREEN ⚠️`;
-                            voiceMsg = `${shortSymbol} ${tf} HEIKIN ASHI is no longer perfect GREEN`;
-                        }
-                    } else if (condition === 'perfect-red') {
-                        if (mode === 'is' && isPerfectRed) {
-                            triggered = true;
-                            msg = `💥 ${shortSymbol} ${tf} HEIKIN ASHI RED 💥`;
-                            voiceMsg = `${shortSymbol} ${tf} HEIKIN ASHI turned into RED color`;
-                        } else if (mode === 'not' && !isPerfectRed) {
-                            triggered = true;
-                            msg = `⚠️ ${shortSymbol} ${tf} HA NOT RED ⚠️`;
-                            voiceMsg = `${shortSymbol} ${tf} HEIKIN ASHI is no longer perfect RED`;
-                        }
-                    }
-
                     if (triggered) {
+                        const typeLabel = type.toUpperCase();
+                        const colorLabel = color.toUpperCase();
+                        const condLabel = cond.toUpperCase();
+                        const voiceType = type === 'doji' ? 'indecisive' : typeLabel;
+
+                        // Determine Emoji
+                        let emoji = "⚠️";
+                        const isPerfectRed = isRed && !hasTopWick;
+                        const isPerfectGreen = isGreen && !hasBottomWick;
+
+                        if (isPerfectRed) emoji = "💥";
+                        else if (isPerfectGreen) emoji = "🚀";
+
+                        msg = `${emoji} ${shortSymbol} ${tf} HEIKIN ${condLabel} ${typeLabel} ${colorLabel} ${emoji}`;
+                        voiceMsg = `${shortSymbol} ${tf} heikin ashi ${cond === 'is' ? 'is now' : 'is no longer'} ${voiceType} ${colorLabel}`;
                         triggerAlert(id, msg, voiceMsg);
                     }
                 }
@@ -323,8 +332,8 @@ function triggerAlert(id, message, voiceMessage = null) {
 
     speak(textToSpeak, cleanUI);
 
-    // Special channel for EMA Alert, EMA Cross, Heikin, and Shooting Star
-    const wolvesRiseIds = ['ema-alert', 'heikin'];
+    // Special channel for EMA Alert, EMA Cross, Heikin, Raw Candle, and Shooting Star
+    const wolvesRiseIds = ['ema-alert', 'heikin', 'rawcandle'];
     const telegramChatId = wolvesRiseIds.includes(id) ? "@futures_wolves_rise" : null;
 
     // Send Telegram Alert ONLY if enabled (Secret Toggle)

@@ -49,13 +49,16 @@ function updateConditionUI(el) {
     const text = el.innerText.toUpperCase();
     const val = (el.value || text).toUpperCase();
     if (val.includes('GREEN') || val.includes('UP') || val.includes('ABOVE')) {
-        el.classList.remove('red-mode');
+        el.classList.remove('red-mode', 'orange-mode');
         el.classList.add('green-mode');
     } else if (val.includes('RED') || val.includes('DOWN') || val.includes('BELOW')) {
-        el.classList.remove('green-mode');
+        el.classList.remove('green-mode', 'orange-mode');
         el.classList.add('red-mode');
-    } else {
+    } else if (val.includes('BOTH')) {
         el.classList.remove('green-mode', 'red-mode');
+        el.classList.add('orange-mode');
+    } else {
+        el.classList.remove('green-mode', 'red-mode', 'orange-mode');
     }
 }
 
@@ -67,8 +70,8 @@ function toggleConditionState(id) {
     let nextState, nextText;
 
     if (id === 'heikin-condition') {
-        nextState = currentState === 'perfect-green' ? 'perfect-red' : 'perfect-green';
-        nextText = nextState === 'perfect-green' ? 'GREEN' : 'RED';
+        nextState = currentState === 'green' ? 'red' : 'green';
+        nextText = nextState === 'green' ? 'GREEN' : 'RED';
     } else if (id === 'rawcandle-condition') {
         nextState = currentState === 'green' ? 'red' : 'green';
         nextText = nextState === 'green' ? 'GREEN' : 'RED';
@@ -134,6 +137,19 @@ function toggleHeikinMode() {
     console.log(`Heikin mode toggled to: ${nextState}`);
 }
 
+function toggleHeikinType() {
+    const btn = document.getElementById('heikin-type');
+    if (!btn) return;
+
+    const currentState = btn.dataset.state;
+    const nextState = currentState === 'perfect' ? 'doji' : 'perfect';
+
+    btn.dataset.state = nextState;
+    btn.innerText = nextState.toUpperCase();
+
+    console.log(`Heikin type toggled to: ${nextState}`);
+}
+
 function toggleRawCandleMode() {
     const btn = document.getElementById('rawcandle-mode');
     if (!btn) return;
@@ -155,7 +171,7 @@ function toggleBreakoutMode() {
     const nextState = currentState === 'ha' ? 'raw' : 'ha';
 
     btn.dataset.state = nextState;
-    btn.innerText = nextState.toUpperCase();
+    btn.innerText = nextState === 'ha' ? "HEIKIN" : nextState.toUpperCase();
 
     console.log(`Breakout mode toggled to: ${nextState}`);
 }
