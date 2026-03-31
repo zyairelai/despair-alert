@@ -1,26 +1,34 @@
 async function updateTitleAndFavicon() {
     // Both Main Dashboard and Trend page now use this logic
-    const symbol = document.getElementById('global-symbol').innerText;
+    const symbolEl = document.getElementById('global-symbol');
+    if (!symbolEl) return;
+
+    const symbol = symbolEl.innerText;
     try {
         const klines = await fetchKlines(symbol, "1d");
-        if (klines.length === 0) return;
+        if (!klines || klines.length === 0) {
+            symbolEl.classList.remove('title-green', 'title-red');
+            symbolEl.classList.add('title-yellow');
+            return;
+        }
 
         const last = klines[klines.length - 1];
         const isGreen = last.close > last.open;
 
-        const titleEl = document.getElementById('global-symbol');
         let colorClass = isGreen ? "title-green" : "title-red";
         let faviconPath = isGreen ? "images/favicon_green.png" : "images/favicon_red.png";
 
         // Apply classes
-        titleEl.classList.remove('title-green', 'title-red', 'title-yellow');
-        titleEl.classList.add(colorClass);
+        symbolEl.classList.remove('title-green', 'title-red', 'title-yellow');
+        symbolEl.classList.add(colorClass);
 
         // Update Favicon (on all pages)
         updateFavicon(faviconPath);
 
     } catch (e) {
         console.error("1D coloring update failed", e);
+        symbolEl.classList.remove('title-green', 'title-red');
+        symbolEl.classList.add('title-yellow');
     }
 }
 
@@ -35,5 +43,8 @@ function updateFavicon(faviconPath) {
 }
 
 // Global script should handle the interval
-setInterval(updateTitleAndFavicon, 5000); // 5s is plenty for 1d color
+window.haColoringInterval = setInterval(updateTitleAndFavicon, 5000); // 5s is plenty for 1d color
 updateTitleAndFavicon(); // Initial run
+
+// Expose globally for manual triggers (e.g. when symbol changes)
+window.updateTitleAndFavicon = updateTitleAndFavicon;

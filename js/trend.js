@@ -103,31 +103,15 @@ async function updateTrend() {
         if (isEmergency) {
             trendDisplay.innerText = "1H EMERGENCY BREAKDOWN";
             trendDisplay.className = "overall-trend trend-down";
-            if (symbolBtn) {
-                symbolBtn.classList.add("title-red");
-                symbolBtn.classList.remove("title-green", "title-yellow");
-            }
         } else if (isRedSingularity) {
             trendDisplay.innerText = "CURRENTLY DOWNTREND";
             trendDisplay.className = "overall-trend trend-down";
-            if (symbolBtn) {
-                symbolBtn.classList.add("title-red");
-                symbolBtn.classList.remove("title-green", "title-yellow");
-            }
         } else if (isUptrend) {
             trendDisplay.innerText = "CURRENTLY UPTREND";
             trendDisplay.className = "overall-trend trend-up";
-            if (symbolBtn) {
-                symbolBtn.classList.add("title-green");
-                symbolBtn.classList.remove("title-red", "title-yellow");
-            }
         } else {
             trendDisplay.innerText = "NO TRADE ZONE";
             trendDisplay.className = "overall-trend trend-neutral";
-            if (symbolBtn) {
-                symbolBtn.classList.remove("title-green", "title-red");
-                symbolBtn.classList.add("title-yellow");
-            }
         }
 
         checkAndSendAlert(p1h, isEmergency, isRedSingularity);
@@ -255,12 +239,7 @@ function updateGlobalSymbol() {
     }
 
     // FULL UI RESET: Revert elements to initial state
-
-    const symbolBtn = document.getElementById("global-symbol");
-    if (symbolBtn) {
-        symbolBtn.classList.remove("title-green", "title-red");
-        symbolBtn.classList.add("title-yellow");
-    }
+    if (window.updateTitleAndFavicon) window.updateTitleAndFavicon();
     const trendDisplay = document.getElementById("trendDisplay");
     trendDisplay.innerText = "INITIALIZING...";
     trendDisplay.className = "overall-trend trend-neutral";

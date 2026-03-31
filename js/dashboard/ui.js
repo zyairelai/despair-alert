@@ -206,6 +206,11 @@ async function updateGlobalSymbol() {
     if (typeof fetchDailyLevels === 'function') {
         await fetchDailyLevels(symbol);
     }
+
+    // 4. SYNC Title and Favicon
+    if (window.updateTitleAndFavicon) {
+        window.updateTitleAndFavicon();
+    }
 }
 // Input Validation for Numeric Fields
 function setupNumericInputs() {
