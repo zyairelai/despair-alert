@@ -39,7 +39,6 @@
                             onclick="toggleTFMenu('price')">5m</button>
                         <div class="tf-dropdown-menu" id="price-tf-menu" data-value="5m">
                             <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('price', '1m')">1m</button>
                                 <button type="button" class="tf-btn active" onclick="setTF('price', '5m')">5m</button>
                                 <button type="button" class="tf-btn" onclick="setTF('price', '15m')">15m</button>
                                 <button type="button" class="tf-btn" onclick="setTF('price', '1h')">1H</button>
@@ -79,7 +78,6 @@
                             onclick="toggleTFMenu('ema-alert')">5m</button>
                         <div class="tf-dropdown-menu" id="ema-alert-tf-menu" data-value="5m">
                             <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('ema-alert', '1m')">1m</button>
                                 <button type="button" class="tf-btn active"
                                     onclick="setTF('ema-alert', '5m')">5m</button>
                                 <button type="button" class="tf-btn" onclick="setTF('ema-alert', '15m')">15m</button>
@@ -119,16 +117,14 @@
                 <div class="card-content">
                     <div class="tf-selector" id="heikin-tf-selector">
                         <button type="button" class="tf-current-btn" id="heikin-tf-trigger"
-                            onclick="toggleTFMenu('heikin')">5m</button>
-                        <div class="tf-dropdown-menu" id="heikin-tf-menu" data-value="5m">
+                            onclick="toggleTFMenu('heikin')">1H</button>
+                        <div class="tf-dropdown-menu" id="heikin-tf-menu" data-value="1h">
                             <div class="tf-grid">
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '1m')">1m</button>
                                 <button type="button" class="tf-btn" onclick="setTF('heikin', '3m')">3m</button>
-                                <button type="button" class="tf-btn active" onclick="setTF('heikin', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '5m')">5m</button>
                                 <button type="button" class="tf-btn" onclick="setTF('heikin', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '1h')">1H</button>
+                                <button type="button" class="tf-btn active" onclick="setTF('heikin', '1h')">1H</button>
                                 <button type="button" class="tf-btn" onclick="setTF('heikin', '2h')">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('heikin', '4h')">4H</button>
                                 <button type="button" class="tf-btn" onclick="setTF('heikin', '6h')">6H</button>
                             </div>
                         </div>
@@ -171,12 +167,10 @@
                             <div class="tf-grid">
                                 <button type="button" class="tf-btn" onclick="setTF('rawcandle', '5m')">5m</button>
                                 <button type="button" class="tf-btn" onclick="setTF('rawcandle', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('rawcandle', '30m')">30m</button>
                                 <button type="button" class="tf-btn active"
                                     onclick="setTF('rawcandle', '1d')">1D</button>
                                 <button type="button" class="tf-btn" onclick="setTF('rawcandle', '1h')">1H</button>
                                 <button type="button" class="tf-btn" onclick="setTF('rawcandle', '2h')">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('rawcandle', '4h')">4H</button>
                                 <button type="button" class="tf-btn" onclick="setTF('rawcandle', '6h')">6H</button>
                             </div>
                         </div>
@@ -215,12 +209,10 @@
                             <div class="tf-grid">
                                 <button type="button" class="tf-btn" onclick="setTF('breakout', '5m')">5m</button>
                                 <button type="button" class="tf-btn" onclick="setTF('breakout', '15m')">15m</button>
-                                <button type="button" class="tf-btn" onclick="setTF('breakout', '30m')">30m</button>
                                 <button type="button" class="tf-btn" onclick="setTF('breakout', '1d')">1D</button>
                                 <button type="button" class="tf-btn active"
                                     onclick="setTF('breakout', '1h')">1H</button>
                                 <button type="button" class="tf-btn" onclick="setTF('breakout', '2h')">2H</button>
-                                <button type="button" class="tf-btn" onclick="setTF('breakout', '4h')">4H</button>
                                 <button type="button" class="tf-btn" onclick="setTF('breakout', '6h')">6H</button>
                             </div>
                         </div>
@@ -250,8 +242,19 @@
 
 
         <div id="footer-controls"
-            style="display: flex; align-items: center; justify-content: center; gap: 2.5rem; margin-top: 1.5rem; margin-bottom: 1.5rem;">
-            <a href="trend.html" target="_blank" class="despair-link" style="margin: 0;">TREND BEEP</a>
+            style="display: flex; align-items: center; justify-content: space-between; margin-top: 1.5rem; margin-bottom: 1.5rem; width: 100%;">
+            <div
+                style="flex: 1; display: flex; justify-content: flex-start; padding-left: calc(1.2rem + 6px + 0.5rem);">
+                <a href="https://www.coinglass.com/tv/Binance_BTCUSDT" target="_blank" class="despair-link"
+                    style="margin: 0;">CHART</a>
+            </div>
+            <div style="flex: 1; display: flex; justify-content: center;">
+                <a href="trend.html" target="_blank" class="despair-link" style="margin: 0;">TREND BEEP</a>
+            </div>
+            <div style="flex: 1; display: flex; justify-content: flex-end; padding-right: 2.4rem;">
+                <a href="https://www.coinglass.com/pro/futures/LiquidationHeatMap?coin=BTC&type=pair" target="_blank"
+                    class="despair-link" style="margin: 0;">HEATMAP</a>
+            </div>
         </div>
     </div>
 

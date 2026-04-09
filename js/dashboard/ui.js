@@ -243,8 +243,8 @@ function setupNumericInputs() {
             const charCode = e.which ? e.which : e.keyCode;
             const charStr = String.fromCharCode(charCode);
 
-            // Allow numbers (0-9) and dot (.)
-            if (!/[\d\.]/.test(charStr)) {
+            // Allow numbers (0-9), dot (.), and minus (-)
+            if (!/[\d\.\-]/.test(charStr)) {
                 e.preventDefault();
             }
 
@@ -256,7 +256,7 @@ function setupNumericInputs() {
 
         // Block non-numeric content on paste or change (Sanitization)
         el.addEventListener('input', () => {
-            el.value = el.value.replace(/[^\d\.]/g, '');
+            el.value = el.value.replace(/[^\d\.\-]/g, '');
             // Ensure only one dot remains
             const parts = el.value.split('.');
             if (parts.length > 2) {

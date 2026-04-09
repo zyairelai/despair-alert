@@ -279,7 +279,7 @@ select option {
     border-radius: 12px;
     padding: 0.8rem;
     z-index: 2000;
-    min-width: 320px;
+    min-width: 240px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
 }
 
@@ -289,12 +289,13 @@ select option {
 
 .tf-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 0.4rem;
 }
 
-#heikin-tf-menu .tf-grid {
-    grid-template-columns: repeat(4, 1fr);
+#heikin-tf-menu .tf-grid,
+#breakout-tf-menu .tf-grid {
+    grid-template-columns: repeat(3, 1fr);
 }
 
 .tf-btn {
