@@ -79,33 +79,37 @@ window.speechSynthesis.onvoiceschanged = () => {
 
 // Start logic
 // Secret Telegram Toggle (Main Dashboard Only)
-window.telegramEnabled = true;
+window.telegramEnabled = false;
 let teleBuffer = "";
+
+const activeSounds = [];
+function playSecretSound(file) {
+    const audio = new Audio(file);
+    activeSounds.push(audio);
+    audio.onended = () => {
+        const index = activeSounds.indexOf(audio);
+        if (index > -1) activeSounds.splice(index, 1);
+    };
+    audio.play().catch(err => console.error("Sound play failed:", err));
+}
+
 document.addEventListener('keydown', (e) => {
-    // Basic buffer logic to detect "te", "tt", "on", "off"
+    // Basic buffer logic to detect "tt", "on", "off", "zz"
     teleBuffer += e.key.toLowerCase();
     if (teleBuffer.length > 5) teleBuffer = teleBuffer.slice(-5);
 
-    const lastTwo = teleBuffer.slice(-  2);
+    const lastTwo = teleBuffer.slice(-2);
     const lastThree = teleBuffer.slice(-3);
 
-    if (!window.telegramEnabled && (lastTwo === "te" || lastTwo === "tt" || lastTwo === "on")) {
+    if (!window.telegramEnabled && (lastTwo === "tt" || lastTwo === "on")) {
         window.telegramEnabled = true;
         console.log("SECRET: Telegram Alerts Enabled.");
-
-        // Play pickup sound
-        const audio = new Audio('images/pickup.mp3');
-        audio.play().catch(err => console.error("Sound play failed:", err));
-
+        playSecretSound('images/pickup.mp3');
         teleBuffer = ""; // Reset buffer
-    } else if (window.telegramEnabled && (lastThree === "off" || lastTwo === "zz" || lastTwo === "oo")) {
+    } else if (window.telegramEnabled && (lastThree === "off" || lastTwo === "zz")) {
         window.telegramEnabled = false;
         console.log("SECRET: Telegram Alerts Disabled.");
-
-        // Play gameover sound
-        const audio = new Audio('images/gameover.mp3');
-        audio.play().catch(err => console.error("Sound play failed:", err));
-
+        playSecretSound('images/gameover.mp3');
         teleBuffer = ""; // Reset buffer
     }
 });
