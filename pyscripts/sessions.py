@@ -23,6 +23,15 @@ def get_klines(pair, interval, limit=100):
     df = pandas.DataFrame(result, columns=cols)
     return df
 
+def telegram_bot_sendtext(bot_message):
+    print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S")))
+    bot_token = os.environ.get('TELEGRAM_LIVERMORE')
+    chat_id = "@swinglivermore"
+    url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
+    params = {'chat_id': chat_id, 'parse_mode': 'html', 'text': bot_message}
+    response = requests.get(url, params=params)
+    return response.json()
+
 def get_session_levels(df, date, start_hour, end_hour):
     """Filters klines for a specific date and hour range (MYT)."""
     # Convert timestamp to MYT
@@ -64,13 +73,13 @@ def main():
                 
                 symbol_short = SYMBOL.replace('USDT', '')
                 if curr_price >= h1d:
-                    msg = f"{symbol_short} price hit previous day high"
-                    os.system(f'spd-say "{msg}" 2>/dev/null || espeak "{msg}" 2>/dev/null &')
+                    msg = f"{symbol_short} touch Prev High"
+                    telegram_bot_sendtext(msg)
                     print(colored(f"\n>>> ALERT: {msg} <<<", "yellow", attrs=["bold"]))
                     triggered = True
                 elif curr_price <= l1d:
-                    msg = f"{symbol_short} price hit previous day low"
-                    os.system(f'spd-say "{msg}" 2>/dev/null || espeak "{msg}" 2>/dev/null &')
+                    msg = f"{symbol_short} touch Prev Low"
+                    telegram_bot_sendtext(msg)
                     print(colored(f"\n>>> ALERT: {msg} <<<", "yellow", attrs=["bold"]))
                     triggered = True
 
