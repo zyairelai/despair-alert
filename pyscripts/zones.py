@@ -82,7 +82,7 @@ def get_4h_levels():
 
 def print_levels(levels, timeframe="1D"):
     prefix = f"{'Current' if args.current_mode else 'Prev'} {timeframe}"
-    print(f"\n======= {prefix} =======")
+    print(f"\n{f' {prefix} ':=^30}")
     for name, val, color in levels:
         print(f"{prefix} {name}: {colored(str(int(val)), color)}")
 
