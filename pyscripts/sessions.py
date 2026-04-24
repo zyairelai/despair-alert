@@ -36,20 +36,20 @@ def get_session_levels(df, date, start_hour, end_hour):
     """Filters klines for a specific date and hour range (MYT)."""
     # Convert timestamp to MYT
     df['dt'] = pandas.to_datetime(df['timestamp'], unit='ms', utc=True).dt.tz_convert(MYT)
-    
+
     mask = (df['dt'].dt.date == date) & (df['dt'].dt.hour >= start_hour) & (df['dt'].dt.hour < end_hour)
     session_df = df[mask]
-    
+
     if session_df.empty:
         return None, None
-    
+
     return int(session_df['high'].max()), int(session_df['low'].min())
 
 def main():
     parser = argparse.ArgumentParser(description='The SESSIONS script.')
     parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help='Trading pair (default: BTCUSDT)')
     parser.add_argument('--alert', action='store_true', help='Read alert if price hits Prev 1D High/Low')
-    
+
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
     SYMBOL = args.symbol
@@ -70,7 +70,7 @@ def main():
                 # Fetch latest 1m kline for current price
                 df_now = get_klines(SYMBOL, "1m", limit=1)
                 curr_price = df_now.iloc[-1]['close']
-                
+
                 symbol_short = SYMBOL.replace('USDT', '')
                 if curr_price >= h1d:
                     msg = f"{symbol_short} touch Prev High"
@@ -92,7 +92,7 @@ def main():
                 # 2. Session Data (1m klines)
                 # Fetch 1500 minutes to cover the full current day in MYT
                 df_1m = get_klines(SYMBOL, "1m", limit=1500)
-                
+
                 now_myt = datetime.now(MYT)
                 today = now_myt.date()
 
@@ -103,8 +103,8 @@ def main():
                     print(f"Tokyo High: {colored(str(th), 'red', attrs=['bold'])}")
                     print(f"Tokyo Low : {colored(str(tl), 'red', attrs=['bold'])}")
                 else:
-                    print("Tokyo High: N/A (Not started or no data)")
-                    print("Tokyo Low : N/A (Not started or no data)")
+                    print("Tokyo High: N/A")
+                    print("Tokyo Low : N/A")
 
                 # London Session: 16:00 - 20:00 MYT
                 lh, ll = get_session_levels(df_1m, today, 16, 20)
@@ -113,8 +113,8 @@ def main():
                     print(f"London High: {colored(str(lh), 'green', attrs=['bold'])}")
                     print(f"London Low : {colored(str(ll), 'green', attrs=['bold'])}")
                 else:
-                    print("London High: N/A (Not started or no data)")
-                    print("London Low : N/A (Not started or no data)")
+                    print("London High: N/A")
+                    print("London Low : N/A")
 
                 # 2.5 Opening Session (US Open)
                 # 21:30 - 21:45 (15m)
@@ -122,10 +122,10 @@ def main():
                 start_time = datetime.combine(today, datetime.min.time()).replace(hour=21, minute=30, tzinfo=MYT)
                 end_15m = start_time + timedelta(minutes=15)
                 end_30m = start_time + timedelta(minutes=30)
-                
+
                 mask_15m = (df_1m['dt'] >= start_time) & (df_1m['dt'] < end_15m)
                 mask_30m = (df_1m['dt'] >= start_time) & (df_1m['dt'] < end_30m)
-                
+
                 # 15m
                 print(f"\n{' Opening 15m ':=^30}")
                 df_15m = df_1m[mask_15m]
@@ -140,7 +140,7 @@ def main():
                 else:
                     print("15m High: N/A")
                     print("15m Low : N/A")
-                    
+
                 # 30m
                 print(f"\n{' Opening 30m ':=^30}")
                 df_30m = df_1m[mask_30m]
@@ -161,7 +161,7 @@ def main():
                 df_monday = get_klines(SYMBOL, "1d", limit=10)
                 df_monday['dt'] = pandas.to_datetime(df_monday['timestamp'], unit='ms', utc=True).dt.tz_convert(MYT)
                 monday_candles = df_monday[df_monday['dt'].dt.weekday == 0]
-                
+
                 print(f"\n{' Monday ':=^30}")
                 if not monday_candles.empty:
                     last_monday = monday_candles.iloc[-1]
@@ -174,10 +174,10 @@ def main():
 
             if not args.alert or triggered:
                 break
-            
+
             if first_run:
                 print(colored(f"\nMonitoring {SYMBOL} Alert..."))
-            
+
             first_run = False
             time.sleep(5)
 
