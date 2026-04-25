@@ -120,7 +120,7 @@ def main():
                 line = f"{title_text:=^30}"
                 print(f"\n{colored(line, 'white', attrs=['bold'])}")
                 print(f"Prev 1D High: {colored(format_price(h1d), 'white', attrs=['bold'])}")
-                print(f"Prev 1D Mid : {colored(format_price(m1d), 'white', attrs=['bold'])}")
+                # print(f"Prev 1D Mid : {colored(format_price(m1d), 'white', attrs=['bold'])}")
                 print(f"Prev 1D Low : {colored(format_price(l1d), 'white', attrs=['bold'])}")
 
                 # 2. Session Data (1m klines)
@@ -130,61 +130,70 @@ def main():
                 now_myt = datetime.now(MYT)
                 today = now_myt.date()
 
+                # US DST: 2nd Sun March to 1st Sun Nov
+                dst_start = datetime(today.year, 3, 14) - timedelta(days=(datetime(today.year, 3, 14).weekday() + 1) % 7)
+                dst_end = datetime(today.year, 11, 7) - timedelta(days=(datetime(today.year, 11, 7).weekday() + 1) % 7)
+                is_dst = dst_start.date() <= today < dst_end.date()
+                
+                # hour_shift: 0 in Summer, 1 in Winter (1h delay)
+                hour_shift = 0 if is_dst else 1
+                open_hour = 21 if is_dst else 22
+
                 # Benchmarks for duplication check (Highs and Lows kept separate)
-                bench_h = [h1d]
-                bench_l = [l1d]
+                bench_h = []
+                bench_l = []
 
                 # Asia Session
-                ah12, al12 = get_session_levels(df_1m, today, 8, 12)
-                ah15, al15 = get_session_levels(df_1m, today, 8, 15)
+                ah_start = 8 + hour_shift
+                ah_end = 12 + hour_shift
+                asia_end_dt = datetime.combine(today, datetime.min.time()).replace(hour=ah_end, tzinfo=MYT)
+                ah12, al12 = get_session_levels(df_1m, today, ah_start, ah_end)
 
                 title_text = " Asia Session "
                 line = f"{title_text:=^30}"
                 print(f"\n{colored(line, 'red', attrs=['bold'])}")
                 
-                # 0800-1200
-                if ah12 is not None:
+                # Asia Sub-session 1
+                time_range_a1 = f"{ah_start:02d}00-{ah_end:02d}00"
+                if ah12 is not None and now_myt >= asia_end_dt:
                     h_near = is_near(ah12, bench_h)
                     l_near = is_near(al12, bench_l)
-                    
                     h_display = colored("-", "white") if h_near else colored(format_price(ah12), 'red', attrs=['bold'])
                     l_display = colored("-", "white") if l_near else colored(format_price(al12), 'red', attrs=['bold'])
-                    
-                    print(f"0800-1200 High: {h_display}")
-                    print(f"0800-1200 Low : {l_display}")
-                    
+                    print(f"{time_range_a1} High: {h_display}")
+                    print(f"{time_range_a1} Low : {l_display}")
                     if not h_near: bench_h.append(ah12)
                     if not l_near: bench_l.append(al12)
                 else:
-                    print("0800-1200 High: N/A")
-                    print("0800-1200 Low : N/A")
+                    print(f"{time_range_a1} High: N/A")
+                    print(f"{time_range_a1} Low : N/A")
 
-                # 0800-1500
-                if ah15 is not None:
-                    h_near = is_near(ah15, bench_h)
-                    l_near = is_near(al15, bench_l)
-                    
-                    h_display = colored("-", "white") if h_near else colored(format_price(ah15), 'red', attrs=['bold'])
-                    l_display = colored("-", "white") if l_near else colored(format_price(al15), 'red', attrs=['bold'])
-                    
-                    print(f"0800-1500 High: {h_display}")
-                    print(f"0800-1500 Low : {l_display}")
-                    
-                    if not h_near: bench_h.append(ah15)
-                    if not l_near: bench_l.append(al15)
+                # London Session
+                lh_start = 15 + hour_shift
+                lh_end = 18 + hour_shift
+                london_end_dt = datetime.combine(today, datetime.min.time()).replace(hour=lh_end, tzinfo=MYT)
+                lh18, ll18 = get_session_levels(df_1m, today, lh_start, lh_end)
+
+                title_text = " London Session "
+                line = f"{title_text:=^30}"
+                print(f"\n{colored(line, 'yellow', attrs=['bold'])}")
+                
+                # London Sub-session 1
+                time_range_l1 = f"{lh_start:02d}00-{lh_end:02d}00"
+                if lh18 is not None and now_myt >= london_end_dt:
+                    h_near = is_near(lh18, bench_h)
+                    l_near = is_near(ll18, bench_l)
+                    h_display = colored("-", "white") if h_near else colored(format_price(lh18), 'yellow', attrs=['bold'])
+                    l_display = colored("-", "white") if l_near else colored(format_price(ll18), 'yellow', attrs=['bold'])
+                    print(f"{time_range_l1} High: {h_display}")
+                    print(f"{time_range_l1} Low : {l_display}")
+                    if not h_near: bench_h.append(lh18)
+                    if not l_near: bench_l.append(ll18)
                 else:
-                    print("0800-1500 High: N/A")
-                    print("0800-1500 Low : N/A")
-
-
+                    print(f"{time_range_l1} High: N/A")
+                    print(f"{time_range_l1} Low : N/A")
 
                 # 2.5 Opening Session (US Open)
-                # US DST: 2nd Sun March to 1st Sun Nov
-                dst_start = datetime(today.year, 3, 14) - timedelta(days=(datetime(today.year, 3, 14).weekday() + 1) % 7)
-                dst_end = datetime(today.year, 11, 7) - timedelta(days=(datetime(today.year, 11, 7).weekday() + 1) % 7)
-                is_dst = dst_start.date() <= today < dst_end.date()
-                open_hour = 21 if is_dst else 22
-                
                 start_time = datetime.combine(today, datetime.min.time()).replace(hour=open_hour, minute=30, tzinfo=MYT)
                 end_30m = start_time + timedelta(minutes=30)
                 mask_30m = (df_1m['dt'] >= start_time) & (df_1m['dt'] < end_30m)
