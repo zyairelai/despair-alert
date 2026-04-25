@@ -7,6 +7,7 @@ from termcolor import colored
 
 # Constants
 MYT = timezone(timedelta(hours=8))
+NEAR_THRESHOLD = 0.002
 
 # Initialize session for performance
 session = requests.Session()
@@ -31,6 +32,15 @@ def format_price(price):
     if p >= 10: return f"{p:.2f}"
     # Return original string if it's a very small number or other
     return str(price).rstrip('0').rstrip('.') if '.' in str(price) else str(price)
+
+def is_near(val, benchmarks, threshold=NEAR_THRESHOLD):
+    """Returns True if val is within the threshold percentage of any benchmark."""
+    if val is None or not benchmarks:
+        return False
+    for b in benchmarks:
+        if b is not None and abs(val - b) / b <= threshold:
+            return True
+    return False
 
 def telegram_bot_sendtext(bot_message):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S")))
@@ -120,6 +130,10 @@ def main():
                 now_myt = datetime.now(MYT)
                 today = now_myt.date()
 
+                # Benchmarks for duplication check (Highs and Lows kept separate)
+                bench_h = [h1d]
+                bench_l = [l1d]
+
                 # Asia Session
                 ah12, al12 = get_session_levels(df_1m, today, 8, 12)
                 ah15, al15 = get_session_levels(df_1m, today, 8, 15)
@@ -127,19 +141,37 @@ def main():
                 title_text = " Asia Session "
                 line = f"{title_text:=^30}"
                 print(f"\n{colored(line, 'red', attrs=['bold'])}")
+                
+                # 0800-1200
                 if ah12 is not None:
-                    print(f"0800-1200 High: {colored(format_price(ah12), 'red', attrs=['bold'])}")
-                    print(f"0800-1200 Low : {colored(format_price(al12), 'red', attrs=['bold'])}")
+                    h_near = is_near(ah12, bench_h)
+                    l_near = is_near(al12, bench_l)
+                    
+                    h_display = colored("-", "white") if h_near else colored(format_price(ah12), 'red', attrs=['bold'])
+                    l_display = colored("-", "white") if l_near else colored(format_price(al12), 'red', attrs=['bold'])
+                    
+                    print(f"0800-1200 High: {h_display}")
+                    print(f"0800-1200 Low : {l_display}")
+                    
+                    if not h_near: bench_h.append(ah12)
+                    if not l_near: bench_l.append(al12)
                 else:
                     print("0800-1200 High: N/A")
                     print("0800-1200 Low : N/A")
 
+                # 0800-1500
                 if ah15 is not None:
-                    # Handle duplicates: white and not bold for '-'
-                    h_val = colored("-", "white") if ah15 == ah12 else colored(format_price(ah15), 'red', attrs=['bold'])
-                    l_val = colored("-", "white") if al15 == al12 else colored(format_price(al15), 'red', attrs=['bold'])
-                    print(f"0800-1500 High: {h_val}")
-                    print(f"0800-1500 Low : {l_val}")
+                    h_near = is_near(ah15, bench_h)
+                    l_near = is_near(al15, bench_l)
+                    
+                    h_display = colored("-", "white") if h_near else colored(format_price(ah15), 'red', attrs=['bold'])
+                    l_display = colored("-", "white") if l_near else colored(format_price(al15), 'red', attrs=['bold'])
+                    
+                    print(f"0800-1500 High: {h_display}")
+                    print(f"0800-1500 Low : {l_display}")
+                    
+                    if not h_near: bench_h.append(ah15)
+                    if not l_near: bench_l.append(al15)
                 else:
                     print("0800-1500 High: N/A")
                     print("0800-1500 Low : N/A")
@@ -168,8 +200,14 @@ def main():
                         print(f"{time_range} Low : N/A")
                     else:
                         h30, l30 = df_30m['high'].max(), df_30m['low'].min()
-                        print(f"{time_range} High: {colored(format_price(h30), 'green', attrs=['bold'])}")
-                        print(f"{time_range} Low : {colored(format_price(l30), 'green', attrs=['bold'])}")
+                        h_near = is_near(h30, bench_h)
+                        l_near = is_near(l30, bench_l)
+                        
+                        h_display = colored("-", "white") if h_near else colored(format_price(h30), 'green', attrs=['bold'])
+                        l_display = colored("-", "white") if l_near else colored(format_price(l30), 'green', attrs=['bold'])
+                        
+                        print(f"{time_range} High: {h_display}")
+                        print(f"{time_range} Low : {l_display}")
                 else:
                     print(f"{time_range} High: N/A")
                     print(f"{time_range} Low : N/A")
