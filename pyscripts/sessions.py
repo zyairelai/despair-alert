@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # python-argcomplete-ok
 
-import pandas, requests, time, socket, os, sys, argparse, argcomplete
+import pandas, requests, time, socket, os, sys, argparse, argcomplete, shutil
 from datetime import datetime, timedelta, timezone
 from termcolor import colored
 
@@ -23,6 +23,15 @@ def get_klines(pair, interval, limit=100):
     df = pandas.DataFrame(result, columns=cols)
     return df
 
+def format_price(price):
+    if price is None: return "N/A"
+    p = float(price)
+    if p >= 10000: return f"{int(p)}"
+    if p >= 1000: return f"{p:.1f}"
+    if p >= 10: return f"{p:.2f}"
+    # Return original string if it's a very small number or other
+    return str(price).rstrip('0').rstrip('.') if '.' in str(price) else str(price)
+
 def telegram_bot_sendtext(bot_message):
     print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S")))
     bot_token = os.environ.get('TELEGRAM_LIVERMORE')
@@ -31,6 +40,17 @@ def telegram_bot_sendtext(bot_message):
     params = {'chat_id': chat_id, 'parse_mode': 'html', 'text': bot_message}
     response = requests.get(url, params=params)
     return response.json()
+
+def clear_pycache():
+    count = 0
+    for root, dirs, _ in os.walk('.'):
+        if '__pycache__' in dirs:
+            pycache_path = os.path.join(root, '__pycache__')
+            try:
+                shutil.rmtree(pycache_path)
+                count += 1
+            except: pass
+    if count > 0: print(f"\n[i] Cleaned up {count} __pycache__ folder(s).")
 
 def get_session_levels(df, date, start_hour, end_hour):
     """Filters klines for a specific date and hour range (MYT)."""
@@ -43,16 +63,18 @@ def get_session_levels(df, date, start_hour, end_hour):
     if session_df.empty:
         return None, None
 
-    return int(session_df['high'].max()), int(session_df['low'].min())
+    return session_df['high'].max(), session_df['low'].min()
 
 def main():
-    parser = argparse.ArgumentParser(description='The SESSIONS script.')
-    parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help='Trading pair (default: BTCUSDT)')
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('--symbol', dest='symbol', default='BTCUSDT', metavar='BTCUSDT', help='Trading pair (default: BTCUSDT)')
     parser.add_argument('--alert', action='store_true', help='Read alert if price hits Prev 1D High/Low')
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
-    SYMBOL = args.symbol
+    SYMBOL = args.symbol.upper()
+    if not SYMBOL.endswith('USDT'):
+        SYMBOL += 'USDT'
 
     try:
         first_run = True
@@ -61,8 +83,8 @@ def main():
             df_1d = get_klines(SYMBOL, "1d", limit=2)
             # index -2 is the previous completed day
             prev_1d = df_1d.iloc[-2]
-            h1d, l1d = int(prev_1d['high']), int(prev_1d['low'])
-            m1d = int((h1d + l1d) / 2)
+            h1d, l1d = prev_1d['high'], prev_1d['low']
+            m1d = (h1d + l1d) / 2
 
             triggered = False
             # Alert Logic
@@ -75,19 +97,21 @@ def main():
                 if curr_price >= h1d:
                     msg = f"{symbol_short} touch Prev High"
                     telegram_bot_sendtext(msg)
-                    print(colored(f"\n>>> ALERT: {msg} <<<", "yellow", attrs=["bold"]))
+                    print(f"\n>>> ALERT: {msg} <<<")
                     triggered = True
                 elif curr_price <= l1d:
                     msg = f"{symbol_short} touch Prev Low"
                     telegram_bot_sendtext(msg)
-                    print(colored(f"\n>>> ALERT: {msg} <<<", "yellow", attrs=["bold"]))
+                    print(f"\n>>> ALERT: {msg} <<<")
                     triggered = True
 
             if first_run or not args.alert:
-                print(f"\n{' Prev 1D ':=^30}")
-                print(f"Prev 1D High: {colored(str(h1d), 'white', attrs=['bold'])}")
-                print(f"Prev 1D Mid : {colored(str(m1d), 'white', attrs=['bold'])}")
-                print(f"Prev 1D Low : {colored(str(l1d), 'white', attrs=['bold'])}")
+                title_text = f" Prev 1D "
+                line = f"{title_text:=^30}"
+                print(f"\n{colored(line, 'white', attrs=['bold'])}")
+                print(f"Prev 1D High: {colored(format_price(h1d), 'white', attrs=['bold'])}")
+                print(f"Prev 1D Mid : {colored(format_price(m1d), 'white', attrs=['bold'])}")
+                print(f"Prev 1D Low : {colored(format_price(l1d), 'white', attrs=['bold'])}")
 
                 # 2. Session Data (1m klines)
                 # Fetch 1500 minutes to cover the full current day in MYT
@@ -96,65 +120,59 @@ def main():
                 now_myt = datetime.now(MYT)
                 today = now_myt.date()
 
-                # Tokyo Session: 08:00 - 15:00 MYT
-                th, tl = get_session_levels(df_1m, today, 8, 15)
-                print(f"\n{' Tokyo Session ':=^30}")
-                if th is not None:
-                    print(f"Tokyo High: {colored(str(th), 'red', attrs=['bold'])}")
-                    print(f"Tokyo Low : {colored(str(tl), 'red', attrs=['bold'])}")
-                else:
-                    print("Tokyo High: N/A")
-                    print("Tokyo Low : N/A")
+                # Asia Session
+                ah12, al12 = get_session_levels(df_1m, today, 8, 12)
+                ah15, al15 = get_session_levels(df_1m, today, 8, 15)
 
-                # London Session: 16:00 - 20:00 MYT
-                lh, ll = get_session_levels(df_1m, today, 16, 20)
-                print(f"\n{' London Session ':=^30}")
-                if lh is not None:
-                    print(f"London High: {colored(str(lh), 'green', attrs=['bold'])}")
-                    print(f"London Low : {colored(str(ll), 'green', attrs=['bold'])}")
+                title_text = " Asia Session "
+                line = f"{title_text:=^30}"
+                print(f"\n{colored(line, 'red', attrs=['bold'])}")
+                if ah12 is not None:
+                    print(f"0800-1200 High: {colored(format_price(ah12), 'red', attrs=['bold'])}")
+                    print(f"0800-1200 Low : {colored(format_price(al12), 'red', attrs=['bold'])}")
                 else:
-                    print("London High: N/A")
-                    print("London Low : N/A")
+                    print("0800-1200 High: N/A")
+                    print("0800-1200 Low : N/A")
+
+                if ah15 is not None:
+                    # Handle duplicates: white and not bold for '-'
+                    h_val = colored("-", "white") if ah15 == ah12 else colored(format_price(ah15), 'red', attrs=['bold'])
+                    l_val = colored("-", "white") if al15 == al12 else colored(format_price(al15), 'red', attrs=['bold'])
+                    print(f"0800-1500 High: {h_val}")
+                    print(f"0800-1500 Low : {l_val}")
+                else:
+                    print("0800-1500 High: N/A")
+                    print("0800-1500 Low : N/A")
+
+
 
                 # 2.5 Opening Session (US Open)
-                # 21:30 - 21:45 (15m)
-                # 21:30 - 22:00 (30m)
-                start_time = datetime.combine(today, datetime.min.time()).replace(hour=21, minute=30, tzinfo=MYT)
-                end_15m = start_time + timedelta(minutes=15)
+                # US DST: 2nd Sun March to 1st Sun Nov
+                dst_start = datetime(today.year, 3, 14) - timedelta(days=(datetime(today.year, 3, 14).weekday() + 1) % 7)
+                dst_end = datetime(today.year, 11, 7) - timedelta(days=(datetime(today.year, 11, 7).weekday() + 1) % 7)
+                is_dst = dst_start.date() <= today < dst_end.date()
+                open_hour = 21 if is_dst else 22
+                
+                start_time = datetime.combine(today, datetime.min.time()).replace(hour=open_hour, minute=30, tzinfo=MYT)
                 end_30m = start_time + timedelta(minutes=30)
-
-                mask_15m = (df_1m['dt'] >= start_time) & (df_1m['dt'] < end_15m)
                 mask_30m = (df_1m['dt'] >= start_time) & (df_1m['dt'] < end_30m)
-
-                # 15m
-                print(f"\n{' Opening 15m ':=^30}")
-                df_15m = df_1m[mask_15m]
-                if not df_15m.empty:
-                    if now_myt < end_15m:
-                        print(f"15m High: {colored('[developing]', 'yellow')}")
-                        print(f"15m Low : {colored('[developing]', 'yellow')}")
-                    else:
-                        h15, l15 = int(df_15m['high'].max()), int(df_15m['low'].min())
-                        print(f"15m High: {colored(str(h15), 'yellow', attrs=['bold'])}")
-                        print(f"15m Low : {colored(str(l15), 'yellow', attrs=['bold'])}")
-                else:
-                    print("15m High: N/A")
-                    print("15m Low : N/A")
-
-                # 30m
-                print(f"\n{' Opening 30m ':=^30}")
+                
+                time_range = f"{open_hour}30-{open_hour+1}00"
+                title_text = " New York Session "
+                line = f"{title_text:=^30}"
+                print(f"\n{colored(line, 'green', attrs=['bold'])}")
                 df_30m = df_1m[mask_30m]
                 if not df_30m.empty:
                     if now_myt < end_30m:
-                        print(f"30m High: {colored('[developing]', 'yellow')}")
-                        print(f"30m Low : {colored('[developing]', 'yellow')}")
+                        print(f"{time_range} High: N/A")
+                        print(f"{time_range} Low : N/A")
                     else:
-                        h30, l30 = int(df_30m['high'].max()), int(df_30m['low'].min())
-                        print(f"30m High: {colored(str(h30), 'yellow', attrs=['bold'])}")
-                        print(f"30m Low : {colored(str(l30), 'yellow', attrs=['bold'])}")
+                        h30, l30 = df_30m['high'].max(), df_30m['low'].min()
+                        print(f"{time_range} High: {colored(format_price(h30), 'green', attrs=['bold'])}")
+                        print(f"{time_range} Low : {colored(format_price(l30), 'green', attrs=['bold'])}")
                 else:
-                    print("30m High: N/A")
-                    print("30m Low : N/A")
+                    print(f"{time_range} High: N/A")
+                    print(f"{time_range} Low : N/A")
 
                 # 3. Monday High/Low
                 # Fetch last 10 days to ensure we get the last Monday
@@ -162,15 +180,31 @@ def main():
                 df_monday['dt'] = pandas.to_datetime(df_monday['timestamp'], unit='ms', utc=True).dt.tz_convert(MYT)
                 monday_candles = df_monday[df_monday['dt'].dt.weekday == 0]
 
-                print(f"\n{' Monday ':=^30}")
+                title_text = " Monday "
+                line = f"{title_text:=^30}"
+                print(f"\n{colored(line, 'blue', attrs=['bold'])}")
                 if not monday_candles.empty:
                     last_monday = monday_candles.iloc[-1]
-                    mh, ml = int(last_monday['high']), int(last_monday['low'])
-                    print(f"Monday High: {colored(str(mh), 'blue', attrs=['bold'])}")
-                    print(f"Monday Low : {colored(str(ml), 'blue', attrs=['bold'])}")
+                    mh, ml = last_monday['high'], last_monday['low']
+                    print(f"Monday High: {colored(format_price(mh), 'blue', attrs=['bold'])}")
+                    print(f"Monday Low : {colored(format_price(ml), 'blue', attrs=['bold'])}")
                 else:
                     print("Monday High: N/A")
                     print("Monday Low : N/A")
+
+                # 4. Weekly High/Low
+                df_1w = get_klines(SYMBOL, "1w", limit=2)
+                title_text = " Weekly "
+                line = f"{title_text:=^30}"
+                print(f"\n{colored(line, 'magenta', attrs=['bold'])}")
+                if len(df_1w) >= 2:
+                    prev_week = df_1w.iloc[-2]
+                    wh, wl = prev_week['high'], prev_week['low']
+                    print(f"Prev Week High: {colored(format_price(wh), 'magenta', attrs=['bold'])}")
+                    print(f"Prev Week Low : {colored(format_price(wl), 'magenta', attrs=['bold'])}")
+                else:
+                    print("Prev Week High: N/A")
+                    print("Prev Week Low : N/A")
 
             if not args.alert or triggered:
                 break
@@ -181,8 +215,12 @@ def main():
             first_run = False
             time.sleep(5)
 
+    except KeyboardInterrupt:
+        print("\nAborted.")
     except Exception as e:
         print(f"Error: {e}")
+    finally:
+        clear_pycache()
 
 if __name__ == "__main__":
     main()

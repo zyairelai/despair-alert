@@ -15,12 +15,7 @@ alias zones="/home/kali/despair-alert/zones.py"
 ```
 ```
 # Enable python-argcomplete
-autoload -U bashcompinit
-bashcompinit
-
-# Only zones.py currently has complex flag completion
-eval "$(register-python-argcomplete --shell zsh /home/kali/despair-alert/zones.py)"
-compdef _python_argcomplete zones
+eval "$(register-python-argcomplete sessions.py)"
 ```
 ```
 
