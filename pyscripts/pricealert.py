@@ -55,10 +55,10 @@ def telegram_bot_sendtext(bot_message):
 # telegram_bot_sendtext("Telegram works!")
 
 session = requests.Session()
-def get_klines(pair, interval):
+def get_klines(pair, interval, limit=100):
     spot_url = "https://api.binance.com/api/v1/klines"
     url = "https://fapi.binance.com/fapi/v1/klines"
-    params = {"symbol": pair, "interval": interval, "limit": 100}
+    params = {"symbol": pair, "interval": interval, "limit": limit}
     r = session.get(url, params=params, timeout=5)
     r.raise_for_status()
     data = r.json()
@@ -70,15 +70,31 @@ def get_klines(pair, interval):
     candlestick["lower_wick"] = candlestick[["open", "close"]].min(axis=1) - candlestick["low"]
     return candlestick
 
+INITIAL_PRICE = None
+
 def price_alert(symbol):
-    cutloss = get_klines(symbol, "1m")
+    global INITIAL_PRICE
+    df = get_klines(symbol, "1m", limit=1)
+    now_candle = df.iloc[-1]
+    
+    if INITIAL_PRICE is None:
+        INITIAL_PRICE = now_candle['close']
+        print(f"Monitoring... (Current Price: {INITIAL_PRICE})")
+        return
+
     for target_price_str in targets:
-        try: target_price = float(target_price_str)
+        try: target_p = float(target_price_str)
         except ValueError: continue
 
-        if cutloss["high"].iloc[-1] >= target_price >= cutloss["low"].iloc[-1]:
-            telegram_bot_sendtext(f"Price touched target: {target_price_str}")
-            exit()
+        # Swallowing logic: Trigger if target is hit or passed by the 1m High/Low
+        if INITIAL_PRICE < target_p:
+            if now_candle["high"] >= target_p:
+                telegram_bot_sendtext(f"{symbol} touched target: {target_price_str}")
+                exit()
+        else:
+            if now_candle["low"] <= target_p:
+                telegram_bot_sendtext(f"{symbol} touched target: {target_price_str}")
+                exit()
 
 try:
     while True:

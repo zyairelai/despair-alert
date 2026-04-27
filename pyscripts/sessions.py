@@ -101,15 +101,15 @@ def main():
             if args.alert:
                 # Fetch latest 1m kline for current price
                 df_now = get_klines(SYMBOL, "1m", limit=1)
-                curr_price = df_now.iloc[-1]['close']
+                now_candle = df_now.iloc[-1]
 
                 symbol_short = SYMBOL.replace('USDT', '')
-                if curr_price >= h1d:
+                if now_candle['high'] >= h1d:
                     msg = f"{symbol_short} touch Prev High"
                     telegram_bot_sendtext(msg)
                     print(f"\n>>> ALERT: {msg} <<<")
                     triggered = True
-                elif curr_price <= l1d:
+                elif now_candle['low'] <= l1d:
                     msg = f"{symbol_short} touch Prev Low"
                     telegram_bot_sendtext(msg)
                     print(f"\n>>> ALERT: {msg} <<<")
