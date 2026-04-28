@@ -139,7 +139,7 @@ def main():
                 dst_start = datetime(today.year, 3, 14) - timedelta(days=(datetime(today.year, 3, 14).weekday() + 1) % 7)
                 dst_end = datetime(today.year, 11, 7) - timedelta(days=(datetime(today.year, 11, 7).weekday() + 1) % 7)
                 is_dst = dst_start.date() <= today < dst_end.date()
-                
+
                 # hour_shift: 0 in Summer, 1 in Winter (1h delay)
                 hour_shift = 0 if is_dst else 1
                 open_hour = 21 if is_dst else 22
@@ -158,7 +158,7 @@ def main():
                     title_text = " Asia Session "
                     line = f"{title_text:=^30}"
                     print(f"\n{colored(line, 'red', attrs=['bold'])}")
-                    
+
                     # Asia Sub-session 1
                     time_range_a1 = f"{ah_start:02d}00-{ah_end:02d}00"
                     if ah12 is not None and now_myt >= asia_end_dt:
@@ -184,7 +184,7 @@ def main():
                     title_text = " London Session "
                     line = f"{title_text:=^30}"
                     print(f"\n{colored(line, 'yellow', attrs=['bold'])}")
-                    
+
                     # London Sub-session 1
                     time_range_l1 = f"{lh_start:02d}00-{lh_end:02d}00"
                     if lh18 is not None and now_myt >= london_end_dt:
@@ -205,7 +205,7 @@ def main():
                     start_time = datetime.combine(today, datetime.min.time()).replace(hour=open_hour, minute=30, tzinfo=MYT)
                     end_30m = start_time + timedelta(minutes=30)
                     mask_30m = (df_1m['dt'] >= start_time) & (df_1m['dt'] < end_30m)
-                    
+
                     time_range = f"{open_hour}30-{open_hour+1}00"
                     title_text = " New York Session "
                     line = f"{title_text:=^30}"
@@ -219,10 +219,10 @@ def main():
                             h30, l30 = df_30m['high'].max(), df_30m['low'].min()
                             h_near = is_near(h30, bench_h)
                             l_near = is_near(l30, bench_l)
-                            
+
                             h_display = colored("-", "white") if h_near else colored(format_price(h30), 'green', attrs=['bold'])
                             l_display = colored("-", "white") if l_near else colored(format_price(l30), 'green', attrs=['bold'])
-                            
+
                             print(f"{time_range} High: {h_display}")
                             print(f"{time_range} Low : {l_display}")
                     else:
@@ -272,12 +272,9 @@ def main():
             first_run = False
             time.sleep(5)
 
-    except KeyboardInterrupt:
-        print("\nAborted.")
-    except Exception as e:
-        print(f"Error: {e}")
-    finally:
-        clear_pycache()
+    except KeyboardInterrupt: print("\nAborted.")
+    except Exception as e: print(f"Error: {e}")
+    finally: clear_pycache()
 
 if __name__ == "__main__":
     main()

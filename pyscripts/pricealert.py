@@ -76,7 +76,7 @@ def price_alert(symbol):
     global INITIAL_PRICE
     df = get_klines(symbol, "1m", limit=1)
     now_candle = df.iloc[-1]
-    
+
     if INITIAL_PRICE is None:
         INITIAL_PRICE = now_candle['close']
         print(f"Monitoring... (Current Price: {INITIAL_PRICE})")
