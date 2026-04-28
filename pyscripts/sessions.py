@@ -8,6 +8,12 @@ from termcolor import colored
 # Constants
 MYT = timezone(timedelta(hours=8))
 NEAR_THRESHOLD = 0.002
+PREV_DAY = True
+ASIA_SESSION = True
+LONDON_SESSION = False
+NEWYORK_SESSION = True
+MONDAY_RANGE = False
+WEEKLY_RANGE = True
 
 # Initialize session for performance
 session = requests.Session()
@@ -43,7 +49,7 @@ def is_near(val, benchmarks, threshold=NEAR_THRESHOLD):
     return False
 
 def telegram_bot_sendtext(bot_message):
-    print(bot_message + "\nTriggered at: " + str(datetime.today().strftime("%d-%m-%Y @ %H:%M:%S")))
+    print(bot_message + "\nTriggered at: " + str(datetime.now(MYT).strftime("%d-%m-%Y @ %H:%M:%S")))
     bot_token = os.environ.get('TELEGRAM_LIVERMORE')
     chat_id = "@swinglivermore"
     url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
@@ -52,15 +58,11 @@ def telegram_bot_sendtext(bot_message):
     return response.json()
 
 def clear_pycache():
-    count = 0
     for root, dirs, _ in os.walk('.'):
         if '__pycache__' in dirs:
             pycache_path = os.path.join(root, '__pycache__')
-            try:
-                shutil.rmtree(pycache_path)
-                count += 1
+            try: shutil.rmtree(pycache_path)
             except: pass
-    if count > 0: print(f"\n[i] Cleaned up {count} __pycache__ folder(s).")
 
 def get_session_levels(df, date, start_hour, end_hour):
     """Filters klines for a specific date and hour range (MYT)."""
@@ -116,18 +118,21 @@ def main():
                     triggered = True
 
             if first_run or not args.alert:
-                title_text = f" Prev 1D "
-                line = f"{title_text:=^30}"
-                print(f"\n{colored(line, 'white', attrs=['bold'])}")
-                print(f"Prev 1D High: {colored(format_price(h1d), 'white', attrs=['bold'])}")
-                # print(f"Prev 1D Mid : {colored(format_price(m1d), 'white', attrs=['bold'])}")
-                print(f"Prev 1D Low : {colored(format_price(l1d), 'white', attrs=['bold'])}")
+                if PREV_DAY:
+                    title_text = f" Prev 1D "
+                    line = f"{title_text:=^30}"
+                    print(f"\n{colored(line, 'white', attrs=['bold'])}")
+                    print(f"Prev 1D High: {colored(format_price(h1d), 'white', attrs=['bold'])}")
+                    # print(f"Prev 1D Mid : {colored(format_price(m1d), 'white', attrs=['bold'])}")
+                    print(f"Prev 1D Low : {colored(format_price(l1d), 'white', attrs=['bold'])}")
 
                 # 2. Session Data (1m klines)
                 # Fetch 1500 minutes to cover the full current day in MYT
                 df_1m = get_klines(SYMBOL, "1m", limit=1500)
 
-                now_myt = datetime.now(MYT)
+                # Use the timestamp from the latest candle to be completely independent of local computer clock
+                last_candle_ms = df_1m.iloc[-1]['timestamp']
+                now_myt = datetime.fromtimestamp(last_candle_ms / 1000.0, tz=timezone.utc).astimezone(MYT)
                 today = now_myt.date()
 
                 # US DST: 2nd Sun March to 1st Sun Nov
@@ -143,115 +148,120 @@ def main():
                 bench_h = []
                 bench_l = []
 
-                # Asia Session
-                ah_start = 8 + hour_shift
-                ah_end = 12 + hour_shift
-                asia_end_dt = datetime.combine(today, datetime.min.time()).replace(hour=ah_end, tzinfo=MYT)
-                ah12, al12 = get_session_levels(df_1m, today, ah_start, ah_end)
+                if ASIA_SESSION:
+                    # Asia Session
+                    ah_start = 8 + hour_shift
+                    ah_end = 12 + hour_shift
+                    asia_end_dt = datetime.combine(today, datetime.min.time()).replace(hour=ah_end, tzinfo=MYT)
+                    ah12, al12 = get_session_levels(df_1m, today, ah_start, ah_end)
 
-                title_text = " Asia Session "
-                line = f"{title_text:=^30}"
-                print(f"\n{colored(line, 'red', attrs=['bold'])}")
-                
-                # Asia Sub-session 1
-                time_range_a1 = f"{ah_start:02d}00-{ah_end:02d}00"
-                if ah12 is not None and now_myt >= asia_end_dt:
-                    h_near = is_near(ah12, bench_h)
-                    l_near = is_near(al12, bench_l)
-                    h_display = colored("-", "white") if h_near else colored(format_price(ah12), 'red', attrs=['bold'])
-                    l_display = colored("-", "white") if l_near else colored(format_price(al12), 'red', attrs=['bold'])
-                    print(f"{time_range_a1} High: {h_display}")
-                    print(f"{time_range_a1} Low : {l_display}")
-                    if not h_near: bench_h.append(ah12)
-                    if not l_near: bench_l.append(al12)
-                else:
-                    print(f"{time_range_a1} High: N/A")
-                    print(f"{time_range_a1} Low : N/A")
+                    title_text = " Asia Session "
+                    line = f"{title_text:=^30}"
+                    print(f"\n{colored(line, 'red', attrs=['bold'])}")
+                    
+                    # Asia Sub-session 1
+                    time_range_a1 = f"{ah_start:02d}00-{ah_end:02d}00"
+                    if ah12 is not None and now_myt >= asia_end_dt:
+                        h_near = is_near(ah12, bench_h)
+                        l_near = is_near(al12, bench_l)
+                        h_display = colored("-", "white") if h_near else colored(format_price(ah12), 'red', attrs=['bold'])
+                        l_display = colored("-", "white") if l_near else colored(format_price(al12), 'red', attrs=['bold'])
+                        print(f"{time_range_a1} High: {h_display}")
+                        print(f"{time_range_a1} Low : {l_display}")
+                        if not h_near: bench_h.append(ah12)
+                        if not l_near: bench_l.append(al12)
+                    else:
+                        print(f"{time_range_a1} High: N/A")
+                        print(f"{time_range_a1} Low : N/A")
 
-                # London Session
-                lh_start = 15 + hour_shift
-                lh_end = 18 + hour_shift
-                london_end_dt = datetime.combine(today, datetime.min.time()).replace(hour=lh_end, tzinfo=MYT)
-                lh18, ll18 = get_session_levels(df_1m, today, lh_start, lh_end)
+                if LONDON_SESSION:
+                    # London Session
+                    lh_start = 15 + hour_shift
+                    lh_end = 18 + hour_shift
+                    london_end_dt = datetime.combine(today, datetime.min.time()).replace(hour=lh_end, tzinfo=MYT)
+                    lh18, ll18 = get_session_levels(df_1m, today, lh_start, lh_end)
 
-                title_text = " London Session "
-                line = f"{title_text:=^30}"
-                print(f"\n{colored(line, 'yellow', attrs=['bold'])}")
-                
-                # London Sub-session 1
-                time_range_l1 = f"{lh_start:02d}00-{lh_end:02d}00"
-                if lh18 is not None and now_myt >= london_end_dt:
-                    h_near = is_near(lh18, bench_h)
-                    l_near = is_near(ll18, bench_l)
-                    h_display = colored("-", "white") if h_near else colored(format_price(lh18), 'yellow', attrs=['bold'])
-                    l_display = colored("-", "white") if l_near else colored(format_price(ll18), 'yellow', attrs=['bold'])
-                    print(f"{time_range_l1} High: {h_display}")
-                    print(f"{time_range_l1} Low : {l_display}")
-                    if not h_near: bench_h.append(lh18)
-                    if not l_near: bench_l.append(ll18)
-                else:
-                    print(f"{time_range_l1} High: N/A")
-                    print(f"{time_range_l1} Low : N/A")
+                    title_text = " London Session "
+                    line = f"{title_text:=^30}"
+                    print(f"\n{colored(line, 'yellow', attrs=['bold'])}")
+                    
+                    # London Sub-session 1
+                    time_range_l1 = f"{lh_start:02d}00-{lh_end:02d}00"
+                    if lh18 is not None and now_myt >= london_end_dt:
+                        h_near = is_near(lh18, bench_h)
+                        l_near = is_near(ll18, bench_l)
+                        h_display = colored("-", "white") if h_near else colored(format_price(lh18), 'yellow', attrs=['bold'])
+                        l_display = colored("-", "white") if l_near else colored(format_price(ll18), 'yellow', attrs=['bold'])
+                        print(f"{time_range_l1} High: {h_display}")
+                        print(f"{time_range_l1} Low : {l_display}")
+                        if not h_near: bench_h.append(lh18)
+                        if not l_near: bench_l.append(ll18)
+                    else:
+                        print(f"{time_range_l1} High: N/A")
+                        print(f"{time_range_l1} Low : N/A")
 
-                # 2.5 Opening Session (US Open)
-                start_time = datetime.combine(today, datetime.min.time()).replace(hour=open_hour, minute=30, tzinfo=MYT)
-                end_30m = start_time + timedelta(minutes=30)
-                mask_30m = (df_1m['dt'] >= start_time) & (df_1m['dt'] < end_30m)
-                
-                time_range = f"{open_hour}30-{open_hour+1}00"
-                title_text = " New York Session "
-                line = f"{title_text:=^30}"
-                print(f"\n{colored(line, 'green', attrs=['bold'])}")
-                df_30m = df_1m[mask_30m]
-                if not df_30m.empty:
-                    if now_myt < end_30m:
+                if NEWYORK_SESSION:
+                    # 2.5 Opening Session (US Open)
+                    start_time = datetime.combine(today, datetime.min.time()).replace(hour=open_hour, minute=30, tzinfo=MYT)
+                    end_30m = start_time + timedelta(minutes=30)
+                    mask_30m = (df_1m['dt'] >= start_time) & (df_1m['dt'] < end_30m)
+                    
+                    time_range = f"{open_hour}30-{open_hour+1}00"
+                    title_text = " New York Session "
+                    line = f"{title_text:=^30}"
+                    print(f"\n{colored(line, 'green', attrs=['bold'])}")
+                    df_30m = df_1m[mask_30m]
+                    if not df_30m.empty:
+                        if now_myt < end_30m:
+                            print(f"{time_range} High: N/A")
+                            print(f"{time_range} Low : N/A")
+                        else:
+                            h30, l30 = df_30m['high'].max(), df_30m['low'].min()
+                            h_near = is_near(h30, bench_h)
+                            l_near = is_near(l30, bench_l)
+                            
+                            h_display = colored("-", "white") if h_near else colored(format_price(h30), 'green', attrs=['bold'])
+                            l_display = colored("-", "white") if l_near else colored(format_price(l30), 'green', attrs=['bold'])
+                            
+                            print(f"{time_range} High: {h_display}")
+                            print(f"{time_range} Low : {l_display}")
+                    else:
                         print(f"{time_range} High: N/A")
                         print(f"{time_range} Low : N/A")
+
+                if MONDAY_RANGE:
+                    # 3. Monday High/Low
+                    # Fetch last 10 days to ensure we get the last Monday
+                    df_monday = get_klines(SYMBOL, "1d", limit=10)
+                    df_monday['dt'] = pandas.to_datetime(df_monday['timestamp'], unit='ms', utc=True).dt.tz_convert(MYT)
+                    monday_candles = df_monday[df_monday['dt'].dt.weekday == 0]
+
+                    title_text = " Monday "
+                    line = f"{title_text:=^30}"
+                    print(f"\n{colored(line, 'blue', attrs=['bold'])}")
+                    if not monday_candles.empty:
+                        last_monday = monday_candles.iloc[-1]
+                        mh, ml = last_monday['high'], last_monday['low']
+                        print(f"Monday High: {colored(format_price(mh), 'blue', attrs=['bold'])}")
+                        print(f"Monday Low : {colored(format_price(ml), 'blue', attrs=['bold'])}")
                     else:
-                        h30, l30 = df_30m['high'].max(), df_30m['low'].min()
-                        h_near = is_near(h30, bench_h)
-                        l_near = is_near(l30, bench_l)
-                        
-                        h_display = colored("-", "white") if h_near else colored(format_price(h30), 'green', attrs=['bold'])
-                        l_display = colored("-", "white") if l_near else colored(format_price(l30), 'green', attrs=['bold'])
-                        
-                        print(f"{time_range} High: {h_display}")
-                        print(f"{time_range} Low : {l_display}")
-                else:
-                    print(f"{time_range} High: N/A")
-                    print(f"{time_range} Low : N/A")
+                        print("Monday High: N/A")
+                        print("Monday Low : N/A")
 
-                # 3. Monday High/Low
-                # Fetch last 10 days to ensure we get the last Monday
-                df_monday = get_klines(SYMBOL, "1d", limit=10)
-                df_monday['dt'] = pandas.to_datetime(df_monday['timestamp'], unit='ms', utc=True).dt.tz_convert(MYT)
-                monday_candles = df_monday[df_monday['dt'].dt.weekday == 0]
-
-                title_text = " Monday "
-                line = f"{title_text:=^30}"
-                print(f"\n{colored(line, 'blue', attrs=['bold'])}")
-                if not monday_candles.empty:
-                    last_monday = monday_candles.iloc[-1]
-                    mh, ml = last_monday['high'], last_monday['low']
-                    print(f"Monday High: {colored(format_price(mh), 'blue', attrs=['bold'])}")
-                    print(f"Monday Low : {colored(format_price(ml), 'blue', attrs=['bold'])}")
-                else:
-                    print("Monday High: N/A")
-                    print("Monday Low : N/A")
-
-                # 4. Weekly High/Low
-                df_1w = get_klines(SYMBOL, "1w", limit=2)
-                title_text = " Weekly "
-                line = f"{title_text:=^30}"
-                print(f"\n{colored(line, 'magenta', attrs=['bold'])}")
-                if len(df_1w) >= 2:
-                    prev_week = df_1w.iloc[-2]
-                    wh, wl = prev_week['high'], prev_week['low']
-                    print(f"Prev Week High: {colored(format_price(wh), 'magenta', attrs=['bold'])}")
-                    print(f"Prev Week Low : {colored(format_price(wl), 'magenta', attrs=['bold'])}")
-                else:
-                    print("Prev Week High: N/A")
-                    print("Prev Week Low : N/A")
+                if WEEKLY_RANGE:
+                    # 4. Weekly High/Low
+                    df_1w = get_klines(SYMBOL, "1w", limit=2)
+                    title_text = " Weekly "
+                    line = f"{title_text:=^30}"
+                    print(f"\n{colored(line, 'magenta', attrs=['bold'])}")
+                    if len(df_1w) >= 2:
+                        prev_week = df_1w.iloc[-2]
+                        wh, wl = prev_week['high'], prev_week['low']
+                        print(f"Prev Week High: {colored(format_price(wh), 'magenta', attrs=['bold'])}")
+                        print(f"Prev Week Low : {colored(format_price(wl), 'magenta', attrs=['bold'])}")
+                    else:
+                        print("Prev Week High: N/A")
+                        print("Prev Week Low : N/A")
 
             if not args.alert or triggered:
                 break
