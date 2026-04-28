@@ -8,12 +8,7 @@ from termcolor import colored
 # Constants
 MYT = timezone(timedelta(hours=8))
 NEAR_THRESHOLD = 0.002
-PREV_DAY = True
-ASIA_SESSION = True
-LONDON_SESSION = False
-NEWYORK_SESSION = True
-MONDAY_RANGE = False
-WEEKLY_RANGE = True
+PREV_DAY, ASIA_SESSION, LONDON_SESSION, NEWYORK_SESSION, MONDAY_RANGE, WEEKLY_RANGE = True, True, False, True, False, False
 
 # Initialize session for performance
 session = requests.Session()
@@ -78,14 +73,22 @@ def get_session_levels(df, date, start_hour, end_hour):
     return session_df['high'].max(), session_df['low'].min()
 
 def main():
+    global PREV_DAY, ASIA_SESSION, LONDON_SESSION, NEWYORK_SESSION, MONDAY_RANGE, WEEKLY_RANGE
+
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('--symbol', dest='symbol', default='BTCUSDT', metavar='BTCUSDT', help='Trading pair (default: BTCUSDT)')
-    parser.add_argument('--alert', action='store_true', help='Read alert if price hits Prev 1D High/Low')
+    parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS, help=argparse.SUPPRESS)
+    parser.add_argument('--alert', action='store_true', help='Enable Telegram Alert')
+    parser.add_argument('--show-all', action='store_true', help='Show All Sessions')
+    parser.add_argument('--symbol', dest='symbol', default='BTCUSDT', help='Default BTCUSDT')
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
+
+    if args.show_all:
+        PREV_DAY, ASIA_SESSION, LONDON_SESSION, NEWYORK_SESSION, MONDAY_RANGE, WEEKLY_RANGE = True, True, True, True, True, True
+
     SYMBOL = args.symbol.upper()
-    if not SYMBOL.endswith('USDT'):
+    if not (SYMBOL.endswith('USDT') or SYMBOL.endswith('USDC')):
         SYMBOL += 'USDT'
 
     try:

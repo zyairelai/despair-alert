@@ -19,7 +19,9 @@ parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help
 
 argcomplete.autocomplete(parser)
 args = parser.parse_args()
-SYMBOL = args.symbol
+SYMBOL = args.symbol.upper()
+if not (SYMBOL.endswith('USDT') or SYMBOL.endswith('USDC')):
+    SYMBOL += 'USDT'
 if args.exit_mode: SLEEP_INTERVAL = "-"
 
 def sleep_until_next(interval):

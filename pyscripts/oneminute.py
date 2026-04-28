@@ -8,7 +8,9 @@ parser = argparse.ArgumentParser(description='Stoploss monitor script.', add_hel
 parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
 parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
 args, unknown = parser.parse_known_args()
-SYMBOL = args.symbol
+SYMBOL = args.symbol.upper()
+if not (SYMBOL.endswith('USDT') or SYMBOL.endswith('USDC')):
+    SYMBOL += 'USDT'
 
 # Condition Selection
 print("\nSelect condition to trigger:")

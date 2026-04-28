@@ -27,7 +27,9 @@ if len(sys.argv) == 1:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
     args, _ = parser.parse_known_args()
-    SYMBOL = args.symbol
+    SYMBOL = args.symbol.upper()
+    if not (SYMBOL.endswith('USDT') or SYMBOL.endswith('USDC')):
+        SYMBOL += 'USDT'
 else:
     parser = argparse.ArgumentParser(add_help=False)
     parser.error = lambda message: (print_usage(), sys.exit(1))
@@ -35,7 +37,9 @@ else:
     parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
     args = parser.parse_args()
     targets = args.targets
-    SYMBOL = args.symbol
+    SYMBOL = args.symbol.upper()
+    if not (SYMBOL.endswith('USDT') or SYMBOL.endswith('USDC')):
+        SYMBOL += 'USDT'
 
     if len(targets) == 1:
         print(f"Set Price Alert: {targets[0]}")

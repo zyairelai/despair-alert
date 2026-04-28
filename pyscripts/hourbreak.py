@@ -9,7 +9,9 @@ parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
 parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
 
 args, unknown = parser.parse_known_args()
-SYMBOL = args.symbol
+SYMBOL = args.symbol.upper()
+if not (SYMBOL.endswith('USDT') or SYMBOL.endswith('USDC')):
+    SYMBOL += 'USDT'
 
 try:
     val = input("How many previous candles to lookback? ").strip()
@@ -73,7 +75,7 @@ def heikin_ashi(klines):
 
 def short_despair():
     klines_raw = get_klines(SYMBOL, "1h")
-    
+
     # Emergency 1h Logic: Current high > previous high AND current 1h candle is RED
     last_1h = klines_raw.iloc[-1]
     prev_1h = klines_raw.iloc[-2]

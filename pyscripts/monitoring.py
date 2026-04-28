@@ -8,10 +8,11 @@ parser = argparse.ArgumentParser(description='Continuous EMA Monitoring.', add_h
 parser.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
 parser.add_argument('--symbol', '--pair', dest='symbol', default='BTCUSDT', help=argparse.SUPPRESS)
 args, unknown = parser.parse_known_args()
-SYMBOL = args.symbol
+SYMBOL = args.symbol.upper()
+if not (SYMBOL.endswith('USDT') or SYMBOL.endswith('USDC')):
+    SYMBOL += 'USDT'
 
 # Configuration
-SYMBOL = args.symbol
 LTF = "5m"
 LAST_TREND = None # Immediate trend for display
 LAST_ALERT_TREND = None # Trend that was actually alerted
@@ -58,7 +59,7 @@ def get_trend_at(df, idx):
     ema10 = row['10EMA']
     ema20 = row['20EMA']
     ema50 = row['50EMA']
-    
+
     if ema10 < ema20: return "DOWNTREND"
     if ema10 > ema20 and ema20 > ema50: return "UPTREND"
     return "NEUTRAL"
@@ -68,10 +69,10 @@ def monitor():
     try:
         df_1h = get_klines(SYMBOL, "1h")
         df_ltf = get_klines(SYMBOL, LTF)
-        
+
         last_1h = df_1h.iloc[-1]
         prev_1h = df_1h.iloc[-2]
-        
+
         # Trend Determination Logic
         current_trend = "NO TRADE ZONE"
 
@@ -91,10 +92,10 @@ def monitor():
                     break
             if is_uptrend_confirmed:
                 current_trend = "UPTREND"
-        
+
         # Emergency 1h Logic: Current high > previous high AND current 1h candle is RED
         is_emergency = last_1h['high'] > prev_1h['high'] and last_1h['close'] < last_1h['open']
-        
+
         trend_color = "green" if current_trend == "UPTREND" else "red" if current_trend == "DOWNTREND" else "yellow"
         display_trend = "EMERGENCY DOWNTREND" if is_emergency else current_trend
         # Output lines
@@ -102,17 +103,17 @@ def monitor():
             f"\r[{colored(SYMBOL, 'cyan')}]",
             colored(f" [+] OVERALL TREND: {display_trend}", trend_color)
         ]
-        
+
         # Clear current lines and rewrite
         output_str = "\033[K" + "\n\033[K".join(lines)
         num_newlines = output_str.count('\n')
         sys.stdout.write(output_str + f"\033[{num_newlines}A")
         sys.stdout.flush()
-        
+
         # Alert Logic: Trigger once per 5m candle change after candle close
         current_candle_ts = df_ltf.iloc[-1]['timestamp']
         current_hour_ts = last_1h['timestamp']
-        
+
         is_new_candle = LAST_ALERT_CANDLE is None or current_candle_ts > LAST_ALERT_CANDLE
         is_new_emergency_hour = LAST_EMERGENCY_HOUR is None or current_hour_ts > LAST_EMERGENCY_HOUR
 
@@ -147,9 +148,9 @@ def monitor():
 
         if trigger_msg:
             telegram_bot_sendtext(trigger_msg)
-            
+
         LAST_ALERT_CANDLE = current_candle_ts
-            
+
         LAST_TREND = current_trend
     except Exception as e: pass
 

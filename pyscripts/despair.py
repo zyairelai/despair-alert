@@ -40,7 +40,7 @@ def main():
     try:
         display_menu(SCRIPTS_LIST)
         user_input = input("\nEnter Script Number or Name: ").strip()
-        
+
         if not user_input:
             script_name = "monitoring.py"
             args = []
@@ -48,9 +48,7 @@ def main():
             parts = user_input.split()
             choice = parts[0].lower()
             args = parts[1:]
-            
             script_name = None
-            
             # Simple numeric or exact name matching
             try:
                 choice_idx = int(choice) - 1
