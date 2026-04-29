@@ -91,14 +91,9 @@ def price_alert(symbol):
         except ValueError: continue
 
         # Swallowing logic: Trigger if target is hit or passed by the 1m High/Low
-        if INITIAL_PRICE < target_p:
-            if now_candle["high"] >= target_p:
-                telegram_bot_sendtext(f"{symbol} touched target: {target_price_str}")
-                exit()
-        else:
-            if now_candle["low"] <= target_p:
-                telegram_bot_sendtext(f"{symbol} touched target: {target_price_str}")
-                exit()
+        if now_candle["high"] >= target_p >= now_candle["low"]:
+            telegram_bot_sendtext(f"{symbol} touched target: {target_price_str}")
+            exit()
 
 try:
     while True:

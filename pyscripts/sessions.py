@@ -109,12 +109,12 @@ def main():
                 now_candle = df_now.iloc[-1]
 
                 symbol_short = SYMBOL.replace('USDT', '')
-                if now_candle['high'] >= h1d:
+                if now_candle['high'] >= h1d >= now_candle['low']:
                     msg = f"{symbol_short} touch Prev High"
                     telegram_bot_sendtext(msg)
                     print(f"\n>>> ALERT: {msg} <<<")
                     triggered = True
-                elif now_candle['low'] <= l1d:
+                elif now_candle['high'] >= l1d >= now_candle['low']:
                     msg = f"{symbol_short} touch Prev Low"
                     telegram_bot_sendtext(msg)
                     print(f"\n>>> ALERT: {msg} <<<")
