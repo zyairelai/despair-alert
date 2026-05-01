@@ -8,7 +8,7 @@ from termcolor import colored
 # Constants
 MYT = timezone(timedelta(hours=8))
 NEAR_THRESHOLD = 0.002
-PREV_DAY, ASIA_SESSION, LONDON_SESSION, NEWYORK_SESSION, MONDAY_RANGE, WEEKLY_RANGE = True, True, False, True, False, False
+PREV_DAY, ASIA_SESSION, LONDON_SESSION, NEWYORK_SESSION, MONDAY_RANGE, WEEKLY_RANGE = True, True, True, True, True, True
 
 # Initialize session for performance
 session = requests.Session()
@@ -78,14 +78,10 @@ def main():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS, help=argparse.SUPPRESS)
     parser.add_argument('--alert', action='store_true', help='Enable Telegram Alert')
-    parser.add_argument('--show-all', action='store_true', help='Show All Sessions')
     parser.add_argument('--symbol', dest='symbol', default='BTCUSDT', help='Default BTCUSDT')
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
-
-    if args.show_all:
-        PREV_DAY, ASIA_SESSION, LONDON_SESSION, NEWYORK_SESSION, MONDAY_RANGE, WEEKLY_RANGE = True, True, True, True, True, True
 
     SYMBOL = args.symbol.upper()
     if not (SYMBOL.endswith('USDT') or SYMBOL.endswith('USDC')):
@@ -206,18 +202,47 @@ def main():
                 if NEWYORK_SESSION:
                     # 2.5 Opening Session (US Open)
                     start_time = datetime.combine(today, datetime.min.time()).replace(hour=open_hour, minute=30, tzinfo=MYT)
+                    end_15m = start_time + timedelta(minutes=15)
                     end_30m = start_time + timedelta(minutes=30)
+                    
+                    mask_15m = (df_1m['dt'] >= start_time) & (df_1m['dt'] < end_15m)
                     mask_30m = (df_1m['dt'] >= start_time) & (df_1m['dt'] < end_30m)
 
-                    time_range = f"{open_hour}30-{open_hour+1}00"
+                    time_range_15m = f"{open_hour}30-{open_hour}45"
+                    time_range_30m = f"{open_hour}30-{open_hour+1}00"
+                    
                     title_text = " New York Session "
                     line = f"{title_text:=^30}"
                     print(f"\n{colored(line, 'green', attrs=['bold'])}")
+                    
+                    # 15m range
+                    df_15m = df_1m[mask_15m]
+                    if not df_15m.empty:
+                        if now_myt < end_15m:
+                            print(f"{time_range_15m} High: N/A")
+                            print(f"{time_range_15m} Low : N/A")
+                        else:
+                            h15, l15 = df_15m['high'].max(), df_15m['low'].min()
+                            h_near = is_near(h15, bench_h)
+                            l_near = is_near(l15, bench_l)
+
+                            h_display = colored("-", "white") if h_near else colored(format_price(h15), 'green', attrs=['bold'])
+                            l_display = colored("-", "white") if l_near else colored(format_price(l15), 'green', attrs=['bold'])
+
+                            print(f"{time_range_15m} High: {h_display}")
+                            print(f"{time_range_15m} Low : {l_display}")
+                            if not h_near: bench_h.append(h15)
+                            if not l_near: bench_l.append(l15)
+                    else:
+                        print(f"{time_range_15m} High: N/A")
+                        print(f"{time_range_15m} Low : N/A")
+
+                    # 30m range
                     df_30m = df_1m[mask_30m]
                     if not df_30m.empty:
                         if now_myt < end_30m:
-                            print(f"{time_range} High: N/A")
-                            print(f"{time_range} Low : N/A")
+                            print(f"{time_range_30m} High: N/A")
+                            print(f"{time_range_30m} Low : N/A")
                         else:
                             h30, l30 = df_30m['high'].max(), df_30m['low'].min()
                             h_near = is_near(h30, bench_h)
@@ -226,11 +251,13 @@ def main():
                             h_display = colored("-", "white") if h_near else colored(format_price(h30), 'green', attrs=['bold'])
                             l_display = colored("-", "white") if l_near else colored(format_price(l30), 'green', attrs=['bold'])
 
-                            print(f"{time_range} High: {h_display}")
-                            print(f"{time_range} Low : {l_display}")
+                            print(f"{time_range_30m} High: {h_display}")
+                            print(f"{time_range_30m} Low : {l_display}")
+                            if not h_near: bench_h.append(h30)
+                            if not l_near: bench_l.append(l30)
                     else:
-                        print(f"{time_range} High: N/A")
-                        print(f"{time_range} Low : N/A")
+                        print(f"{time_range_30m} High: N/A")
+                        print(f"{time_range_30m} Low : N/A")
 
                 if MONDAY_RANGE:
                     # 3. Monday High/Low
