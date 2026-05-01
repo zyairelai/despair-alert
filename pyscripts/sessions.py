@@ -128,6 +128,7 @@ def main():
                 # 2. Session Data (1m klines)
                 # Fetch 1500 minutes to cover the full current day in MYT
                 df_1m = get_klines(SYMBOL, "1m", limit=1500)
+                df_1m['dt'] = pandas.to_datetime(df_1m['timestamp'], unit='ms', utc=True).dt.tz_convert(MYT)
 
                 # Use the timestamp from the latest candle to be completely independent of local computer clock
                 last_candle_ms = df_1m.iloc[-1]['timestamp']
@@ -176,28 +177,62 @@ def main():
                 if LONDON_SESSION:
                     # London Session
                     lh_start = 15 + hour_shift
-                    lh_end = 18 + hour_shift
-                    london_end_dt = datetime.combine(today, datetime.min.time()).replace(hour=lh_end, tzinfo=MYT)
-                    lh18, ll18 = get_session_levels(df_1m, today, lh_start, lh_end)
+                    
+                    start_time_london = datetime.combine(today, datetime.min.time()).replace(hour=lh_start, tzinfo=MYT)
+                    end_1800 = start_time_london + timedelta(hours=3)
+                    end_2030 = start_time_london + timedelta(hours=5, minutes=30)
+                    
+                    mask_1800 = (df_1m['dt'] >= start_time_london) & (df_1m['dt'] < end_1800)
+                    mask_2030 = (df_1m['dt'] >= start_time_london) & (df_1m['dt'] < end_2030)
+                    
+                    time_range_1800 = f"{lh_start:02d}00-{lh_start+3:02d}00"
+                    time_range_2030 = f"{lh_start:02d}00-{lh_start+5:02d}30"
 
                     title_text = " London Session "
                     line = f"{title_text:=^30}"
                     print(f"\n{colored(line, 'yellow', attrs=['bold'])}")
 
-                    # London Sub-session 1
-                    time_range_l1 = f"{lh_start:02d}00-{lh_end:02d}00"
-                    if lh18 is not None and now_myt >= london_end_dt:
-                        h_near = is_near(lh18, bench_h)
-                        l_near = is_near(ll18, bench_l)
-                        h_display = colored("-", "white") if h_near else colored(format_price(lh18), 'yellow', attrs=['bold'])
-                        l_display = colored("-", "white") if l_near else colored(format_price(ll18), 'yellow', attrs=['bold'])
-                        print(f"{time_range_l1} High: {h_display}")
-                        print(f"{time_range_l1} Low : {l_display}")
-                        if not h_near: bench_h.append(lh18)
-                        if not l_near: bench_l.append(ll18)
+                    # London Sub-session 1 (1500-1800)
+                    df_1800 = df_1m[mask_1800]
+                    if not df_1800.empty:
+                        if now_myt < end_1800:
+                            print(f"{time_range_1800} High: N/A")
+                            print(f"{time_range_1800} Low : N/A")
+                        else:
+                            lh18, ll18 = df_1800['high'].max(), df_1800['low'].min()
+                            h_near = is_near(lh18, bench_h)
+                            l_near = is_near(ll18, bench_l)
+                            h_display = colored("-", "white") if h_near else colored(format_price(lh18), 'yellow', attrs=['bold'])
+                            l_display = colored("-", "white") if l_near else colored(format_price(ll18), 'yellow', attrs=['bold'])
+                            print(f"{time_range_1800} High: {h_display}")
+                            print(f"{time_range_1800} Low : {l_display}")
+                            if not h_near: bench_h.append(lh18)
+                            if not l_near: bench_l.append(ll18)
                     else:
-                        print(f"{time_range_l1} High: N/A")
-                        print(f"{time_range_l1} Low : N/A")
+                        print(f"{time_range_1800} High: N/A")
+                        print(f"{time_range_1800} Low : N/A")
+
+                    # London Sub-session 2 (1500-2030)
+                    LONDON_SUB_SESSION_2 = False
+                    if LONDON_SUB_SESSION_2:
+                        df_2030 = df_1m[mask_2030]
+                        if not df_2030.empty:
+                            if now_myt < end_2030:
+                                print(f"{time_range_2030} High: N/A")
+                                print(f"{time_range_2030} Low : N/A")
+                            else:
+                                lh20, ll20 = df_2030['high'].max(), df_2030['low'].min()
+                                h_near = is_near(lh20, bench_h)
+                                l_near = is_near(ll20, bench_l)
+                                h_display = colored("-", "white") if h_near else colored(format_price(lh20), 'yellow', attrs=['bold'])
+                                l_display = colored("-", "white") if l_near else colored(format_price(ll20), 'yellow', attrs=['bold'])
+                                print(f"{time_range_2030} High: {h_display}")
+                                print(f"{time_range_2030} Low : {l_display}")
+                                if not h_near: bench_h.append(lh20)
+                                if not l_near: bench_l.append(ll20)
+                        else:
+                            print(f"{time_range_2030} High: N/A")
+                            print(f"{time_range_2030} Low : N/A")
 
                 if NEWYORK_SESSION:
                     # 2.5 Opening Session (US Open)
