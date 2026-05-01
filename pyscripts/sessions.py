@@ -164,8 +164,8 @@ def main():
                     if ah12 is not None and now_myt >= asia_end_dt:
                         h_near = is_near(ah12, bench_h)
                         l_near = is_near(al12, bench_l)
-                        h_display = colored("-", "white") if h_near else colored(format_price(ah12), 'red', attrs=['bold'])
-                        l_display = colored("-", "white") if l_near else colored(format_price(al12), 'red', attrs=['bold'])
+                        h_display = colored(format_price(ah12), 'red', attrs=['bold'])
+                        l_display = colored(format_price(al12), 'red', attrs=['bold'])
                         print(f"{time_range_a1} High: {h_display}")
                         print(f"{time_range_a1} Low : {l_display}")
                         if not h_near: bench_h.append(ah12)
@@ -177,14 +177,14 @@ def main():
                 if LONDON_SESSION:
                     # London Session
                     lh_start = 15 + hour_shift
-                    
+
                     start_time_london = datetime.combine(today, datetime.min.time()).replace(hour=lh_start, tzinfo=MYT)
                     end_1800 = start_time_london + timedelta(hours=3)
                     end_2030 = start_time_london + timedelta(hours=5, minutes=30)
-                    
+
                     mask_1800 = (df_1m['dt'] >= start_time_london) & (df_1m['dt'] < end_1800)
                     mask_2030 = (df_1m['dt'] >= start_time_london) & (df_1m['dt'] < end_2030)
-                    
+
                     time_range_1800 = f"{lh_start:02d}00-{lh_start+3:02d}00"
                     time_range_2030 = f"{lh_start:02d}00-{lh_start+5:02d}30"
 
@@ -202,8 +202,8 @@ def main():
                             lh18, ll18 = df_1800['high'].max(), df_1800['low'].min()
                             h_near = is_near(lh18, bench_h)
                             l_near = is_near(ll18, bench_l)
-                            h_display = colored("-", "white") if h_near else colored(format_price(lh18), 'yellow', attrs=['bold'])
-                            l_display = colored("-", "white") if l_near else colored(format_price(ll18), 'yellow', attrs=['bold'])
+                            h_display = colored(format_price(lh18), 'yellow', attrs=['bold'])
+                            l_display = colored(format_price(ll18), 'yellow', attrs=['bold'])
                             print(f"{time_range_1800} High: {h_display}")
                             print(f"{time_range_1800} Low : {l_display}")
                             if not h_near: bench_h.append(lh18)
@@ -224,8 +224,8 @@ def main():
                                 lh20, ll20 = df_2030['high'].max(), df_2030['low'].min()
                                 h_near = is_near(lh20, bench_h)
                                 l_near = is_near(ll20, bench_l)
-                                h_display = colored("-", "white") if h_near else colored(format_price(lh20), 'yellow', attrs=['bold'])
-                                l_display = colored("-", "white") if l_near else colored(format_price(ll20), 'yellow', attrs=['bold'])
+                                h_display = colored(format_price(lh20), 'yellow', attrs=['bold'])
+                                l_display = colored(format_price(ll20), 'yellow', attrs=['bold'])
                                 print(f"{time_range_2030} High: {h_display}")
                                 print(f"{time_range_2030} Low : {l_display}")
                                 if not h_near: bench_h.append(lh20)
@@ -239,17 +239,17 @@ def main():
                     start_time = datetime.combine(today, datetime.min.time()).replace(hour=open_hour, minute=30, tzinfo=MYT)
                     end_15m = start_time + timedelta(minutes=15)
                     end_30m = start_time + timedelta(minutes=30)
-                    
+
                     mask_15m = (df_1m['dt'] >= start_time) & (df_1m['dt'] < end_15m)
                     mask_30m = (df_1m['dt'] >= start_time) & (df_1m['dt'] < end_30m)
 
                     time_range_15m = f"{open_hour}30-{open_hour}45"
                     time_range_30m = f"{open_hour}30-{open_hour+1}00"
-                    
+
                     title_text = " New York Session "
                     line = f"{title_text:=^30}"
                     print(f"\n{colored(line, 'green', attrs=['bold'])}")
-                    
+
                     # 15m range
                     df_15m = df_1m[mask_15m]
                     if not df_15m.empty:
@@ -261,8 +261,8 @@ def main():
                             h_near = is_near(h15, bench_h)
                             l_near = is_near(l15, bench_l)
 
-                            h_display = colored("-", "white") if h_near else colored(format_price(h15), 'green', attrs=['bold'])
-                            l_display = colored("-", "white") if l_near else colored(format_price(l15), 'green', attrs=['bold'])
+                            h_display = colored(format_price(h15), 'green', attrs=['bold'])
+                            l_display = colored(format_price(l15), 'green', attrs=['bold'])
 
                             print(f"{time_range_15m} High: {h_display}")
                             print(f"{time_range_15m} Low : {l_display}")
@@ -283,8 +283,8 @@ def main():
                             h_near = is_near(h30, bench_h)
                             l_near = is_near(l30, bench_l)
 
-                            h_display = colored("-", "white") if h_near else colored(format_price(h30), 'green', attrs=['bold'])
-                            l_display = colored("-", "white") if l_near else colored(format_price(l30), 'green', attrs=['bold'])
+                            h_display = colored(format_price(h30), 'green', attrs=['bold'])
+                            l_display = colored(format_price(l30), 'green', attrs=['bold'])
 
                             print(f"{time_range_30m} High: {h_display}")
                             print(f"{time_range_30m} Low : {l_display}")
