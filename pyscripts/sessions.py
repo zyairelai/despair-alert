@@ -7,8 +7,8 @@ from termcolor import colored
 
 # Constants
 MYT = timezone(timedelta(hours=8))
-NEAR_THRESHOLD = 0.002
-PREV_DAY, ASIA_SESSION, LONDON_SESSION, NEWYORK_SESSION, MONDAY_RANGE, WEEKLY_RANGE = True, True, True, True, True, True
+PREV_DAY, ASIA_SESSION, LONDON_SESSION, NEWYORK_SESSION = True, True, True, True
+MONDAY_RANGE, WEEKLY_RANGE, RANGE_15M, RANGE_30M = True, False, False, False
 
 # Initialize session for performance
 session = requests.Session()
@@ -34,14 +34,14 @@ def format_price(price):
     # Return original string if it's a very small number or other
     return str(price).rstrip('0').rstrip('.') if '.' in str(price) else str(price)
 
-def is_near(val, benchmarks, threshold=NEAR_THRESHOLD):
-    """Returns True if val is within the threshold percentage of any benchmark."""
+def is_near(val, benchmarks):
+    """Returns the name if val exactly matches any benchmark, else None."""
     if val is None or not benchmarks:
-        return False
-    for b in benchmarks:
-        if b is not None and abs(val - b) / b <= threshold:
-            return True
-    return False
+        return None
+    for name, b in benchmarks:
+        if b is not None and val == b:
+            return name
+    return None
 
 def telegram_bot_sendtext(bot_message):
     print(bot_message + "\nTriggered at: " + str(datetime.now(MYT).strftime("%d-%m-%Y @ %H:%M:%S")))
@@ -95,7 +95,6 @@ def main():
             # index -2 is the previous completed day
             prev_1d = df_1d.iloc[-2]
             h1d, l1d = prev_1d['high'], prev_1d['low']
-            m1d = (h1d + l1d) / 2
 
             triggered = False
             # Alert Logic
@@ -117,14 +116,6 @@ def main():
                     triggered = True
 
             if first_run or not args.alert:
-                if PREV_DAY:
-                    title_text = f" Prev 1D "
-                    line = f"{title_text:=^30}"
-                    print(f"\n{colored(line, 'white', attrs=['bold'])}")
-                    print(f"Prev 1D High : {colored(format_price(h1d), 'white', attrs=['bold'])}")
-                    print(f"Prev 1D Mid  : {colored(format_price(m1d), 'white', attrs=['bold'])}")
-                    print(f"Prev 1D Low  : {colored(format_price(l1d), 'white', attrs=['bold'])}")
-
                 # 2. Session Data (1m klines)
                 # Fetch 1500 minutes to cover the full current day in MYT
                 df_1m = get_klines(SYMBOL, "1m", limit=1500)
@@ -144,9 +135,58 @@ def main():
                 hour_shift = 0 if is_dst else 1
                 open_hour = 21 if is_dst else 22
 
+                # Delay the "reset" to the next day until NY market closes (5 AM MYT Summer / 6 AM MYT Winter)
+                reset_hour = 5 + hour_shift
+                if now_myt.hour < reset_hour:
+                    today = (now_myt - timedelta(days=1)).date()
+
                 # Benchmarks for duplication check (Highs and Lows kept separate)
                 bench_h = []
                 bench_l = []
+
+                if MONDAY_RANGE and today.weekday() in [1, 2]:
+                    # 3. Monday High/Low
+                    # Fetch last 10 days to ensure we get the last Monday
+                    df_monday = get_klines(SYMBOL, "1d", limit=10)
+                    df_monday['dt'] = pandas.to_datetime(df_monday['timestamp'], unit='ms', utc=True).dt.tz_convert(MYT)
+                    monday_candles = df_monday[df_monday['dt'].dt.weekday == 0]
+
+                    if not monday_candles.empty:
+                        title_text = " Monday "
+                        line = f"{title_text:=^30}"
+                        print(f"\n{colored(line, 'blue', attrs=['bold'])}")
+                        
+                        last_monday = monday_candles.iloc[-1]
+                        mh, ml = last_monday['high'], last_monday['low']
+                        
+                        h_dup = is_near(mh, bench_h)
+                        l_dup = is_near(ml, bench_l)
+                        
+                        h_dup_str = f" (duplicated with {h_dup})" if h_dup else ""
+                        l_dup_str = f" (duplicated with {l_dup})" if l_dup else ""
+
+                        print(f"Monday High: {colored(format_price(mh), 'blue', attrs=['bold'])}{h_dup_str}")
+                        print(f"Monday Low : {colored(format_price(ml), 'blue', attrs=['bold'])}{l_dup_str}")
+                        
+                        if not h_dup: bench_h.append(("Monday", mh))
+                        if not l_dup: bench_l.append(("Monday", ml))
+
+                if PREV_DAY:
+                    title_text = f" Prev 1D "
+                    line = f"{title_text:=^30}"
+                    print(f"\n{colored(line, 'white', attrs=['bold'])}")
+                    
+                    h_dup = is_near(h1d, bench_h)
+                    l_dup = is_near(l1d, bench_l)
+
+                    h_dup_str = f" (duplicated with {h_dup})" if h_dup else ""
+                    l_dup_str = f" (duplicated with {l_dup})" if l_dup else ""
+
+                    print(f"Prev 1D High : {colored(format_price(h1d), 'white', attrs=['bold'])}{h_dup_str}")
+                    print(f"Prev 1D Low  : {colored(format_price(l1d), 'white', attrs=['bold'])}{l_dup_str}")
+
+                    if not h_dup: bench_h.append(("Prev 1D", h1d))
+                    if not l_dup: bench_l.append(("Prev 1D", l1d))
 
                 if ASIA_SESSION:
                     # Asia Session
@@ -162,14 +202,14 @@ def main():
                     # Asia Sub-session 1
                     time_range_a1 = f"{ah_start:02d}00-{ah_end:02d}00"
                     if ah12 is not None and now_myt >= asia_end_dt:
-                        h_near = is_near(ah12, bench_h)
-                        l_near = is_near(al12, bench_l)
-                        h_display = colored(format_price(ah12), 'red', attrs=['bold'])
-                        l_display = colored(format_price(al12), 'red', attrs=['bold'])
+                        h_dup = is_near(ah12, bench_h)
+                        l_dup = is_near(al12, bench_l)
+                        h_display = colored(format_price(ah12), 'red', attrs=['bold']) + (f" (duplicated with {h_dup})" if h_dup else "")
+                        l_display = colored(format_price(al12), 'red', attrs=['bold']) + (f" (duplicated with {l_dup})" if l_dup else "")
                         print(f"{time_range_a1} High: {h_display}")
                         print(f"{time_range_a1} Low : {l_display}")
-                        if not h_near: bench_h.append(ah12)
-                        if not l_near: bench_l.append(al12)
+                        if not h_dup: bench_h.append(("Asia", ah12))
+                        if not l_dup: bench_l.append(("Asia", al12))
                     else:
                         print(f"{time_range_a1} High: N/A")
                         print(f"{time_range_a1} Low : N/A")
@@ -179,11 +219,11 @@ def main():
                     lh_start = 15 + hour_shift
 
                     start_time_london = datetime.combine(today, datetime.min.time()).replace(hour=lh_start, tzinfo=MYT)
-                    end_london = start_time_london + timedelta(hours=5)
+                    end_london = start_time_london + timedelta(hours=5, minutes=30)
 
                     mask_london = (df_1m['dt'] >= start_time_london) & (df_1m['dt'] < end_london)
 
-                    time_range_london = f"{lh_start:02d}00-{lh_start+5:02d}00"
+                    time_range_london = f"{lh_start:02d}00-{lh_start+5:02d}30"
 
                     title_text = " London Session "
                     line = f"{title_text:=^30}"
@@ -196,14 +236,14 @@ def main():
                             print(f"{time_range_london} Low : N/A")
                         else:
                             lh, ll = df_london['high'].max(), df_london['low'].min()
-                            h_near = is_near(lh, bench_h)
-                            l_near = is_near(ll, bench_l)
-                            h_display = colored(format_price(lh), 'yellow', attrs=['bold'])
-                            l_display = colored(format_price(ll), 'yellow', attrs=['bold'])
+                            h_dup = is_near(lh, bench_h)
+                            l_dup = is_near(ll, bench_l)
+                            h_display = colored(format_price(lh), 'yellow', attrs=['bold']) + (f" (duplicated with {h_dup})" if h_dup else "")
+                            l_display = colored(format_price(ll), 'yellow', attrs=['bold']) + (f" (duplicated with {l_dup})" if l_dup else "")
                             print(f"{time_range_london} High: {h_display}")
                             print(f"{time_range_london} Low : {l_display}")
-                            if not h_near: bench_h.append(lh)
-                            if not l_near: bench_l.append(ll)
+                            if not h_dup: bench_h.append(("London", lh))
+                            if not l_dup: bench_l.append(("London", ll))
                     else:
                         print(f"{time_range_london} High: N/A")
                         print(f"{time_range_london} Low : N/A")
@@ -229,77 +269,62 @@ def main():
                     midnight_dt = datetime.combine(today, datetime.min.time()).replace(hour=midnight_hour, tzinfo=MYT)
                     
                     if now_myt < midnight_dt:
-                        print(" Midnight Open: N/A")
+                        print("Midnight Open: N/A")
                     else:
                         df_after = df_1m[df_1m['dt'] >= midnight_dt]
                         if not df_after.empty:
                             midnight_open = df_after.iloc[0]['open']
-                            print(f" Midnight Open: {colored(format_price(midnight_open), 'green', attrs=['bold'])}")
+                            print(f"Midnight Open: {colored(format_price(midnight_open), 'green', attrs=['bold'])}")
                         else:
-                            print(" Midnight Open: N/A")
+                            print("Midnight Open: N/A")
 
                     # 15m range
-                    df_15m = df_1m[mask_15m]
-                    if not df_15m.empty:
-                        if now_myt < end_15m:
+                    if RANGE_15M:
+                        df_15m = df_1m[mask_15m]
+                        if not df_15m.empty:
+                            if now_myt < end_15m:
+                                print(f"{time_range_15m} High: N/A")
+                                print(f"{time_range_15m} Low : N/A")
+                            else:
+                                h15, l15 = df_15m['high'].max(), df_15m['low'].min()
+                                h_dup = is_near(h15, bench_h)
+                                l_dup = is_near(l15, bench_l)
+
+                                h_display = colored(format_price(h15), 'green', attrs=['bold']) + (f" (duplicated with {h_dup})" if h_dup else "")
+                                l_display = colored(format_price(l15), 'green', attrs=['bold']) + (f" (duplicated with {l_dup})" if l_dup else "")
+
+                                print(f"{time_range_15m} High: {h_display}")
+                                print(f"{time_range_15m} Low : {l_display}")
+                                if not h_dup: bench_h.append(("NY 15m", h15))
+                                if not l_dup: bench_l.append(("NY 15m", l15))
+                        else:
                             print(f"{time_range_15m} High: N/A")
                             print(f"{time_range_15m} Low : N/A")
-                        else:
-                            h15, l15 = df_15m['high'].max(), df_15m['low'].min()
-                            h_near = is_near(h15, bench_h)
-                            l_near = is_near(l15, bench_l)
-
-                            h_display = colored(format_price(h15), 'green', attrs=['bold'])
-                            l_display = colored(format_price(l15), 'green', attrs=['bold'])
-
-                            print(f"{time_range_15m} High: {h_display}")
-                            print(f"{time_range_15m} Low : {l_display}")
-                            if not h_near: bench_h.append(h15)
-                            if not l_near: bench_l.append(l15)
-                    else:
-                        print(f"{time_range_15m} High: N/A")
-                        print(f"{time_range_15m} Low : N/A")
 
                     # 30m range
-                    df_30m = df_1m[mask_30m]
-                    if not df_30m.empty:
-                        if now_myt < end_30m:
+                    if RANGE_30M:
+                        df_30m = df_1m[mask_30m]
+                        if not df_30m.empty:
+                            if now_myt < end_30m:
+                                print(f"{time_range_30m} High: N/A")
+                                print(f"{time_range_30m} Low : N/A")
+                            else:
+                                h30, l30 = df_30m['high'].max(), df_30m['low'].min()
+                                h_dup = is_near(h30, bench_h)
+                                l_dup = is_near(l30, bench_l)
+
+                                h_display = colored(format_price(h30), 'green', attrs=['bold']) + (f" (duplicated with {h_dup})" if h_dup else "")
+                                l_display = colored(format_price(l30), 'green', attrs=['bold']) + (f" (duplicated with {l_dup})" if l_dup else "")
+
+                                print(f"{time_range_30m} High: {h_display}")
+                                print(f"{time_range_30m} Low : {l_display}")
+                                if not h_dup: bench_h.append(("NY 30m", h30))
+                                if not l_dup: bench_l.append(("NY 30m", l30))
+                        else:
                             print(f"{time_range_30m} High: N/A")
                             print(f"{time_range_30m} Low : N/A")
-                        else:
-                            h30, l30 = df_30m['high'].max(), df_30m['low'].min()
-                            h_near = is_near(h30, bench_h)
-                            l_near = is_near(l30, bench_l)
 
-                            h_display = colored(format_price(h30), 'green', attrs=['bold'])
-                            l_display = colored(format_price(l30), 'green', attrs=['bold'])
 
-                            print(f"{time_range_30m} High: {h_display}")
-                            print(f"{time_range_30m} Low : {l_display}")
-                            if not h_near: bench_h.append(h30)
-                            if not l_near: bench_l.append(l30)
-                    else:
-                        print(f"{time_range_30m} High: N/A")
-                        print(f"{time_range_30m} Low : N/A")
-
-                if MONDAY_RANGE:
-                    # 3. Monday High/Low
-                    # Fetch last 10 days to ensure we get the last Monday
-                    df_monday = get_klines(SYMBOL, "1d", limit=10)
-                    df_monday['dt'] = pandas.to_datetime(df_monday['timestamp'], unit='ms', utc=True).dt.tz_convert(MYT)
-                    monday_candles = df_monday[df_monday['dt'].dt.weekday == 0]
-
-                    title_text = " Monday "
-                    line = f"{title_text:=^30}"
-                    print(f"\n{colored(line, 'blue', attrs=['bold'])}")
-                    if not monday_candles.empty:
-                        last_monday = monday_candles.iloc[-1]
-                        mh, ml = last_monday['high'], last_monday['low']
-                        print(f"Monday High: {colored(format_price(mh), 'blue', attrs=['bold'])}")
-                        print(f"Monday Low : {colored(format_price(ml), 'blue', attrs=['bold'])}")
-                    else:
-                        print("Monday High: N/A")
-                        print("Monday Low : N/A")
 
                 if WEEKLY_RANGE:
                     # 4. Weekly High/Low
