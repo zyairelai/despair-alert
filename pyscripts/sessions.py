@@ -7,8 +7,6 @@ from termcolor import colored
 
 # Constants
 MYT = timezone(timedelta(hours=8))
-PREV_DAY, ASIA_SESSION, LONDON_SESSION = True, True, True
-MONDAY_RANGE, WEEKLY_RANGE = False, False
 
 # Initialize session for performance
 session = requests.Session()
@@ -34,17 +32,7 @@ def format_price(price):
     # Return original string if it's a very small number or other
     return str(price).rstrip('0').rstrip('.') if '.' in str(price) else str(price)
 
-def is_near(val, benchmarks):
-    """Returns the name if val exactly matches any benchmark, else None."""
-    if val is None or not benchmarks:
-        return None
-    for name, b in benchmarks:
-        if b is not None and val == b:
-            return name
-    return None
-
 def telegram_bot_sendtext(bot_message):
-    print(bot_message + "\nTriggered at: " + str(datetime.now(MYT).strftime("%d-%m-%Y @ %H:%M:%S")))
     bot_token = os.environ.get('TELEGRAM_LIVERMORE')
     chat_id = "@swinglivermore"
     url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
@@ -73,8 +61,6 @@ def get_session_levels(df, date, start_hour, end_hour):
     return session_df['high'].max(), session_df['low'].min()
 
 def main():
-    global PREV_DAY, ASIA_SESSION, LONDON_SESSION, MONDAY_RANGE, WEEKLY_RANGE
-
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS, help=argparse.SUPPRESS)
     parser.add_argument('--alert', action='store_true', help='Enable Telegram Alert')
@@ -92,231 +78,119 @@ def main():
         while True:
             # 1. Previous 1D Levels
             df_1d = get_klines(SYMBOL, "1d", limit=2)
-            # index -2 is the previous completed day
             prev_1d = df_1d.iloc[-2]
             h1d, l1d = prev_1d['high'], prev_1d['low']
 
-            triggered = False
-            # Alert Logic
-            if args.alert:
-                # Fetch latest 1m kline for current price
-                df_now = get_klines(SYMBOL, "1m", limit=1)
-                now_candle = df_now.iloc[-1]
+            # 2. Fetch Data for Time & Session Logic (Required for both Alert & Display)
+            df_1m = get_klines(SYMBOL, "1m", limit=1500)
+            df_1m['dt'] = pandas.to_datetime(df_1m['timestamp'], unit='ms', utc=True).dt.tz_convert(MYT)
 
-                symbol_short = SYMBOL.replace('USDT', '')
-                if now_candle['high'] >= h1d >= now_candle['low']:
-                    msg = f"{symbol_short} touch Prev High"
-                    telegram_bot_sendtext(msg)
-                    print(f"\n>>> ALERT: {msg} <<<")
-                    triggered = True
-                elif now_candle['high'] >= l1d >= now_candle['low']:
-                    msg = f"{symbol_short} touch Prev Low"
-                    telegram_bot_sendtext(msg)
-                    print(f"\n>>> ALERT: {msg} <<<")
-                    triggered = True
+            last_candle_ms = df_1m.iloc[-1]['timestamp']
+            now_myt = datetime.fromtimestamp(last_candle_ms / 1000.0, tz=timezone.utc).astimezone(MYT)
+            today = now_myt.date()
+
+            # US DST & Reset Logic
+            dst_start = datetime(today.year, 3, 14) - timedelta(days=(datetime(today.year, 3, 14).weekday() + 1) % 7)
+            dst_end = datetime(today.year, 11, 7) - timedelta(days=(datetime(today.year, 11, 7).weekday() + 1) % 7)
+            is_dst = dst_start.date() <= today < dst_end.date()
+            hour_shift = 0 if is_dst else 1
+            reset_hour = 5 + hour_shift
+            if now_myt.hour < reset_hour:
+                today = (now_myt - timedelta(days=1)).date()
+
+            # Pre-calculate Asia Session levels for alert logic
+            ah14, al14 = get_session_levels(df_1m, today, 8, 14)
 
             if first_run or not args.alert:
-                # 2. Session Data (1m klines)
-                # Fetch 1500 minutes to cover the full current day in MYT
-                df_1m = get_klines(SYMBOL, "1m", limit=1500)
-                df_1m['dt'] = pandas.to_datetime(df_1m['timestamp'], unit='ms', utc=True).dt.tz_convert(MYT)
+                # 1. Prev 1D
+                title_1d = " Prev 1D "
+                line_1d = f"{title_1d:=^30}"
+                print(f"\n{colored(line_1d, 'white', attrs=['bold'])}")
+                print(f"Prev 1D High : {colored(format_price(h1d), 'white', attrs=['bold'])}")
+                print(f"Prev 1D Low  : {colored(format_price(l1d), 'white', attrs=['bold'])}")
 
-                # Use the timestamp from the latest candle to be completely independent of local computer clock
-                last_candle_ms = df_1m.iloc[-1]['timestamp']
-                now_myt = datetime.fromtimestamp(last_candle_ms / 1000.0, tz=timezone.utc).astimezone(MYT)
-                today = now_myt.date()
+                # 2. Asia Session
+                title_asia = " Asia Session "
+                line_asia = f"{title_asia:=^30}"
+                print(f"\n{colored(line_asia, 'red', attrs=['bold'])}")
+                
+                asia_end_2_dt = datetime.combine(today, datetime.min.time()).replace(hour=14, tzinfo=MYT)
+                if ah14 is not None and now_myt >= asia_end_2_dt:
+                    print(f"0800-1400 High: {colored(format_price(ah14), 'red', attrs=['bold'])}")
+                    print(f"0800-1400 Low : {colored(format_price(al14), 'red', attrs=['bold'])}")
+                else:
+                    print("0800-1400 High: N/A")
+                    print("0800-1400 Low : N/A")
 
-                # US DST: 2nd Sun March to 1st Sun Nov
-                dst_start = datetime(today.year, 3, 14) - timedelta(days=(datetime(today.year, 3, 14).weekday() + 1) % 7)
-                dst_end = datetime(today.year, 11, 7) - timedelta(days=(datetime(today.year, 11, 7).weekday() + 1) % 7)
-                is_dst = dst_start.date() <= today < dst_end.date()
-
-                # hour_shift: 0 in Summer, 1 in Winter (1h delay)
-                hour_shift = 0 if is_dst else 1
-                open_hour = 21 if is_dst else 22
-
-                # Delay the "reset" to the next day until NY market closes (5 AM MYT Summer / 6 AM MYT Winter)
-                reset_hour = 5 + hour_shift
-                if now_myt.hour < reset_hour:
-                    today = (now_myt - timedelta(days=1)).date()
-
-                # Benchmarks for duplication check (Highs and Lows kept separate)
-                bench_h = []
-                bench_l = []
-
-                if WEEKLY_RANGE:
-                    # 4. Weekly High/Low
-                    df_1w = get_klines(SYMBOL, "1w", limit=2)
-                    title_text = " Weekly "
-                    line = f"{title_text:=^30}"
-                    print(f"\n{colored(line, 'magenta', attrs=['bold'])}")
-                    if len(df_1w) >= 2:
-                        prev_week = df_1w.iloc[-2]
-                        wh, wl = prev_week['high'], prev_week['low']
-                        print(f"Prev Week High: {colored(format_price(wh), 'magenta', attrs=['bold'])}")
-                        print(f"Prev Week Low : {colored(format_price(wl), 'magenta', attrs=['bold'])}")
-                    else:
-                        print("Prev Week High: N/A")
-                        print("Prev Week Low : N/A")
-
-                if MONDAY_RANGE: # and today.weekday() in [1, 2]:
-                    # 3. Monday High/Low
-                    # Fetch last 10 days to ensure we get the last Monday
-                    df_monday = get_klines(SYMBOL, "1d", limit=10)
-                    df_monday['dt'] = pandas.to_datetime(df_monday['timestamp'], unit='ms', utc=True).dt.tz_convert(MYT)
-                    monday_candles = df_monday[df_monday['dt'].dt.weekday == 0]
-
-                    if not monday_candles.empty:
-                        title_text = " Monday "
-                        line = f"{title_text:=^30}"
-                        print(f"\n{colored(line, 'blue', attrs=['bold'])}")
-                        
-                        last_monday = monday_candles.iloc[-1]
-                        mh, ml = last_monday['high'], last_monday['low']
-                        
-                        h_dup = is_near(mh, bench_h)
-                        l_dup = is_near(ml, bench_l)
-                        
-                        h_dup_str = " (duplicated)" if h_dup else ""
-                        l_dup_str = " (duplicated)" if l_dup else ""
-
-                        print(f"Monday High: {colored(format_price(mh), 'blue', attrs=['bold'])}{h_dup_str}")
-                        print(f"Monday Low : {colored(format_price(ml), 'blue', attrs=['bold'])}{l_dup_str}")
-                        
-                        if not h_dup: bench_h.append(("Monday", mh))
-                        if not l_dup: bench_l.append(("Monday", ml))
-
-                if PREV_DAY:
-                    title_text = f" Prev 1D "
-                    line = f"{title_text:=^30}"
-                    print(f"\n{colored(line, 'white', attrs=['bold'])}")
-                    
-                    h_dup = is_near(h1d, bench_h)
-                    l_dup = is_near(l1d, bench_l)
-
-                    h_dup_str = " (duplicated)" if h_dup else ""
-                    l_dup_str = " (duplicated)" if l_dup else ""
-
-                    print(f"Prev 1D High : {colored(format_price(h1d), 'white', attrs=['bold'])}{h_dup_str}")
-                    print(f"Prev 1D Low  : {colored(format_price(l1d), 'white', attrs=['bold'])}{l_dup_str}")
-
-                    if not h_dup: bench_h.append(("Prev 1D", h1d))
-                    if not l_dup: bench_l.append(("Prev 1D", l1d))
-
-                if ASIA_SESSION:
-                    # Asia Session
-                    ah_start = 8
-                    asia_end_1 = 12
-                    asia_end_2 = 14
-                    
-                    asia_end_1_dt = datetime.combine(today, datetime.min.time()).replace(hour=asia_end_1, tzinfo=MYT)
-                    asia_end_2_dt = datetime.combine(today, datetime.min.time()).replace(hour=asia_end_2, tzinfo=MYT)
-                    
-                    ah12, al12 = get_session_levels(df_1m, today, ah_start, asia_end_1)
-                    ah14, al14 = get_session_levels(df_1m, today, ah_start, asia_end_2)
-
-                    title_text = " Asia Session "
-                    line = f"{title_text:=^30}"
-                    print(f"\n{colored(line, 'red', attrs=['bold'])}")
-
-                    # Asia Sub-session 1 (0800-1200)
-                    time_range_a1 = f"{ah_start:02d}00-{asia_end_1:02d}00"
-                    if ah12 is not None and now_myt >= asia_end_1_dt:
-                        h_dup = is_near(ah12, bench_h)
-                        l_dup = is_near(al12, bench_l)
-                        h_display = colored(format_price(ah12), 'red', attrs=['bold']) + (" (duplicated)" if h_dup else "")
-                        l_display = colored(format_price(al12), 'red', attrs=['bold']) + (" (duplicated)" if l_dup else "")
-                        print(f"{time_range_a1} High: {h_display}")
-                        print(f"{time_range_a1} Low : {l_display}")
-                        if not h_dup: bench_h.append(("Asia12", ah12))
-                        if not l_dup: bench_l.append(("Asia12", al12))
-                    else:
-                        print(f"{time_range_a1} High: N/A")
-                        print(f"{time_range_a1} Low : N/A")
-
-                    # Asia Sub-session 2 (0800-1400)
-                    time_range_a2 = f"{ah_start:02d}00-{asia_end_2:02d}00"
-                    if ah14 is not None and now_myt >= asia_end_2_dt:
-                        h_dup = is_near(ah14, bench_h)
-                        l_dup = is_near(al14, bench_l)
-                        h_display = colored(format_price(ah14), 'red', attrs=['bold']) + (" (duplicated)" if h_dup else "")
-                        l_display = colored(format_price(al14), 'red', attrs=['bold']) + (" (duplicated)" if l_dup else "")
-                        print(f"{time_range_a2} High: {h_display}")
-                        print(f"{time_range_a2} Low : {l_display}")
-                        if not h_dup: bench_h.append(("Asia14", ah14))
-                        if not l_dup: bench_l.append(("Asia14", al14))
-                    else:
-                        print(f"{time_range_a2} High: N/A")
-                        print(f"{time_range_a2} Low : N/A")
-
-                if LONDON_SESSION:
-                    # London Session
-                    lh_start = 15 + hour_shift
-
-                    start_time_london = datetime.combine(today, datetime.min.time()).replace(hour=lh_start, tzinfo=MYT)
-                    end_london = start_time_london + timedelta(hours=5, minutes=30)
-
-                    mask_london = (df_1m['dt'] >= start_time_london) & (df_1m['dt'] < end_london)
-
-                    time_range_london = f"{lh_start:02d}00-{lh_start+5:02d}30"
-
-                    title_text = " London Session "
-                    line = f"{title_text:=^30}"
-                    print(f"\n{colored(line, 'yellow', attrs=['bold'])}")
-
-                    df_london = df_1m[mask_london]
-                    if not df_london.empty:
-                        # London Open
-                        london_open = df_london.iloc[0]['open']
-                        print(f"{lh_start:02d}00 London Open : {colored(format_price(london_open), 'yellow', attrs=['bold'])}")
-
-                        if now_myt < end_london:
-                            print(f"{time_range_london} High: N/A")
-                            print(f"{time_range_london} Low : N/A")
-                        else:
-                            lh, ll = df_london['high'].max(), df_london['low'].min()
-                            h_dup = is_near(lh, bench_h)
-                            l_dup = is_near(ll, bench_l)
-                            h_display = colored(format_price(lh), 'yellow', attrs=['bold']) + (" (duplicated)" if h_dup else "")
-                            l_display = colored(format_price(ll), 'yellow', attrs=['bold']) + (" (duplicated)" if l_dup else "")
-                            print(f"{time_range_london} High: {h_display}")
-                            print(f"{time_range_london} Low : {l_display}")
-                            if not h_dup: bench_h.append(("London", lh))
-                            if not l_dup: bench_l.append(("London", ll))
-                    else:
-                        print(f"{time_range_london} High: N/A")
-                        print(f"{time_range_london} Low : N/A")
-
-                # Midnight Open (New York Midnight)
+                # 3. NY Midnight Open
                 midnight_hour = 12 + hour_shift
                 midnight_dt = datetime.combine(today, datetime.min.time()).replace(hour=midnight_hour, tzinfo=MYT)
-                
-                print("") # New line before Daily Open
+                print("") # Spacer
                 if now_myt < midnight_dt:
-                    print("Daily Open : N/A")
+                    print("NY Midnight Open : N/A")
                 else:
                     df_after = df_1m[df_1m['dt'] >= midnight_dt]
                     if not df_after.empty:
                         midnight_open = df_after.iloc[0]['open']
-                        print(f"Daily Open : {colored(format_price(midnight_open), 'green', attrs=['bold'])}")
+                        print(f"NY Midnight Open : {colored(format_price(midnight_open), 'green', attrs=['bold'])}")
                     else:
-                        print("Daily Open : N/A")
+                        print("NY Midnight Open : N/A")
 
-                # Current Price
+                # 4. Current Price
                 last_candle = df_1m.iloc[-1]
                 cur_price = last_candle['close']
                 cur_time = now_myt.strftime("%H:%M")
-                print(f"Current at : {format_price(cur_price)} at {cur_time}")
+                print(f"Current @ : {format_price(cur_price)} at {cur_time}")
 
+            if first_run and args.alert:
+                symbol_short = SYMBOL.replace('USDT', '').replace('USDC', '')
+                print(colored(f"\nMonitoring {symbol_short} Alert...\n"))
+
+            triggered = False
+            # Alert Logic
+            if args.alert:
+                # Fetch latest 5m kline for current price check as requested
+                df_now = get_klines(SYMBOL, "5m", limit=1)
+                now_candle = df_now.iloc[-1]
+                symbol_short = SYMBOL.replace('USDT', '').replace('USDC', '')
+                
+                alerts = []
+                # Buffer 0.25% in the inner range (High - 0.25%, Low + 0.25%)
+                BUFFER = 0.0025
+                if now_candle['high'] >= h1d * (1-BUFFER): alerts.append("Prev High")
+                if now_candle['low'] <= l1d * (1+BUFFER): alerts.append("Prev Low")
+                
+                # Asia Session (0800-1400) Alert
+                asia_end_2_dt = datetime.combine(today, datetime.min.time()).replace(hour=14, tzinfo=MYT)
+                if now_myt >= asia_end_2_dt and ah14 is not None:
+                    if now_candle['high'] >= ah14 * 0.997: alerts.append("Asia High")
+                    if now_candle['low'] <= al14 * 1.003: alerts.append("Asia Low")
+                
+                if alerts:
+                    msg = f"{symbol_short} near " + " & ".join(alerts)
+                    telegram_bot_sendtext(msg)
+                    
+                    timestamp = datetime.now(MYT).strftime("%d-%m-%Y @ %H:%M:%S")
+                    print(f"\n>>> ALERT: {msg} <<<")
+                    print(f"Triggered at: {timestamp}")
+                    triggered = True
+
+            if args.alert and not triggered and not first_run:
+                last_candle = df_1m.iloc[-1]
+                cur_price = last_candle['close']
+                cur_time = now_myt.strftime("%H:%M")
+                # Move up 4 lines to update "Current @" then return
+                sys.stdout.write("\033[4A")
+                sys.stdout.write(f"\rCurrent @ : {format_price(cur_price)} at {cur_time}   ")
+                sys.stdout.write("\033[4B")
+                sys.stdout.flush()
 
             if not args.alert or triggered:
+                if args.alert: print("") # Move to next line after alert or break
                 break
 
-            if first_run:
-                print(colored(f"\nMonitoring {SYMBOL} Alert..."))
-
             first_run = False
-            time.sleep(5)
+            time.sleep(2)
 
     except KeyboardInterrupt: print("\nAborted.")
     except Exception as e: print(f"Error: {e}")
