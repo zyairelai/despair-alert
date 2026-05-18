@@ -1,44 +1,10 @@
 let SYMBOL = localStorage.getItem('globalSymbol') || "BTCUSDT";
 let started = false;
 let lastBeepInterval = 0;
-let beepInterval = parseInt(localStorage.getItem('beepInterval')) || 5;
+let beepInterval = 5;
 let audioCtx = null;
 
-// Secret Telegram Toggle (Trend Change Alerts Only)
-window.telegramEnabled = false;
-let teleBuffer = "";
 
-const activeSounds = [];
-function playSecretSound(file) {
-    const audio = new Audio(file);
-    activeSounds.push(audio);
-    audio.onended = () => {
-        const index = activeSounds.indexOf(audio);
-        if (index > -1) activeSounds.splice(index, 1);
-    };
-    audio.play().catch(err => console.error("Sound play failed:", err));
-}
-
-document.addEventListener('keydown', (e) => {
-    // Basic buffer logic to detect "tt", "on", "off", "zz"
-    teleBuffer += e.key.toLowerCase();
-    if (teleBuffer.length > 5) teleBuffer = teleBuffer.slice(-5);
-
-    const lastTwo = teleBuffer.slice(-2);
-    const lastThree = teleBuffer.slice(-3);
-
-    if (!window.telegramEnabled && (lastTwo === "tt" || lastTwo === "on")) {
-        window.telegramEnabled = true;
-        console.log("SECRET: Trend Telegram Alerts Enabled.");
-        playSecretSound('images/pickup.mp3');
-        teleBuffer = ""; // Reset buffer
-    } else if (window.telegramEnabled && (lastThree === "off" || lastTwo === "zz")) {
-        window.telegramEnabled = false;
-        console.log("SECRET: Trend Telegram Alerts Disabled.");
-        playSecretSound('images/gameover.mp3');
-        teleBuffer = ""; // Reset buffer
-    }
-});
 
 function getAudioContext() {
     if (!audioCtx) {
@@ -73,89 +39,27 @@ async function updateTrend() {
 
         if (p1h.length < 50) return;
 
-        const cur1h = p1h[p1h.length - 1];
-        const prev1h = p1h[p1h.length - 2];
-
-        // 1. HA & Raw Color Detection (1H Only)
         const ha1h = getHA(p1h);
-        const raw1h = cur1h.close > cur1h.open ? "GREEN" : "RED";
+        if (!ha1h) return;
 
-        // 1.2. EMA 50 Calculation
-        const closes = p1h.map(k => k.close);
-        const ema50 = calculateEMA(closes, 50);
-        const isAboveEma = ha1h && ema50 && ha1h.close > ema50;
-
-        // 1.5. 1H Price Action Conditions
-        const prev1hMinBody = Math.min(prev1h.open, prev1h.close);
-        const prev1hMaxBody = Math.max(prev1h.open, prev1h.close);
-        const priceLowBroken = cur1h.low < prev1hMinBody;
-        const priceHighBroken = cur1h.high > prev1hMaxBody;
-
-        // 2. Trend Logic (1H Only + Price Condition)
-        const isRedSingularity = (ha1h && ha1h.color === "RED" && raw1h === "RED" && priceLowBroken);
-        const isUptrend = (ha1h && ha1h.color === "GREEN" && raw1h === "GREEN" && priceHighBroken && isAboveEma);
-
-        // 3. Emergency 1h Logic
-        const maxPrevHigh = prev1h.high;
-        const isEmergency = cur1h.high > maxPrevHigh && cur1h.close < cur1h.open;
-
-        // Calculate Perfect Red for Previous Candle
-        const haPrev1h = getHA(p1h.slice(0, -1));
-        const isPrevPerfectRed = haPrev1h &&
-            haPrev1h.color === "RED" &&
-            haPrev1h.high <= Math.max(haPrev1h.open, haPrev1h.close) + (haPrev1h.open * 0.0001);
+        const isPerfectGreen = ha1h.color === "GREEN" && ha1h.low >= ha1h.open - (ha1h.open * 0.0001);
+        const isPerfectRed = ha1h.color === "RED" && ha1h.high <= ha1h.open + (ha1h.open * 0.0001);
 
         const trendDisplay = document.getElementById("trendDisplay");
-        const symbolBtn = document.getElementById("global-symbol");
-
-        // UI Visuals (Text only, favicon/title handled by ha_coloring.js)
-        if (isEmergency) {
-            trendDisplay.innerText = "1H EMERGENCY BREAKDOWN";
-            trendDisplay.className = "overall-trend trend-down";
-        } else if (isRedSingularity) {
-            trendDisplay.innerText = "CURRENTLY DOWNTREND";
-            trendDisplay.className = "overall-trend trend-down";
-        } else if (isUptrend) {
-            trendDisplay.innerText = "CURRENTLY UPTREND";
-            trendDisplay.className = "overall-trend trend-up";
-        } else {
-            trendDisplay.innerText = "NO TRADE ZONE";
-            trendDisplay.className = "overall-trend trend-neutral";
+        if (trendDisplay) {
+            if (isPerfectGreen) {
+                trendDisplay.innerText = "UPTREND";
+                trendDisplay.className = "overall-trend trend-up";
+            } else if (isPerfectRed) {
+                trendDisplay.innerText = "DOWNTREND";
+                trendDisplay.className = "overall-trend trend-down";
+            } else {
+                trendDisplay.innerText = "NO TRADE ZONE";
+                trendDisplay.className = "overall-trend trend-neutral";
+            }
         }
-
-        checkAndSendAlert(p1h, isEmergency, isRedSingularity, isPrevPerfectRed);
     } catch (e) {
         console.error("Trend update failed", e);
-    }
-}
-
-
-
-function checkAndSendAlert(p1h, isEmergency = false, isRedSingularity = false, isPrevPerfectRed = false) {
-    const now = new Date();
-    const nowTs = now.getTime();
-    const currentHourTs = Math.floor(nowTs / (3600 * 1000)) * (3600 * 1000);
-
-    const symbolShort = SYMBOL.replace("USDT", "");
-
-    // 1. Emergency Case: 1H Breakdown
-    const lastEmergencyHour = localStorage.getItem('lastEmergencyHour');
-    const cooldownEndEmergency = lastEmergencyHour ? (parseInt(lastEmergencyHour) + 3600000 + 30000) : 0;
-    // if (isEmergency && nowTs >= cooldownEndEmergency) {
-    //     const msg = `🩸 ${symbolShort} 1H EMERGENCY BREAKDOWN 🩸`;
-    //     if (window.telegramEnabled) sendTelegramAlert(msg);
-    //     speak(`${symbolShort} 1 hour emergency breakdown.`);
-    //     localStorage.setItem('lastEmergencyHour', currentHourTs.toString());
-    // }
-
-    // 2. Red Singularity Alert
-    const lastRedSingularityHour = localStorage.getItem('lastRedSingularityHour');
-    const cooldownEndRS = lastRedSingularityHour ? (parseInt(lastRedSingularityHour) + 3600000 + 30000) : 0;
-    if (isRedSingularity && nowTs >= cooldownEndRS && !isPrevPerfectRed) {
-        const msg = `💥 ${symbolShort} 1H RED SINGULARITY 💥`;
-        if (window.telegramEnabled) sendTelegramAlert(msg);
-        speak(`${symbolShort} 1 hour red singularity.`);
-        localStorage.setItem('lastRedSingularityHour', currentHourTs.toString());
     }
 }
 
@@ -207,17 +111,12 @@ function start() {
     document.getElementById("startBtn").disabled = true;
     document.getElementById("startBtn").innerText = "MONITORING ACTIVE";
 
-    // Initialize alert cooldowns to now to avoid immediate trigger on first run
     const nowTs = Date.now();
-    const currentHourTs = Math.floor(nowTs / (3600 * 1000)) * (3600 * 1000);
-    localStorage.setItem('lastEmergencyHour', currentHourTs.toString());
-    localStorage.setItem('lastRedSingularityHour', currentHourTs.toString());
-
     // Initialize to current interval to avoid double-beep on start
     lastBeepInterval = Math.floor(nowTs / (beepInterval * 60 * 1000));
 
     monitorInterval = setInterval(tick, 1000);
-    updateTrend(); // Initial Immediate Update (silenced by cooldown)
+    updateTrend(); // Initial Immediate Update
     tick();
 
     // Initial check does not beep or alert, just verifies audio
@@ -259,8 +158,6 @@ function updateGlobalSymbol() {
     localStorage.removeItem('lastAlertTrend');
     localStorage.removeItem('lastTrendAlertCandle');
     localStorage.removeItem('lastAlertCandle');
-    localStorage.removeItem('lastEmergencyHour');
-    localStorage.removeItem('lastRedSingularityHour');
 }
 
 // Ensure the dropdown matches the stored symbol on load
@@ -270,29 +167,4 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerText = SYMBOL;
         btn.classList.add('title-yellow');
     }
-
-    // Initialize Beep Mode UI
-    updateBeepUI();
 });
-
-function setBeepInterval(m) {
-    beepInterval = m;
-    localStorage.setItem('beepInterval', m);
-    updateBeepUI();
-    console.log("Beep interval set to:", m, "minutes");
-
-    // Reset lastBeepInterval to current so it doesn't immediately beep if we just switched
-    lastBeepInterval = Math.floor(Date.now() / (m * 60 * 1000));
-
-    // Immediate UI Update
-    tick();
-}
-
-function updateBeepUI() {
-    const b5 = document.getElementById('beep5m');
-    const b15 = document.getElementById('beep15m');
-    if (b5 && b15) {
-        b5.classList.toggle('active', beepInterval === 5);
-        b15.classList.toggle('active', beepInterval === 15);
-    }
-}

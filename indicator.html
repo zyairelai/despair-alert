@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INDICATOR DASHBOARD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/dashboard/layout.css">
+    <link rel="stylesheet" href="css/dashboard/components.css">
+    <link rel="icon" type="image/png" id="favicon" href="images/favicon_yellow.png">
+</head>
+
+<body>
+    <div class="scanlines"></div>
+
+    <div class="container">
+        <header style="margin-bottom: 1.2rem;">
+            <button id="global-symbol">BTCUSDT</button>
+        </header>
+
+        <div class="alert-grid">
+            <!-- Price Alert -->
+            <div class="alert-card" id="price-card">
+                <div class="card-header">
+                    <h2>PRICE</h2>
+                    <div class="status-indicator inactive">
+                        <div class="dot" id="price-dot"></div>
+                        <span id="price-status">INACTIVE</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="tf-selector" id="price-tf-selector">
+                        <button type="button" class="tf-current-btn" id="price-tf-trigger"
+                            onclick="toggleTFMenu('price')">5m</button>
+                        <div class="tf-dropdown-menu" id="price-tf-menu" data-value="5m">
+                            <div class="tf-grid">
+                                <button type="button" class="tf-btn active" onclick="setTF('price', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('price', '1h')">1H</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>Target 1</label>
+                        <input type="text" id="price-target-1" placeholder="High">
+                    </div>
+                    <div class="input-row">
+                        <label>Target 2</label>
+                        <input type="text" id="price-target-2" placeholder="Mid">
+                    </div>
+                    <div class="input-row">
+                        <label>Target 3</label>
+                        <input type="text" id="price-target-3" placeholder="Low">
+                    </div>
+                </div>
+                <div class="action-group">
+                    <button class="toggle-btn" onclick="toggleAlert('price')">START</button>
+                </div>
+            </div>
+
+            <!-- EMA Alert (Combined Touch & Close) -->
+            <div class="alert-card" id="ema-alert-card">
+                <div class="card-header">
+                    <h2>EMA</h2>
+                    <div class="status-indicator inactive">
+                        <div class="dot" id="ema-alert-dot"></div>
+                        <span id="ema-alert-status">INACTIVE</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="tf-selector" id="ema-alert-tf-selector">
+                        <button type="button" class="tf-current-btn" id="ema-alert-tf-trigger"
+                            onclick="toggleTFMenu('ema-alert')">5m</button>
+                        <div class="tf-dropdown-menu" id="ema-alert-tf-menu" data-value="5m">
+                            <div class="tf-grid">
+                                <button type="button" class="tf-btn active"
+                                    onclick="setTF('ema-alert', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('ema-alert', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('ema-alert', '1h')">1H</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>EMA</label>
+                        <input type="number" id="ema-alert-level" placeholder="20">
+                    </div>
+                    <div class="input-row">
+                        <label>Mode</label>
+                        <button type="button" id="ema-alert-mode" class="condition-toggle" data-state="touch"
+                            onclick="toggleEMAAlertMode()">TOUCH</button>
+                    </div>
+                    <div class="input-row" id="ema-alert-side-row">
+                        <label>Side</label>
+                        <button type="button" id="ema-alert-condition" class="condition-toggle disabled-mode"
+                            data-state="below" onclick="toggleConditionState('ema-alert-condition')">-</button>
+                    </div>
+                </div>
+                <div class="action-group">
+                    <button class="toggle-btn" onclick="toggleAlert('ema-alert')">START</button>
+                </div>
+            </div>
+
+            <!-- Heikin Ashi -->
+            <div class="alert-card" id="heikin-card">
+                <div class="card-header">
+                    <h2>HEIKIN ASHI</h2>
+                    <div class="status-indicator inactive">
+                        <div class="dot" id="heikin-dot"></div>
+                        <span id="heikin-status">INACTIVE</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="tf-selector" id="heikin-tf-selector">
+                        <button type="button" class="tf-current-btn" id="heikin-tf-trigger"
+                            onclick="toggleTFMenu('heikin')">1H</button>
+                        <div class="tf-dropdown-menu" id="heikin-tf-menu" data-value="1h">
+                            <div class="tf-grid">
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '3m')">3m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '15m')">15m</button>
+                                <button type="button" class="tf-btn active" onclick="setTF('heikin', '1h')">1H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '2h')">2H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('heikin', '6h')">6H</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>BOOLEAN</label>
+                        <button type="button" id="heikin-mode" class="condition-toggle" data-state="is"
+                            onclick="toggleHeikinMode()">IS</button>
+                    </div>
+                    <div class="input-row">
+                        <label>MODE</label>
+                        <button type="button" id="heikin-type" class="condition-toggle" data-state="perfect"
+                            onclick="toggleHeikinType()">PERFECT</button>
+                    </div>
+                    <div class="input-row">
+                        <label>COLOR</label>
+                        <button type="button" id="heikin-condition" class="condition-toggle red-mode" data-state="red"
+                            onclick="toggleConditionState('heikin-condition')">RED</button>
+                    </div>
+                </div>
+                <div class="action-group">
+                    <button class="toggle-btn" onclick="toggleAlert('heikin')">START</button>
+                </div>
+            </div>
+
+            <!-- RAW CANDLE -->
+            <div class="alert-card" id="rawcandle-card">
+                <div class="card-header">
+                    <h2>RAW CANDLE</h2>
+                    <div class="status-indicator inactive">
+                        <div class="dot" id="rawcandle-dot"></div>
+                        <span id="rawcandle-status">INACTIVE</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="tf-selector" id="rawcandle-tf-selector">
+                        <button type="button" class="tf-current-btn" id="rawcandle-tf-trigger"
+                            onclick="toggleTFMenu('rawcandle')">1D</button>
+                        <div class="tf-dropdown-menu" id="rawcandle-tf-menu" data-value="1d">
+                            <div class="tf-grid">
+                                <button type="button" class="tf-btn" onclick="setTF('rawcandle', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('rawcandle', '15m')">15m</button>
+                                <button type="button" class="tf-btn active"
+                                    onclick="setTF('rawcandle', '1d')">1D</button>
+                                <button type="button" class="tf-btn" onclick="setTF('rawcandle', '1h')">1H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('rawcandle', '2h')">2H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('rawcandle', '6h')">6H</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row spacer"></div>
+                    <div class="input-row">
+                        <label>Mode</label>
+                        <button type="button" id="rawcandle-mode" class="condition-toggle" data-state="turned"
+                            onclick="toggleRawCandleMode()">TURNED</button>
+                    </div>
+                    <div class="input-row">
+                        <label>Color</label>
+                        <button type="button" id="rawcandle-condition" class="condition-toggle red-mode"
+                            data-state="red" onclick="toggleConditionState('rawcandle-condition')">RED</button>
+                    </div>
+                </div>
+                <div class="action-group">
+                    <button class="toggle-btn" onclick="toggleAlert('rawcandle')">START</button>
+                </div>
+            </div>
+
+            <!-- BREAKOUT -->
+            <div class="alert-card white-text" id="breakout-card">
+                <div class="card-header">
+                    <h2>BREAKOUT</h2>
+                    <div class="status-indicator inactive">
+                        <div class="dot" id="breakout-dot"></div>
+                        <span id="breakout-status">INACTIVE</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="tf-selector" id="breakout-tf-selector">
+                        <button type="button" class="tf-current-btn" id="breakout-tf-trigger"
+                            onclick="toggleTFMenu('breakout')">1H</button>
+                        <div class="tf-dropdown-menu" id="breakout-tf-menu" data-value="1h">
+                            <div class="tf-grid">
+                                <button type="button" class="tf-btn" onclick="setTF('breakout', '5m')">5m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('breakout', '15m')">15m</button>
+                                <button type="button" class="tf-btn" onclick="setTF('breakout', '1d')">1D</button>
+                                <button type="button" class="tf-btn active"
+                                    onclick="setTF('breakout', '1h')">1H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('breakout', '2h')">2H</button>
+                                <button type="button" class="tf-btn" onclick="setTF('breakout', '6h')">6H</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>Candle</label>
+                        <input type="number" id="breakout-lookback" placeholder="3">
+                    </div>
+                    <div class="input-row">
+                        <label>Type</label>
+                        <button type="button" id="breakout-mode" class="condition-toggle" data-state="ha"
+                            onclick="toggleBreakoutMode()">HEIKIN</button>
+                    </div>
+                    <div class="input-row">
+                        <label>Side</label>
+                        <button type="button" id="breakout-condition" class="condition-toggle" data-state="both"
+                            onclick="toggleConditionState('breakout-condition')">BOTH</button>
+                    </div>
+                </div>
+                <div class="action-group">
+                    <button class="toggle-btn" onclick="toggleAlert('breakout')">START</button>
+                </div>
+            </div>
+
+        </div>
+
+
+
+        <div id="footer-controls"
+            style="display: flex; align-items: center; justify-content: space-between; margin-top: 1.5rem; margin-bottom: 1.5rem; width: 100%;">
+            <div
+                style="flex: 1; display: flex; justify-content: flex-start; padding-left: calc(1.2rem + 6px + 0.5rem);">
+                <a href="https://www.coinglass.com/tv/Binance_BTCUSDT" target="_blank" class="despair-link"
+                    style="margin: 0;">CHART</a>
+            </div>
+            <div style="flex: 1; display: flex; justify-content: center;">
+                <a href="index.html" target="_blank" class="despair-link" style="margin: 0;">BEEP DASHBOARD</a>
+            </div>
+            <div style="flex: 1; display: flex; justify-content: flex-end; padding-right: 2.4rem;">
+                <a href="https://www.coinglass.com/pro/futures/LiquidationHeatMap?coin=BTC&type=pair" target="_blank"
+                    class="despair-link" style="margin: 0;">HEATMAP</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modular Dashboard Scripts -->
+    <script src="js/env.js"></script>
+    <script src="js/dashboard/api.js"></script>
+    <script src="js/dashboard/indicators.js"></script>
+    <script src="js/dashboard/speech.js"></script>
+    <script src="js/dashboard/ui.js"></script>
+    <script src="js/dashboard/engine.js"></script>
+    <script src="js/dashboard/main.js"></script>
+    <script src="js/dashboard/ha_coloring.js"></script>
+</body>
+
+</html>

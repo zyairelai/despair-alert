@@ -94,19 +94,19 @@ function playSecretSound(file) {
 }
 
 document.addEventListener('keydown', (e) => {
-    // Basic buffer logic to detect "tt", "on", "off", "zz"
+    // Basic buffer logic to detect "on", "off"
     teleBuffer += e.key.toLowerCase();
     if (teleBuffer.length > 5) teleBuffer = teleBuffer.slice(-5);
 
     const lastTwo = teleBuffer.slice(-2);
     const lastThree = teleBuffer.slice(-3);
 
-    if (!window.telegramEnabled && (lastTwo === "tt" || lastTwo === "on")) {
+    if (!window.telegramEnabled && lastTwo === "on") {
         window.telegramEnabled = true;
         console.log("SECRET: Telegram Alerts Enabled.");
         playSecretSound('images/pickup.mp3');
         teleBuffer = ""; // Reset buffer
-    } else if (window.telegramEnabled && (lastThree === "off" || lastTwo === "zz")) {
+    } else if (window.telegramEnabled && lastThree === "off") {
         window.telegramEnabled = false;
         console.log("SECRET: Telegram Alerts Disabled.");
         playSecretSound('images/gameover.mp3');
