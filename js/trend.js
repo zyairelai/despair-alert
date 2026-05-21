@@ -3,8 +3,23 @@ let started = false;
 let lastBeepInterval = 0;
 let beepInterval = 5;
 let audioCtx = null;
+let serverTimeOffset = 0;
 
-
+async function syncServerTime() {
+    try {
+        const start = Date.now();
+        const res = await fetch("https://fapi.binance.com/fapi/v1/time");
+        if (!res.ok) throw new Error("Network response was not ok");
+        const data = await res.json();
+        const latency = (Date.now() - start) / 2;
+        serverTimeOffset = data.serverTime - (Date.now() - latency);
+        console.log("Time synced with Binance. Offset (ms):", serverTimeOffset);
+    } catch (e) {
+        console.error("Failed to sync server time:", e);
+    }
+}
+syncServerTime();
+setInterval(syncServerTime, 600000); // Re-sync every 10 mins
 
 function getAudioContext() {
     if (!audioCtx) {
@@ -79,8 +94,8 @@ function beep() {
 }
 
 function tick() {
-    const now = new Date();
-    const nowTime = now.getTime();
+    const nowTime = Date.now() + serverTimeOffset;
+    const now = new Date(nowTime);
     const m = now.getMinutes();
     const s = now.getSeconds();
 
@@ -111,13 +126,23 @@ function start() {
     document.getElementById("startBtn").disabled = true;
     document.getElementById("startBtn").innerText = "MONITORING ACTIVE";
 
-    const nowTs = Date.now();
+    const nowTs = Date.now() + serverTimeOffset;
     // Initialize to current interval to avoid double-beep on start
     lastBeepInterval = Math.floor(nowTs / (beepInterval * 60 * 1000));
 
-    monitorInterval = setInterval(tick, 1000);
     updateTrend(); // Initial Immediate Update
     tick();
+
+    function scheduleTick() {
+        if (!started) return;
+        const now = Date.now() + serverTimeOffset;
+        const delay = 1000 - (now % 1000);
+        monitorInterval = setTimeout(() => {
+            tick();
+            scheduleTick();
+        }, delay);
+    }
+    scheduleTick();
 
     // Initial check does not beep or alert, just verifies audio
     beep();
@@ -135,7 +160,7 @@ function updateGlobalSymbol() {
 
     // STOP EVERYTHING: Reset monitoring state
     if (monitorInterval) {
-        clearInterval(monitorInterval);
+        clearTimeout(monitorInterval);
         monitorInterval = null;
     }
 
