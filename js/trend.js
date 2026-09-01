@@ -48,17 +48,19 @@ function getHA(klines) {
 
 async function updateTrend() {
     try {
-        const [p1h] = await Promise.all([
-            fetchKlines(SYMBOL, "1h")
-        ]);
+        const p1m = await fetchKlines(SYMBOL, "1m");
 
-        if (p1h.length < 50) return;
+        if (!p1m || p1m.length < 50) return;
 
-        const ha1h = getHA(p1h);
-        if (!ha1h) return;
+        const closes = p1m.map(k => k.close);
+        const ema10 = calculateEMA(closes, 10);
+        const ema20 = calculateEMA(closes, 20);
+        const ema50 = calculateEMA(closes, 50);
 
-        const isPerfectGreen = ha1h.color === "GREEN" && ha1h.low >= ha1h.open - (ha1h.open * 0.0001);
-        const isPerfectRed = ha1h.color === "RED" && ha1h.high <= ha1h.open + (ha1h.open * 0.0001);
+        if (ema10 === null || ema20 === null || ema50 === null) return;
+
+        const isPerfectGreen = (ema10 > ema20) && (ema20 > ema50);
+        const isPerfectRed = (ema50 > ema20) && (ema20 > ema10);
 
         const trendDisplay = document.getElementById("trendDisplay");
         if (trendDisplay) {

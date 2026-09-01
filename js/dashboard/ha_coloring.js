@@ -1,28 +1,21 @@
-function getHAForColoring(klines) {
-    if (klines.length < 2) return null;
-    let haOpen = (klines[0].open + klines[0].close) / 2;
-    let haClose = (klines[0].open + klines[0].high + klines[0].low + klines[0].close) / 4;
-    let haHigh = klines[0].high;
-    let haLow = klines[0].low;
-
-    for (let i = 1; i < klines.length; i++) {
-        const k = klines[i];
-        haOpen = (haOpen + haClose) / 2;
-        haClose = (k.open + k.high + k.low + k.close) / 4;
-        haHigh = Math.max(k.high, haOpen, haClose);
-        haLow = Math.min(k.low, haOpen, haClose);
+function calculateEMA(prices, period) {
+    if (prices.length < period) return null;
+    const k = 2 / (period + 1);
+    let ema = prices.slice(0, period).reduce((acc, val) => acc + val, 0) / period;
+    for (let i = period; i < prices.length; i++) {
+        ema = (prices[i] - ema) * k + ema;
     }
-    return { open: haOpen, high: haHigh, low: haLow, close: haClose, color: haClose > haOpen ? "GREEN" : "RED" };
+    return ema;
 }
 
 async function updateTitleAndFavicon() {
-    // Both Main Dashboard and Trend page now use this logic
+    // Both Main Dashboard and Trend page now use 1m 10, 20, 50 EMA alignment
     const symbolEl = document.getElementById('global-symbol');
     if (!symbolEl) return;
 
     const symbol = symbolEl.innerText;
     try {
-        const klines = await fetchKlines(symbol, "1h");
+        const klines = await fetchKlines(symbol, "1m");
         if (!klines || klines.length < 50) {
             symbolEl.classList.remove('title-green', 'title-red');
             symbolEl.classList.add('title-yellow');
@@ -30,11 +23,15 @@ async function updateTitleAndFavicon() {
             return;
         }
 
-        const ha1h = getHAForColoring(klines);
-        if (!ha1h) return;
+        const closes = klines.map(k => k.close);
+        const ema10 = calculateEMA(closes, 10);
+        const ema20 = calculateEMA(closes, 20);
+        const ema50 = calculateEMA(closes, 50);
 
-        const isPerfectGreen = ha1h.color === "GREEN" && ha1h.low >= ha1h.open - (ha1h.open * 0.0001);
-        const isPerfectRed = ha1h.color === "RED" && ha1h.high <= ha1h.open + (ha1h.open * 0.0001);
+        if (ema10 === null || ema20 === null || ema50 === null) return;
+
+        const isPerfectGreen = (ema10 > ema20) && (ema20 > ema50);
+        const isPerfectRed = (ema50 > ema20) && (ema20 > ema10);
 
         let colorClass = "title-yellow";
         let faviconPath = "images/favicon_yellow.png";
@@ -55,7 +52,7 @@ async function updateTitleAndFavicon() {
         updateFavicon(faviconPath);
 
     } catch (e) {
-        console.error("1H coloring update failed", e);
+        console.error("1M EMA coloring update failed", e);
         symbolEl.classList.remove('title-green', 'title-red');
         symbolEl.classList.add('title-yellow');
         updateFavicon("images/favicon_yellow.png");
